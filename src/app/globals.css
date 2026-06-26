@@ -1,0 +1,95 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-heading: var(--font-sans);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* CatDex brand accents (PRD section 7) */
+  --color-primary-light: var(--primary-light);
+  --color-green: var(--green);
+  --color-orange: var(--orange);
+
+  /* Rarity tiers */
+  --color-common: var(--common);
+  --color-uncommon: var(--uncommon);
+  --color-rare: var(--rare);
+  --color-epic: var(--epic);
+  --color-legendary: var(--legendary);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+}
+
+:root {
+  --radius: 1rem;
+
+  /* Core palette from PRD section 7 */
+  --background: #fdfaf4;
+  --foreground: #3a3550;
+  --card: #ffffff;
+  --card-foreground: #3a3550;
+  --popover: #ffffff;
+  --popover-foreground: #3a3550;
+  --primary: #9b7ede;
+  --primary-foreground: #ffffff;
+  --secondary: #d9ccf6;
+  --secondary-foreground: #4a3f6b;
+  --muted: #f3eee3;
+  --muted-foreground: #a8a2b8;
+  --accent: #d9ccf6;
+  --accent-foreground: #4a3f6b;
+  --destructive: #e2685f;
+  --border: #efe4cf;
+  --input: #efe4cf;
+  --ring: #9b7ede;
+
+  --primary-light: #d9ccf6;
+  --green: #8fd6a6;
+  --orange: #f6a96b;
+
+  /* Rarity tiers (PRD section 9 + screen mockups) */
+  --common: #c9d3e3;
+  --uncommon: #8fd6a6;
+  --rare: #7fb4e8;
+  --epic: #b79cf0;
+  --legendary: #f6c14b;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
