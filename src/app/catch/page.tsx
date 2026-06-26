@@ -7,6 +7,7 @@ import { MapPin, RotateCcw, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { CatTradingCard } from "@/components/cat-trading-card";
+import { InteractiveCard } from "@/components/interactive-card";
 import { Camera } from "@/components/capture/camera";
 import { CatButton } from "@/components/ui/cat-button";
 import { Input } from "@/components/ui/input";
@@ -211,13 +212,15 @@ export default function CatchPage() {
               transition={{ type: "spring", stiffness: 200, damping: 14 }}
               className="mx-auto w-full max-w-[17rem]"
             >
-              <CatTradingCard
-                name={nickname.trim() || "New friend"}
-                stickerUrl={processed.stickerPreviewUrl}
-                unoptimizedSticker
-                sparkle
-                size="lg"
-              />
+              <InteractiveCard holo>
+                <CatTradingCard
+                  name={nickname.trim() || "New friend"}
+                  stickerUrl={processed.stickerPreviewUrl}
+                  unoptimizedSticker
+                  sparkle
+                  size="lg"
+                />
+              </InteractiveCard>
             </motion.div>
           </AnimatePresence>
 

@@ -93,3 +93,36 @@
     @apply font-sans;
   }
 }
+
+/* Holographic shimmer used on Epic trading cards */
+@keyframes holo-pan {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.holo-idle {
+  background-image: linear-gradient(
+    115deg,
+    transparent 25%,
+    rgba(255, 120, 220, 0.22),
+    rgba(120, 210, 255, 0.22),
+    rgba(180, 140, 255, 0.22),
+    transparent 75%
+  );
+  background-size: 220% 220%;
+  mix-blend-mode: soft-light;
+  animation: holo-pan 5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .holo-idle {
+    animation: none;
+  }
+}

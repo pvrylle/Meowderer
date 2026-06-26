@@ -44,3 +44,39 @@ export function dexNumber(id: string): string {
   const n = (hashString(`dex:${id}`) % 151) + 1;
   return `#${String(n).padStart(3, "0")}`;
 }
+
+export type Biome = "meadow" | "city" | "beach" | "night" | "snow";
+
+const BIOMES: Biome[] = ["meadow", "city", "beach", "night", "snow"];
+
+export const BIOME_LABEL: Record<Biome, string> = {
+  meadow: "Meadow",
+  city: "City",
+  beach: "Beach",
+  night: "Night",
+  snow: "Snow",
+};
+
+/** Stable habitat backdrop for a cat, derived from its id. */
+export function pickBiome(capture: Pick<Capture, "id">): Biome {
+  return BIOMES[hashString(`biome:${capture.id}`) % BIOMES.length];
+}
+
+const TRAIT_LINE: Record<string, string> = {
+  Floof: "an unrepentant floofball",
+  Sass: "powered entirely by sass",
+  Stealth: "a master of the silent ambush",
+};
+
+/** A short, deterministic flavour bio for the card back. */
+export function catBio(
+  capture: Pick<Capture, "id" | "rarity" | "coat_type" | "city" | "country">,
+): string {
+  const stats = catStats(capture);
+  const top = [...stats].sort((a, b) => b.value - a.value)[0];
+  const place = capture.city || capture.country || "parts unknown";
+  const coat = capture.coat_type ? `${capture.coat_type} ` : "";
+  const tier = capture.rarity ? `${capture.rarity}-tier ` : "";
+  const trait = TRAIT_LINE[top.label] ?? "full of surprises";
+  return `This ${tier}${coat}cat was first spotted around ${place}. Locals say it's ${trait}.`;
+}

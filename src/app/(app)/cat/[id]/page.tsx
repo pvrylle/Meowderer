@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
-import { CaptureCard } from "@/components/cat-trading-card";
+import { InteractiveCaptureCard } from "@/components/interactive-capture-card";
 import { CatName, DeleteCatButton } from "@/components/cat/cat-actions";
 import { getCapture } from "@/lib/captures";
 
@@ -28,12 +28,12 @@ export default async function CatDetailPage({
       </header>
 
       <div className="mx-auto w-full max-w-xs">
-        <CaptureCard capture={capture} size="lg" priority />
+        <InteractiveCaptureCard capture={capture} />
       </div>
 
       <div className="flex flex-col items-center gap-1 text-center">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Rename
+          Tap card to flip · Rename
         </p>
         <CatName id={capture.id} initialName={capture.nickname} />
       </div>

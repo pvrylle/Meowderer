@@ -2,7 +2,13 @@ import Image from "next/image";
 import { CalendarDays, Cat, MapPin, PawPrint } from "lucide-react";
 
 import { CardScene } from "@/components/card-scene";
-import { catStats, dexNumber, type CatStat } from "@/lib/cat-stats";
+import {
+  catStats,
+  dexNumber,
+  pickBiome,
+  type Biome,
+  type CatStat,
+} from "@/lib/cat-stats";
 import { rarityBanner, rarityFrame, rarityLabel } from "@/lib/rarity";
 import type { Capture, Rarity } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
@@ -16,6 +22,7 @@ type CatTradingCardProps = {
   coat?: string | null;
   dex?: string | null;
   stats?: CatStat[] | null;
+  biome?: Biome;
   size?: "sm" | "lg";
   priority?: boolean;
   unoptimizedSticker?: boolean;
@@ -70,12 +77,14 @@ export function CatTradingCard({
   coat,
   dex,
   stats,
+  biome = "meadow",
   size = "lg",
   priority,
   unoptimizedSticker,
   sparkle,
 }: CatTradingCardProps) {
   const isLg = size === "lg";
+  const isEpic = rarity === "epic";
 
   return (
     <div
@@ -87,7 +96,7 @@ export function CatTradingCard({
     >
       <div
         className={cn(
-          "flex flex-col bg-white/85 backdrop-blur",
+          "flex flex-col bg-white/90",
           isLg ? "gap-2 rounded-[1.7rem] p-2" : "gap-1.5 rounded-[1.35rem] p-1.5",
         )}
       >
@@ -127,7 +136,8 @@ export function CatTradingCard({
           )}
         >
           <CardScene
-            sparkle={sparkle ?? rarity === "epic"}
+            biome={biome}
+            sparkle={sparkle ?? isEpic}
             className={isLg ? "aspect-[4/5]" : "aspect-square"}
           >
             <Image
@@ -147,6 +157,11 @@ export function CatTradingCard({
               )}
             />
           </CardScene>
+
+          {/* idle holographic shimmer on Epic cards */}
+          {isEpic && (
+            <span className="holo-idle pointer-events-none absolute inset-0" />
+          )}
 
           {/* rarity ribbon */}
           <span
@@ -223,6 +238,7 @@ export function CaptureCard({
       coat={capture.coat_type}
       dex={dexNumber(capture.id)}
       stats={size === "lg" ? catStats(capture) : null}
+      biome={pickBiome(capture)}
       size={size}
       priority={priority}
     />
