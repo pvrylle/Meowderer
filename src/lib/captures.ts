@@ -7,9 +7,9 @@ import { DEMO_CAPTURES, getDemoCapture } from "@/lib/demo";
 import type { Capture } from "@/lib/supabase/types";
 
 export async function getCaptures(): Promise<Capture[]> {
-  if (!isSupabaseConfigured) {
-    return (await isDemoSession()) ? DEMO_CAPTURES : [];
-  }
+  if (await isDemoSession()) return DEMO_CAPTURES;
+  if (!isSupabaseConfigured) return [];
+
   const supabase = await createClient();
   const { data } = await supabase
     .from("captures")
@@ -19,9 +19,9 @@ export async function getCaptures(): Promise<Capture[]> {
 }
 
 export async function getCapture(id: string): Promise<Capture | null> {
-  if (!isSupabaseConfigured) {
-    return (await isDemoSession()) ? getDemoCapture(id) : null;
-  }
+  if (await isDemoSession()) return getDemoCapture(id);
+  if (!isSupabaseConfigured) return null;
+
   const supabase = await createClient();
   const { data } = await supabase
     .from("captures")

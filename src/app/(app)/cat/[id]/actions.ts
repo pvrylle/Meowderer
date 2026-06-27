@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { createClient } from "@/lib/supabase/server";
+import { isDemoSession } from "@/lib/auth";
 
 export type ActionResult =
   | { success: true }
@@ -16,6 +17,10 @@ const renameSchema = z.object({
 });
 
 export async function renameCapture(input: unknown): Promise<ActionResult> {
+  if (await isDemoSession()) {
+    return { success: false, error: "Demo mode — renames aren't saved." };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -41,6 +46,8 @@ export async function renameCapture(input: unknown): Promise<ActionResult> {
 }
 
 export async function deleteCapture(id: string): Promise<void> {
+  if (await isDemoSession()) redirect("/catdex");
+
   const supabase = await createClient();
   const {
     data: { user },

@@ -36,6 +36,9 @@ export async function signIn(formData: FormData): Promise<AuthResult> {
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) return { error: error.message };
 
+  const cookieStore = await cookies();
+  cookieStore.delete(DEMO_COOKIE);
+
   redirect("/home");
 }
 
@@ -58,16 +61,19 @@ export async function signUp(formData: FormData): Promise<AuthResult> {
     return { error: "Check your inbox to confirm your email, then sign in." };
   }
 
+  const cookieStore = await cookies();
+  cookieStore.delete(DEMO_COOKIE);
+
   redirect("/home");
 }
 
 export async function signOut(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.delete(DEMO_COOKIE);
+
   if (isSupabaseConfigured) {
     const supabase = await createClient();
     await supabase.auth.signOut();
-  } else {
-    const cookieStore = await cookies();
-    cookieStore.delete(DEMO_COOKIE);
   }
   redirect("/auth");
 }

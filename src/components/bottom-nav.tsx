@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Camera, Home, LayoutGrid, User } from "lucide-react";
+import { Camera, Home, LayoutGrid, Map, User } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 const TABS = [
   { href: "/home", label: "Home", icon: Home },
   { href: "/catdex", label: "CatDex", icon: LayoutGrid },
+  { href: "/map", label: "Map", icon: Map },
   { href: "/profile", label: "Profile", icon: User },
 ] as const;
 

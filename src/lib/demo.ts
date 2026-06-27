@@ -1,12 +1,10 @@
-import { isSupabaseConfigured } from "@/lib/supabase/env";
 import type { Capture } from "@/lib/supabase/types";
 
 /**
- * Demo mode lets you browse the app without a Supabase project. It is only
- * available when Supabase env vars are absent, and is gated behind a cookie set
- * by the "Continue as demo" button, so the auth/onboarding screens still work.
+ * Demo mode lets you browse the app with sample cats via a cookie set by
+ * "Continue as demo" on the auth screen. Works with or without Supabase.
  */
-export const DEMO_AVAILABLE = !isSupabaseConfigured;
+export const DEMO_AVAILABLE = true;
 export const DEMO_COOKIE = "catdex-demo";
 
 export const DEMO_USER = {

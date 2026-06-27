@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { createClient } from "@/lib/supabase/server";
+import { isDemoSession } from "@/lib/auth";
 
 const saveCaptureSchema = z.object({
   photoPath: z.string().min(1).max(200),
@@ -19,6 +20,10 @@ export type SaveResult =
   | { success: false; error: string };
 
 export async function saveCapture(input: unknown): Promise<SaveResult> {
+  if (await isDemoSession()) {
+    return { success: false, error: "Demo mode — sign in to save cats." };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },

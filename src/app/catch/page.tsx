@@ -18,8 +18,13 @@ import {
 } from "@/lib/capture/pipeline";
 import { uploadCapture } from "@/lib/capture/upload";
 import { getCurrentPosition } from "@/lib/geo";
-import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { DEMO_COOKIE } from "@/lib/demo";
 import { saveCapture } from "./actions";
+
+function isDemoSession(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.cookie.split("; ").some((c) => c === `${DEMO_COOKIE}=1`);
+}
 
 type Phase = "capture" | "preview" | "processing" | "review";
 
@@ -88,8 +93,8 @@ export default function CatchPage() {
 
   async function save() {
     if (!processed) return;
-    if (!isSupabaseConfigured) {
-      toast.info("Demo mode — connect Supabase to save your cats.");
+    if (isDemoSession()) {
+      toast.info("Demo mode — sign in to save your cats.");
       return;
     }
     setSaving(true);

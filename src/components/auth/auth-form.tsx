@@ -141,7 +141,7 @@ export function AuthForm() {
       {DEMO_AVAILABLE && (
         <div className="flex flex-col items-center gap-2 rounded-2xl bg-muted/60 p-4 text-center">
           <p className="text-xs text-muted-foreground">
-            Supabase isn&apos;t connected yet. Explore the app with sample cats.
+            Preview the app with 6 sample cats — map, cards, and collection included.
           </p>
           <CatButton
             type="button"
