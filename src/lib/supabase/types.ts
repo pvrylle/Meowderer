@@ -6,6 +6,9 @@ export type Profile = {
   avatar_url: string | null;
   total_xp: number;
   level: number;
+  streak_count: number;
+  last_capture_date: string | null;
+  daily_goal: number;
   created_at: string;
 };
 
@@ -80,6 +83,7 @@ export type Post = {
   body: string;
   image_url: string | null;
   category: string;
+  capture_id: string | null;
   lat: number | null;
   lng: number | null;
   likes_count: number;
@@ -104,7 +108,18 @@ export type RescueAlert = {
   lng: number | null;
   urgent: boolean;
   resolved: boolean;
+  resolved_by: string | null;
+  resolved_at: string | null;
   created_at: string;
+};
+
+export type UserShelterVisit = {
+  user_id: string;
+  osm_id: string;
+  lat: number;
+  lng: number;
+  name: string | null;
+  visited_at: string;
 };
 
 export type Database = {
@@ -165,6 +180,7 @@ export type Database = {
           body: string;
           category?: string;
           image_url?: string | null;
+          capture_id?: string | null;
           lat?: number | null;
           lng?: number | null;
           likes_count?: number;
@@ -197,10 +213,25 @@ export type Database = {
           lng?: number | null;
           urgent?: boolean;
           resolved?: boolean;
+          resolved_by?: string | null;
+          resolved_at?: string | null;
           id?: string;
           created_at?: string;
         };
         Update: Partial<RescueAlert>;
+        Relationships: [];
+      };
+      user_shelter_visits: {
+        Row: UserShelterVisit;
+        Insert: {
+          user_id: string;
+          osm_id: string;
+          lat: number;
+          lng: number;
+          name?: string | null;
+          visited_at?: string;
+        };
+        Update: Partial<UserShelterVisit>;
         Relationships: [];
       };
       chat_messages: {

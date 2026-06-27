@@ -14,7 +14,7 @@ import { updateAvatarAction } from "@/app/(app)/community/actions";
 import { UserAvatar } from "@/components/user-avatar";
 import { CatButton } from "@/components/ui/cat-button";
 import { uploadAvatar } from "@/lib/community-upload";
-import { pendingCaptureCount } from "@/lib/offline-capture-queue";
+import { useOfflineSync } from "@/hooks/use-offline-sync";
 import { useSettingsStore } from "@/stores/settings";
 
 function formatBytes(bytes: number): string {
@@ -40,12 +40,32 @@ export function SettingsForm({
     estimatedBytes: number;
     percentUsed: number;
   } | null>(null);
-  const [pending, setPending] = useState(0);
+  const { pending, syncing, syncNow } = useOfflineSync();
 
   useEffect(() => {
     void getStorageEstimateAction().then(setStorage);
-    void pendingCaptureCount().then(setPending);
   }, []);
+
+  async function handleSyncNow() {
+    const result = await syncNow();
+    if (result.synced > 0 && result.failed === 0) {
+      toast.success(
+        `Synced ${result.synced} capture${result.synced === 1 ? "" : "s"}!`,
+      );
+      router.refresh();
+    } else if (result.synced > 0) {
+      toast.warning(
+        `Synced ${result.synced}, ${result.failed} failed. Try again.`,
+      );
+      router.refresh();
+    } else if (result.failed > 0) {
+      toast.error(result.errors[0] ?? "Sync failed.");
+    } else if (result.errors[0]) {
+      toast.info(result.errors[0]);
+    } else {
+      toast.info("Nothing to sync.");
+    }
+  }
 
   async function handleBackfill() {
     const result = await backfillPlacesAction();
@@ -179,9 +199,21 @@ export function SettingsForm({
             <p className="text-sm text-muted-foreground">Loading storage estimate…</p>
           )}
           {pending > 0 && (
-            <p className="mt-2 text-xs font-semibold text-orange">
-              {pending} capture{pending === 1 ? "" : "s"} waiting to sync offline
-            </p>
+            <>
+              <p className="mt-2 text-xs font-semibold text-orange">
+                {pending} capture{pending === 1 ? "" : "s"} waiting to sync offline
+              </p>
+              <CatButton
+                variant="outline"
+                size="sm"
+                block
+                className="mt-3"
+                loading={syncing}
+                onClick={handleSyncNow}
+              >
+                Sync now
+              </CatButton>
+            </>
           )}
         </div>
       </section>

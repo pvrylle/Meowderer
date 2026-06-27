@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Building2, ChevronLeft, ChevronRight, Siren } from "lucide-react";
 
 import { CommunityChat } from "@/components/community-chat";

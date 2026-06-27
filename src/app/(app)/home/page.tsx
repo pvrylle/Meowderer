@@ -2,13 +2,34 @@ import Link from "next/link";
 import { Camera, Sparkles, User } from "lucide-react";
 
 import { CatCard } from "@/components/cat-card";
+import { HomeRetention } from "@/components/home-retention";
 import { MascotEmpty } from "@/components/mascot-empty";
 import { CatButton } from "@/components/ui/cat-button";
+import { getCurrentUser } from "@/lib/auth";
 import { getCaptures } from "@/lib/captures";
+import { countCapturesToday } from "@/lib/retention";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function HomePage() {
+  const user = await getCurrentUser();
   const captures = await getCaptures();
   const recent = captures.slice(0, 4);
+
+  let streakCount = 0;
+  let dailyGoal = 1;
+
+  if (user) {
+    const supabase = await createClient();
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("streak_count, daily_goal")
+      .eq("id", user.id)
+      .maybeSingle();
+    streakCount = profile?.streak_count ?? 0;
+    dailyGoal = profile?.daily_goal ?? 1;
+  }
+
+  const todayCount = countCapturesToday(captures.map((c) => c.caught_at));
 
   return (
     <div className="flex flex-col gap-6 p-6 pb-nav">
@@ -31,6 +52,12 @@ export default async function HomePage() {
           </div>
         </div>
       </header>
+
+      <HomeRetention
+        streakCount={streakCount}
+        dailyGoal={dailyGoal}
+        todayCount={todayCount}
+      />
 
       <Link href="/catch">
         <div className="relative overflow-hidden rounded-3xl bg-primary p-6 text-primary-foreground shadow-lg shadow-primary/30">

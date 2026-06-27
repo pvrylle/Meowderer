@@ -34,4 +34,6 @@ export type MetricSnapshot = {
   unique_cities: number;
   unique_countries: number;
   rare_catches: number;
+  shelter_visits: number;
+  verify_rescue: number;
 };

@@ -33,6 +33,33 @@ export function computeMetrics(captures: Capture[]): MetricSnapshot {
     unique_cities: cities.size,
     unique_countries: countries.size,
     rare_catches: rare.length,
+    shelter_visits: 0,
+    verify_rescue: 0,
+  };
+}
+
+export async function computeExtendedMetrics(
+  supabase: Supabase,
+  userId: string,
+  captures: Capture[],
+): Promise<MetricSnapshot> {
+  const base = computeMetrics(captures);
+
+  const [{ count: shelterVisits }, { count: verifyRescue }] = await Promise.all([
+    supabase
+      .from("user_shelter_visits")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId),
+    supabase
+      .from("rescue_alerts")
+      .select("*", { count: "exact", head: true })
+      .eq("resolved_by", userId),
+  ]);
+
+  return {
+    ...base,
+    shelter_visits: shelterVisits ?? 0,
+    verify_rescue: verifyRescue ?? 0,
   };
 }
 
@@ -100,6 +127,14 @@ export async function getUserBadges(
   });
 }
 
+/** Re-sync mission + badge progress (e.g. after community actions). */
+export async function syncMissionProgress(
+  supabase: Supabase,
+  userId: string,
+): Promise<{ completedMissionIds: string[]; leveledBadgeIds: string[] }> {
+  return progressMissionsAndBadgesAfterSave(supabase, userId);
+}
+
 /** Sync mission + badge progress after a new capture. */
 export async function progressMissionsAndBadgesAfterSave(
   supabase: Supabase,
@@ -116,7 +151,7 @@ export async function progressMissionsAndBadgesAfterSave(
     return { completedMissionIds: [], leveledBadgeIds: [] };
   }
 
-  const metrics = computeMetrics(captures);
+  const metrics = await computeExtendedMetrics(supabase, userId, captures);
   const completedMissionIds: string[] = [];
   const leveledBadgeIds: string[] = [];
 

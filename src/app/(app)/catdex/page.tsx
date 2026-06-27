@@ -4,12 +4,26 @@ import { PawPrint } from "lucide-react";
 import { CatDexGrid } from "@/components/catdex-grid";
 import { MascotEmpty } from "@/components/mascot-empty";
 import { CatButton } from "@/components/ui/cat-button";
+import { getCaptureCommunityTags } from "@/lib/capture-tags";
 import { computeCollectionProgress } from "@/lib/collection-progress";
+import { getCurrentUser } from "@/lib/auth";
 import { getCaptures } from "@/lib/captures";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function CatDexPage() {
+  const user = await getCurrentUser();
   const captures = await getCaptures();
   const progress = computeCollectionProgress(captures);
+
+  let helpedIds: string[] = [];
+  let rescuedIds: string[] = [];
+
+  if (user) {
+    const supabase = await createClient();
+    const tags = await getCaptureCommunityTags(supabase, user.id, captures);
+    helpedIds = [...tags.helpedIds];
+    rescuedIds = [...tags.rescuedIds];
+  }
 
   return (
     <div className="flex flex-col gap-5 p-6 pb-nav">
@@ -56,7 +70,11 @@ export default async function CatDexPage() {
           </Link>
         </div>
       ) : (
-        <CatDexGrid captures={captures} />
+        <CatDexGrid
+          captures={captures}
+          helpedIds={helpedIds}
+          rescuedIds={rescuedIds}
+        />
       )}
     </div>
   );

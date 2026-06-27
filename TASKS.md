@@ -133,15 +133,47 @@
 
 ---
 
+## Community Depth (Phase 5)
+
+- [x] Photo posts + `post-images` storage bucket.
+- [x] Comment threads (bottom sheet).
+- [x] Live chat via Supabase Realtime + unread badges.
+- [x] Rescue alerts create/list + live shelter count.
+- [x] Avatars on feed/chat + upload in Settings.
+
+---
+
+## Phase 6 — Retention & ship readiness
+
+- [x] Offline capture queue sync (drain on reconnect + Settings “Sync now”).
+- [x] Streaks + daily catch goal on Home.
+- [x] Community missions: visit shelter, verify rescue report.
+- [x] CatDex Helped / Rescued filter tabs.
+- [x] `/maps` → `/map` redirect in dev proxy.
+- [x] Accessibility pass (comments sheet, nav tap targets).
+- [ ] Lighthouse PWA score audit (run locally before release).
+- [ ] Test on a real phone (camera + GPS + install + offline sync) regularly.
+
+**Real-device QA checklist (before release):**
+- [ ] Install PWA to home screen (iOS + Android).
+- [ ] Catch flow: camera, bg removal, save with GPS on/off.
+- [ ] Offline catch → airplane mode save → reconnect → auto-sync.
+- [ ] Map: Shelters layer + shelter check-in toast within 200 m.
+- [ ] Community: post photo, comment, live chat, resolve alert.
+- [ ] Missions: claim reward after shelter visit / verify rescue.
+
+---
+
 ## Phase 3 — Polish
 
 **Goal:** make it shine and resilient.
 
 - [x] "Is this a cat?" guard before processing (reject junk photos).
 - [x] AI-made UI art pass (mascot via `icon.svg` in empty states).
-- [ ] Streaks / daily catch goal.
+- [x] Streaks / daily catch goal.
 - [x] "Share your sticker" card export (image) — with location rounding/privacy.
 - [x] Offline capture queue (IndexedDB; saves when offline).
+- [x] Offline queue sync when back online.
 - [x] Storage usage meter in Settings; cleanup tools (estimate).
 - [ ] Accessibility + performance pass (Lighthouse PWA score).
 

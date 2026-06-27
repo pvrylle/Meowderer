@@ -8,25 +8,35 @@ import { isRareOrEpic } from "@/lib/xp";
 import type { Capture } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 
-type StatusFilter = "all" | "photographed" | "geotagged" | "rare";
+type StatusFilter =
+  | "all"
+  | "photographed"
+  | "geotagged"
+  | "rare"
+  | "helped"
+  | "rescued";
 
 type CatDexGridProps = {
   captures: Capture[];
+  helpedIds?: string[];
+  rescuedIds?: string[];
 };
 
-const STATUS_TABS: { key: StatusFilter; label: string; disabled?: boolean }[] = [
+const STATUS_TABS: { key: StatusFilter; label: string }[] = [
   { key: "all", label: "All" },
   { key: "photographed", label: "Photographed" },
   { key: "geotagged", label: "Geotagged" },
   { key: "rare", label: "Rare+" },
+  { key: "helped", label: "Helped" },
+  { key: "rescued", label: "Rescued" },
 ];
 
-const TEASER_TABS = [
-  { label: "Helped", disabled: true },
-  { label: "Rescued", disabled: true },
-];
-
-function filterByStatus(captures: Capture[], status: StatusFilter): Capture[] {
+function filterByStatus(
+  captures: Capture[],
+  status: StatusFilter,
+  helpedSet: Set<string>,
+  rescuedSet: Set<string>,
+): Capture[] {
   switch (status) {
     case "photographed":
       return captures;
@@ -34,17 +44,28 @@ function filterByStatus(captures: Capture[], status: StatusFilter): Capture[] {
       return captures.filter((c) => c.lat != null && c.lng != null);
     case "rare":
       return captures.filter((c) => c.rarity && isRareOrEpic(c.rarity));
+    case "helped":
+      return captures.filter((c) => helpedSet.has(c.id));
+    case "rescued":
+      return captures.filter((c) => rescuedSet.has(c.id));
     default:
       return captures;
   }
 }
 
-export function CatDexGrid({ captures }: CatDexGridProps) {
+export function CatDexGrid({
+  captures,
+  helpedIds = [],
+  rescuedIds = [],
+}: CatDexGridProps) {
   const [status, setStatus] = useState<StatusFilter>("all");
 
+  const helpedSet = useMemo(() => new Set(helpedIds), [helpedIds]);
+  const rescuedSet = useMemo(() => new Set(rescuedIds), [rescuedIds]);
+
   const filtered = useMemo(
-    () => filterByStatus(captures, status),
-    [captures, status],
+    () => filterByStatus(captures, status, helpedSet, rescuedSet),
+    [captures, status, helpedSet, rescuedSet],
   );
 
   const placeholderCount =
@@ -68,22 +89,15 @@ export function CatDexGrid({ captures }: CatDexGridProps) {
             {label}
           </button>
         ))}
-        {TEASER_TABS.map(({ label }) => (
-          <button
-            key={label}
-            type="button"
-            disabled
-            title="Coming with Community"
-            className="shrink-0 cursor-not-allowed rounded-full border border-dashed border-border bg-muted/40 px-3 py-1.5 text-xs font-bold text-muted-foreground/60"
-          >
-            {label}
-          </button>
-        ))}
       </div>
 
       {filtered.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-border bg-card/50 px-4 py-10 text-center text-sm text-muted-foreground">
-          No cats match this filter.
+          {status === "helped"
+            ? "No helped cats yet — visit a shelter on the map or check in nearby."
+            : status === "rescued"
+              ? "No rescue stories yet — share a catch as a rescue story from its detail page."
+              : "No cats match this filter."}
         </p>
       ) : (
         <div className="grid grid-cols-2 gap-4">

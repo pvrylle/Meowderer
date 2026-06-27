@@ -9,6 +9,7 @@ import { progressMissionsAndBadgesAfterSave } from "@/lib/missions";
 import { applyLocationEpicBonus, coatToRarity, maxRarity } from "@/lib/coat-rarity";
 import { reverseGeocode } from "@/lib/geocode";
 import { isDemoSession } from "@/lib/auth";
+import { updateStreakOnSave } from "@/lib/retention";
 import type { Rarity } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/server";
 
@@ -141,6 +142,7 @@ export async function saveCapture(input: unknown): Promise<SaveResult> {
   );
 
   await progressMissionsAndBadgesAfterSave(supabase, user.id);
+  await updateStreakOnSave(supabase, user.id);
 
   revalidatePath("/home");
   revalidatePath("/catdex");

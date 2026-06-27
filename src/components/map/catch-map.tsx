@@ -24,7 +24,8 @@ import {
   type CaptureGeoJSON,
   type CapturePointProps,
 } from "@/lib/map";
-import { fetchPois, osmLink, type Poi, type PoiType } from "@/lib/overpass";
+import { fetchPois, osmLink, POI_MIN_ZOOM, type Poi, type PoiType } from "@/lib/overpass";
+import { useShelterCheckIn } from "@/hooks/use-shelter-check-in";
 import type { Rarity } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 
@@ -213,6 +214,12 @@ export function CatchMap({ geojson }: CatchMapProps) {
   const showShelters = layerTab === "all" || layerTab === "shelters";
   const showVets = layerTab === "all" || layerTab === "vets";
 
+  const shelterPois = useMemo(
+    () => pois.filter((p) => p.type === "shelter"),
+    [pois],
+  );
+  useShelterCheckIn(shelterPois, showShelters);
+
   const filteredCats = useMemo(
     () => (showCats ? filterGeoJSON(geojson, query, rarityFilter) : { type: "FeatureCollection" as const, features: [] }),
     [geojson, query, rarityFilter, showCats],
@@ -312,6 +319,10 @@ export function CatchMap({ geojson }: CatchMapProps) {
 
   const loadPois = useCallback(async (map: maplibregl.Map) => {
     if (!showShelters && !showVets) return;
+    if (map.getZoom() < POI_MIN_ZOOM) {
+      setPois([]);
+      return;
+    }
     const b = map.getBounds();
     const types: PoiType[] = [];
     if (showShelters) types.push("shelter");
@@ -330,6 +341,8 @@ export function CatchMap({ geojson }: CatchMapProps) {
         types,
       );
       setPois(results);
+    } catch {
+      setPois([]);
     } finally {
       setPoiLoading(false);
     }
@@ -433,8 +446,13 @@ export function CatchMap({ geojson }: CatchMapProps) {
     const map = mapRef.current;
     if (!map) return;
     syncPoiMarkers(map);
+  }, [filteredPois, syncPoiMarkers]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
     void loadPois(map);
-  }, [filteredPois, syncPoiMarkers, loadPois, layerTab]);
+  }, [loadPois, layerTab]);
 
   useEffect(() => {
     const map = mapRef.current;

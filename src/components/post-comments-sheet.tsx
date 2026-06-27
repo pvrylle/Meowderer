@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -27,6 +27,8 @@ export function PostCommentsSheet({
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
 
   const load = useCallback(async () => {
     if (!postId) return;
@@ -40,6 +42,18 @@ export function PostCommentsSheet({
     if (postId) void load();
     else setComments([]);
   }, [postId, load]);
+
+  useEffect(() => {
+    if (!postId) return;
+    inputRef.current?.focus();
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [postId, onClose]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -59,15 +73,28 @@ export function PostCommentsSheet({
   if (!postId) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/30">
-      <div className="flex max-h-[75vh] w-full flex-col rounded-t-3xl border border-border bg-card shadow-xl">
+    <div
+      className="fixed inset-0 z-50 flex items-end bg-black/30"
+      role="presentation"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="comments-sheet-title"
+        className="flex max-h-[75vh] w-full flex-col rounded-t-3xl border border-border bg-card shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <h2 className="font-extrabold text-foreground">Comments</h2>
+          <h2 id="comments-sheet-title" className="font-extrabold text-foreground">
+            Comments
+          </h2>
           <button
+            ref={closeRef}
             type="button"
-            aria-label="Close"
+            aria-label="Close comments"
             onClick={onClose}
-            className="flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground"
+            className="flex size-11 min-h-11 min-w-11 items-center justify-center rounded-full bg-muted text-muted-foreground"
           >
             <X className="size-4" />
           </button>
@@ -112,9 +139,11 @@ export function PostCommentsSheet({
           className="flex gap-2 border-t border-border p-4"
         >
           <input
+            ref={inputRef}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Add a comment…"
+            aria-label="Comment text"
             className="min-w-0 flex-1 rounded-full border border-border bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30"
           />
           <CatButton type="submit" size="sm" loading={submitting}>

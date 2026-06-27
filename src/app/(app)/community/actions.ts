@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { syncMissionProgress } from "@/lib/missions";
 import { createClient } from "@/lib/supabase/server";
 
 const postSchema = z.object({
@@ -10,6 +11,7 @@ const postSchema = z.object({
   category: z.enum(["sighting", "shelter", "rescue", "general"]).default("sighting"),
   imageUrl: z.string().url().optional().nullable(),
   imagePath: z.string().max(200).optional().nullable(),
+  captureId: z.string().uuid().optional().nullable(),
   lat: z.number().min(-90).max(90).optional().nullable(),
   lng: z.number().min(-180).max(180).optional().nullable(),
 });
@@ -51,6 +53,7 @@ export async function createPostAction(input: unknown) {
     body: parsed.data.body,
     category: parsed.data.category,
     image_url: imageUrl,
+    capture_id: parsed.data.captureId ?? null,
     lat: parsed.data.lat ?? null,
     lng: parsed.data.lng ?? null,
   });
@@ -251,5 +254,88 @@ export async function updateAvatarAction(avatarUrl: string) {
   revalidatePath("/community");
   revalidatePath("/profile");
   revalidatePath("/settings");
+  return { success: true as const };
+}
+
+const shelterVisitSchema = z.object({
+  osmId: z.string().trim().min(1).max(80),
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+  name: z.string().trim().max(120).optional().nullable(),
+});
+
+export async function recordShelterVisitAction(input: unknown) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false as const, error: "Not signed in." };
+
+  const parsed = shelterVisitSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: "Invalid check-in." };
+  }
+
+  const { error } = await supabase.from("user_shelter_visits").upsert(
+    {
+      user_id: user.id,
+      osm_id: parsed.data.osmId,
+      lat: parsed.data.lat,
+      lng: parsed.data.lng,
+      name: parsed.data.name ?? null,
+      visited_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id,osm_id" },
+  );
+
+  if (error) return { success: false as const, error: "Could not record visit." };
+
+  await syncMissionProgress(supabase, user.id);
+
+  revalidatePath("/missions");
+  revalidatePath("/map");
+  return { success: true as const, firstVisit: true as const };
+}
+
+export async function resolveAlertAction(alertId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false as const, error: "Not signed in." };
+
+  const { data: alert } = await supabase
+    .from("rescue_alerts")
+    .select("id, user_id, resolved")
+    .eq("id", alertId)
+    .maybeSingle();
+
+  if (!alert) return { success: false as const, error: "Alert not found." };
+  if (alert.resolved) {
+    return { success: false as const, error: "Already resolved." };
+  }
+  if (alert.user_id === user.id) {
+    return {
+      success: false as const,
+      error: "Ask another community member to verify your alert.",
+    };
+  }
+
+  const { error } = await supabase
+    .from("rescue_alerts")
+    .update({
+      resolved: true,
+      resolved_by: user.id,
+      resolved_at: new Date().toISOString(),
+    })
+    .eq("id", alertId);
+
+  if (error) return { success: false as const, error: "Could not resolve alert." };
+
+  await syncMissionProgress(supabase, user.id);
+
+  revalidatePath("/community");
+  revalidatePath("/community/alerts");
+  revalidatePath("/missions");
   return { success: true as const };
 }
