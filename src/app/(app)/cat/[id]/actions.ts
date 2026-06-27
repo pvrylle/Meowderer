@@ -4,6 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import {
+  deleteCaptureAssets,
+  deleteCaptureAssetsByUrls,
+  isCloudinaryAssetUrl,
+  isSupabaseStorageAsset,
+} from "@/lib/cloudinary";
 import { createClient } from "@/lib/supabase/server";
 import { isDemoSession } from "@/lib/auth";
 
@@ -64,14 +70,24 @@ export async function deleteCapture(id: string): Promise<void> {
     .maybeSingle();
 
   if (capture) {
-    // Best-effort cleanup of storage objects.
-    if (capture.photo_url) {
-      await supabase.storage.from("captures").remove([capture.photo_url]);
+    if (isCloudinaryAssetUrl(capture.photo_url, user.id)) {
+      await deleteCaptureAssetsByUrls(
+        user.id,
+        capture.photo_url,
+        capture.sticker_url,
+      ).catch(() => undefined);
+    } else if (isSupabaseStorageAsset(capture.photo_url, user.id)) {
+      if (capture.photo_url.startsWith(`${user.id}/`)) {
+        await supabase.storage.from("captures").remove([capture.photo_url]);
+      }
+      const stickerPath = capture.sticker_url.split("/stickers/")[1];
+      if (stickerPath) {
+        await supabase.storage.from("stickers").remove([stickerPath]);
+      }
+    } else {
+      await deleteCaptureAssets(user.id, id).catch(() => undefined);
     }
-    const stickerPath = capture.sticker_url.split("/stickers/")[1];
-    if (stickerPath) {
-      await supabase.storage.from("stickers").remove([stickerPath]);
-    }
+
     await supabase.from("captures").delete().eq("id", id).eq("user_id", user.id);
   }
 

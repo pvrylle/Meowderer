@@ -153,8 +153,8 @@ export default function CatchPage() {
 
       const uploaded = await uploadCapture(processed.original, processed.sticker);
       const result = await saveCapture({
-        photoPath: uploaded.photoPath,
-        stickerPath: uploaded.stickerPath,
+        captureId: uploaded.captureId,
+        photoUrl: uploaded.photoUrl,
         stickerUrl: uploaded.stickerUrl,
         nickname: nickname || null,
         lat,

@@ -1,37 +1,37 @@
-import { createClient } from "@/lib/supabase/client";
-
 export interface UploadedCapture {
-  photoPath: string;
-  stickerPath: string;
+  captureId: string;
+  photoUrl: string;
   stickerUrl: string;
 }
 
-/** Uploads the original + sticker to Supabase Storage under the user's folder. */
+/** Upload original + sticker to Cloudinary via the authenticated API route. */
 export async function uploadCapture(
   original: Blob,
   sticker: Blob,
 ): Promise<UploadedCapture> {
-  const supabase = createClient();
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-  if (userError || !user) throw new Error("You must be signed in.");
+  const formData = new FormData();
+  formData.append("original", original, "original.jpg");
+  formData.append("sticker", sticker, "sticker.webp");
 
-  const id = crypto.randomUUID();
-  const photoPath = `${user.id}/${id}.jpg`;
-  const stickerPath = `${user.id}/${id}.webp`;
+  const res = await fetch("/api/captures/upload", {
+    method: "POST",
+    body: formData,
+  });
 
-  const photoUpload = await supabase.storage
-    .from("captures")
-    .upload(photoPath, original, { contentType: "image/jpeg", upsert: false });
-  if (photoUpload.error) throw new Error(photoUpload.error.message);
+  const data = (await res.json()) as {
+    captureId?: string;
+    photoUrl?: string;
+    stickerUrl?: string;
+    error?: string;
+  };
 
-  const stickerUpload = await supabase.storage
-    .from("stickers")
-    .upload(stickerPath, sticker, { contentType: "image/webp", upsert: false });
-  if (stickerUpload.error) throw new Error(stickerUpload.error.message);
+  if (!res.ok || !data.captureId || !data.photoUrl || !data.stickerUrl) {
+    throw new Error(data.error ?? "Failed to upload images.");
+  }
 
-  const { data } = supabase.storage.from("stickers").getPublicUrl(stickerPath);
-  return { photoPath, stickerPath, stickerUrl: data.publicUrl };
+  return {
+    captureId: data.captureId,
+    photoUrl: data.photoUrl,
+    stickerUrl: data.stickerUrl,
+  };
 }

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { unlockAchievementsAfterSave, type Achievement } from "@/lib/achievements";
+import { isCloudinaryAssetUrl } from "@/lib/cloudinary";
 import { progressMissionsAndBadgesAfterSave } from "@/lib/missions";
 import { applyLocationEpicBonus, coatToRarity, maxRarity } from "@/lib/coat-rarity";
 import { reverseGeocode } from "@/lib/geocode";
@@ -12,8 +13,8 @@ import type { Rarity } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/server";
 
 const saveCaptureSchema = z.object({
-  photoPath: z.string().min(1).max(200),
-  stickerPath: z.string().min(1).max(200),
+  captureId: z.string().uuid(),
+  photoUrl: z.string().url(),
   stickerUrl: z.string().url(),
   nickname: z.string().trim().max(40).optional().nullable(),
   lat: z.number().min(-90).max(90).nullable(),
@@ -43,8 +44,8 @@ export async function saveCapture(input: unknown): Promise<SaveResult> {
   }
 
   const {
-    photoPath,
-    stickerPath,
+    captureId,
+    photoUrl,
     stickerUrl,
     nickname,
     lat,
@@ -54,10 +55,17 @@ export async function saveCapture(input: unknown): Promise<SaveResult> {
   } = parsed.data;
 
   if (
-    !photoPath.startsWith(`${user.id}/`) ||
-    !stickerPath.startsWith(`${user.id}/`)
+    !isCloudinaryAssetUrl(photoUrl, user.id) ||
+    !isCloudinaryAssetUrl(stickerUrl, user.id)
   ) {
-    return { success: false, error: "Invalid file path." };
+    return { success: false, error: "Invalid image URLs." };
+  }
+
+  if (
+    !photoUrl.includes(`/${captureId}/`) ||
+    !stickerUrl.includes(`/${captureId}/`)
+  ) {
+    return { success: false, error: "Capture ID does not match uploaded images." };
   }
 
   let city: string | null = null;
@@ -107,8 +115,9 @@ export async function saveCapture(input: unknown): Promise<SaveResult> {
   const { data, error } = await supabase
     .from("captures")
     .insert({
+      id: captureId,
       user_id: user.id,
-      photo_url: photoPath,
+      photo_url: photoUrl,
       sticker_url: stickerUrl,
       nickname: nickname?.trim() || null,
       lat,

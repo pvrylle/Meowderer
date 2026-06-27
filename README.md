@@ -10,7 +10,8 @@ See [`PRD.md`](PRD.md) and [`TASKS.md`](TASKS.md) for the full product spec.
 
 - Next.js 16 (App Router) + React 19 + TypeScript (strict)
 - Tailwind CSS v4 + shadcn/ui
-- Supabase (Auth + Postgres + Storage, RLS everywhere)
+- Supabase (Auth + Postgres, RLS everywhere)
+- Cloudinary (cat photo + sticker hosting)
 - Serwist (PWA / service worker)
 - Framer Motion, Zustand, Zod
 - `@imgly/background-removal` (on-device sticker cutout)
@@ -45,6 +46,24 @@ subfolder. Open http://localhost:3000.
    in the browser; Row Level Security protects your data.
 4. (Optional) Under **Authentication -> Providers**, enable any OAuth providers
    you want; email/password works out of the box.
+
+## Cloudinary setup (required for photo uploads)
+
+1. Create a free account at [cloudinary.com](https://cloudinary.com).
+2. From the **Dashboard**, copy your **Cloud name**, **API Key**, and **API Secret**.
+3. Add them to `.env.local`:
+
+   ```
+   NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=<cloud-name>
+   CLOUDINARY_API_KEY=<api-key>
+   CLOUDINARY_API_SECRET=<api-secret>
+   ```
+
+   Only the cloud name is public. The API key and secret stay server-side and
+   are used by `/api/captures/upload` — never expose the secret in client code.
+
+   Original photos upload as **authenticated** assets (private). Stickers are
+   public delivery URLs used in the CatDex and map.
 
 ## Project structure
 

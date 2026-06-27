@@ -7,11 +7,14 @@ const nextConfig: NextConfig = {
   // config" error. Production builds use `next build --webpack`.
   turbopack: {},
   images: {
-    // Supabase Storage public URLs for stickers.
     remotePatterns: [
       {
         protocol: "https",
         hostname: "*.supabase.co",
+      },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
       },
     ],
     // Local demo stickers are SVGs; safe because they are first-party assets.

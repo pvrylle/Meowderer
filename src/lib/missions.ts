@@ -161,7 +161,7 @@ export async function progressMissionsAndBadgesAfterSave(
 
     const prevLevel = existing?.level ?? 0;
     let level = prevLevel;
-    let xp = value;
+    const xp = value;
 
     while (level < badge.max_level && xp >= xpForBadgeLevel(level + 1)) {
       level++;

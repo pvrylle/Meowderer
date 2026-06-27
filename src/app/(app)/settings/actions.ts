@@ -6,9 +6,9 @@ import { backfillMissingPlaces } from "@/lib/achievements";
 import { isDemoSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
-/** Rough estimate: ~400KB per capture (photo + sticker). Supabase free tier = 1GB. */
+/** Rough estimate: ~400KB per capture (photo + sticker). Cloudinary free tier ≈ 25 GB. */
 const ESTIMATED_BYTES_PER_CAPTURE = 400_000;
-const FREE_TIER_BYTES = 1_073_741_824;
+const FREE_TIER_BYTES = 25 * 1024 * 1024 * 1024;
 
 export async function backfillPlacesAction(): Promise<{
   success: boolean;

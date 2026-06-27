@@ -115,7 +115,7 @@ export function SettingsForm() {
               </div>
               <p className="mt-2 text-xs text-muted-foreground">
                 ~{formatBytes(storage.estimatedBytes)} across {storage.captureCount}{" "}
-                catches (free tier ~1 GB)
+                catches (Cloudinary free tier ~25 GB)
               </p>
             </>
           ) : (
