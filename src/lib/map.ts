@@ -1,4 +1,5 @@
 import type { Capture, Rarity } from "@/lib/supabase/types";
+import type maplibregl from "maplibre-gl";
 
 export const MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
 
@@ -49,4 +50,14 @@ export function capturesToGeoJSON(captures: Capture[]): CaptureGeoJSON {
   }
 
   return { type: "FeatureCollection", features };
+}
+
+/** OpenFreeMap styles reference POI sprites that are not always bundled — supply a 1×1 transparent fallback. */
+const BLANK_SPRITE = new Uint8Array(4);
+
+export function suppressMissingStyleSprites(map: maplibregl.Map) {
+  map.on("styleimagemissing", (e) => {
+    if (map.hasImage(e.id)) return;
+    map.addImage(e.id, { width: 1, height: 1, data: BLANK_SPRITE });
+  });
 }

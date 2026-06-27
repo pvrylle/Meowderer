@@ -29,8 +29,12 @@ export default async function CatDexPage() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4">
-          {captures.map((capture) => (
-            <CatCard key={capture.id} capture={capture} />
+          {captures.map((capture, i) => (
+            <CatCard
+              key={capture.id}
+              capture={capture}
+              priority={i < 2}
+            />
           ))}
         </div>
       )}

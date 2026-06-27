@@ -126,3 +126,29 @@
     animation: none;
   }
 }
+
+/* MapLibre controls — keep above bottom nav on mobile */
+.maplibregl-ctrl-bottom-right {
+  bottom: 5.5rem;
+  right: 0.75rem;
+}
+
+.maplibregl-ctrl-group {
+  border-radius: 1rem !important;
+  box-shadow: 0 4px 14px rgba(58, 53, 80, 0.12) !important;
+  border: 1px solid var(--border) !important;
+  overflow: hidden;
+}
+
+.maplibregl-ctrl-group button {
+  width: 2.25rem !important;
+  height: 2.25rem !important;
+}
+
+/* MapLibre canvas must fill its container */
+.maplibregl-map {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}

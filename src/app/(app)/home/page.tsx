@@ -54,8 +54,8 @@ export default async function HomePage() {
           <EmptyState />
         ) : (
           <div className="grid grid-cols-2 gap-4">
-            {recent.map((capture) => (
-              <CatCard key={capture.id} capture={capture} />
+            {recent.map((capture, i) => (
+              <CatCard key={capture.id} capture={capture} priority={i === 0} />
             ))}
           </div>
         )}
