@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
   // `next dev` (Turbopack) run without the "webpack config and no turbopack
   // config" error. Production builds use `next build --webpack`.
   turbopack: {},
+  async redirects() {
+    return [{ source: "/maps", destination: "/map", permanent: true }];
+  },
   images: {
     remotePatterns: [
       {

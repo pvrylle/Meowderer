@@ -9,10 +9,47 @@ type Supabase = SupabaseClient<Database>;
 
 export type PostWithAuthor = Post & {
   author_name: string;
+  author_avatar: string | null;
   liked_by_me: boolean;
 };
 
-export async function getPosts(supabase: Supabase, userId: string): Promise<PostWithAuthor[]> {
+export type CommentWithAuthor = {
+  id: string;
+  post_id: string;
+  user_id: string;
+  body: string;
+  created_at: string;
+  author_name: string;
+  author_avatar: string | null;
+};
+
+export type ChatMessageWithAuthor = ChatMessage & {
+  author_name: string;
+  author_avatar: string | null;
+};
+
+async function profileMap(
+  supabase: Supabase,
+  userIds: string[],
+): Promise<Map<string, { name: string; avatar: string | null }>> {
+  if (userIds.length === 0) return new Map();
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, username, avatar_url")
+    .in("id", userIds);
+
+  return new Map(
+    (profiles ?? []).map((p) => [
+      p.id,
+      { name: p.username ?? "Cat lover", avatar: p.avatar_url },
+    ]),
+  );
+}
+
+export async function getPosts(
+  supabase: Supabase,
+  userId: string,
+): Promise<PostWithAuthor[]> {
   const { data: posts } = await supabase
     .from("posts")
     .select("*")
@@ -22,14 +59,7 @@ export async function getPosts(supabase: Supabase, userId: string): Promise<Post
   if (!posts?.length) return [];
 
   const userIds = [...new Set(posts.map((p) => p.user_id))];
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, username")
-    .in("id", userIds);
-
-  const nameById = new Map(
-    (profiles ?? []).map((p) => [p.id, p.username ?? "Cat lover"]),
-  );
+  const names = await profileMap(supabase, userIds);
 
   const { data: likes } = await supabase
     .from("post_likes")
@@ -38,11 +68,41 @@ export async function getPosts(supabase: Supabase, userId: string): Promise<Post
 
   const likedIds = new Set((likes ?? []).map((l) => l.post_id));
 
-  return posts.map((p) => ({
-    ...p,
-    author_name: nameById.get(p.user_id) ?? "Cat lover",
-    liked_by_me: likedIds.has(p.id),
-  }));
+  return posts.map((p) => {
+    const author = names.get(p.user_id);
+    return {
+      ...p,
+      author_name: author?.name ?? "Cat lover",
+      author_avatar: author?.avatar ?? null,
+      liked_by_me: likedIds.has(p.id),
+    };
+  });
+}
+
+export async function getPostComments(
+  supabase: Supabase,
+  postId: string,
+): Promise<CommentWithAuthor[]> {
+  const { data: comments } = await supabase
+    .from("post_comments")
+    .select("*")
+    .eq("post_id", postId)
+    .order("created_at", { ascending: true })
+    .limit(100);
+
+  if (!comments?.length) return [];
+
+  const userIds = [...new Set(comments.map((c) => c.user_id))];
+  const names = await profileMap(supabase, userIds);
+
+  return comments.map((c) => {
+    const author = names.get(c.user_id);
+    return {
+      ...c,
+      author_name: author?.name ?? "Cat lover",
+      author_avatar: author?.avatar ?? null,
+    };
+  });
 }
 
 export async function getRescueAlerts(
@@ -52,6 +112,7 @@ export async function getRescueAlerts(
     .from("rescue_alerts")
     .select("*")
     .eq("resolved", false)
+    .order("urgent", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(20);
   return data ?? [];
@@ -60,7 +121,7 @@ export async function getRescueAlerts(
 export async function getChatMessages(
   supabase: Supabase,
   channel: string,
-): Promise<(ChatMessage & { author_name: string })[]> {
+): Promise<ChatMessageWithAuthor[]> {
   const { data: messages } = await supabase
     .from("chat_messages")
     .select("*")
@@ -71,19 +132,16 @@ export async function getChatMessages(
   if (!messages?.length) return [];
 
   const userIds = [...new Set(messages.map((m) => m.user_id))];
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, username")
-    .in("id", userIds);
+  const names = await profileMap(supabase, userIds);
 
-  const nameById = new Map(
-    (profiles ?? []).map((p) => [p.id, p.username ?? "Cat lover"]),
-  );
-
-  return messages.map((m) => ({
-    ...m,
-    author_name: nameById.get(m.user_id) ?? "Cat lover",
-  }));
+  return messages.map((m) => {
+    const author = names.get(m.user_id);
+    return {
+      ...m,
+      author_name: author?.name ?? "Cat lover",
+      author_avatar: author?.avatar ?? null,
+    };
+  });
 }
 
 export async function countUrgentAlerts(supabase: Supabase): Promise<number> {

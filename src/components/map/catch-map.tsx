@@ -50,6 +50,54 @@ const RARITY_FILTERS: { key: RarityFilter; label: string }[] = [
   { key: "epic", label: "Epic" },
 ];
 
+function whenStyleReady(
+  map: maplibregl.Map,
+  fn: () => void,
+  isCancelled?: () => boolean,
+): void {
+  const run = () => {
+    if (isCancelled?.()) return;
+    if (!map.isStyleLoaded()) return;
+    fn();
+  };
+
+  if (map.isStyleLoaded()) {
+    run();
+  } else {
+    map.once("load", run);
+  }
+}
+
+function ensureCapturesLayer(
+  map: maplibregl.Map,
+  data: CaptureGeoJSON,
+  isCancelled?: () => boolean,
+): boolean {
+  if (isCancelled?.() || !map.isStyleLoaded()) return false;
+
+  if (!map.getSource("captures")) {
+    map.addSource("captures", {
+      type: "geojson",
+      data,
+      cluster: true,
+      clusterMaxZoom: 13,
+      clusterRadius: 55,
+    });
+
+    map.addLayer({
+      id: "captures-points",
+      type: "circle",
+      source: "captures",
+      paint: {
+        "circle-radius": 0,
+        "circle-opacity": 0,
+      },
+    });
+  }
+
+  return true;
+}
+
 function fitToFeatures(map: maplibregl.Map, geojson: CaptureGeoJSON) {
   const coords = geojson.features.map((f) => f.geometry.coordinates);
   if (coords.length === 0) return;
@@ -317,25 +365,7 @@ export function CatchMap({ geojson }: CatchMapProps) {
     const onLoad = () => {
       if (cancelled) return;
 
-      if (hasCatPoints) {
-        map.addSource("captures", {
-          type: "geojson",
-          data: filteredCats,
-          cluster: true,
-          clusterMaxZoom: 13,
-          clusterRadius: 55,
-        });
-
-        map.addLayer({
-          id: "captures-points",
-          type: "circle",
-          source: "captures",
-          paint: {
-            "circle-radius": 0,
-            "circle-opacity": 0,
-          },
-        });
-
+      if (hasCatPoints && ensureCapturesLayer(map, filteredCats, () => cancelled)) {
         fitToFeatures(map, filteredCats);
         syncCatMarkers(map);
       }
@@ -344,7 +374,7 @@ export function CatchMap({ geojson }: CatchMapProps) {
       map.resize();
     };
 
-    map.on("load", onLoad);
+    whenStyleReady(map, onLoad, () => cancelled);
     map.on("moveend", () => {
       syncCatMarkers(map);
       void loadPois(map);
@@ -377,31 +407,26 @@ export function CatchMap({ geojson }: CatchMapProps) {
     const map = mapRef.current;
     if (!map) return;
 
-    if (hasCatPoints && map.getSource("captures")) {
-      const source = map.getSource("captures") as maplibregl.GeoJSONSource;
-      source.setData(filteredCats);
-      map.once("idle", () => syncCatMarkers(map));
-    } else if (hasCatPoints && !map.getSource("captures") && showCats) {
-      map.addSource("captures", {
-        type: "geojson",
-        data: filteredCats,
-        cluster: true,
-        clusterMaxZoom: 13,
-        clusterRadius: 55,
-      });
-      map.addLayer({
-        id: "captures-points",
-        type: "circle",
-        source: "captures",
-        paint: { "circle-radius": 0, "circle-opacity": 0 },
-      });
-      syncCatMarkers(map);
-    }
+    const apply = () => {
+      if (!map.isStyleLoaded()) return;
 
-    if (!showCats) {
-      catMarkersRef.current.forEach((m) => m.remove());
-      catMarkersRef.current = [];
-    }
+      if (hasCatPoints && map.getSource("captures")) {
+        const source = map.getSource("captures") as maplibregl.GeoJSONSource;
+        source.setData(filteredCats);
+        map.once("idle", () => syncCatMarkers(map));
+      } else if (hasCatPoints && showCats) {
+        if (ensureCapturesLayer(map, filteredCats)) {
+          syncCatMarkers(map);
+        }
+      }
+
+      if (!showCats) {
+        catMarkersRef.current.forEach((m) => m.remove());
+        catMarkersRef.current = [];
+      }
+    };
+
+    whenStyleReady(map, apply);
   }, [filteredCats, syncCatMarkers, hasCatPoints, showCats]);
 
   useEffect(() => {
@@ -413,8 +438,12 @@ export function CatchMap({ geojson }: CatchMapProps) {
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map?.getSource("captures") || filteredCats.features.length === 0) return;
-    fitToFeatures(map, filteredCats);
+    if (!map) return;
+
+    whenStyleReady(map, () => {
+      if (!map.getSource("captures") || filteredCats.features.length === 0) return;
+      fitToFeatures(map, filteredCats);
+    });
   }, [rarityFilter, filteredCats]);
 
   return (

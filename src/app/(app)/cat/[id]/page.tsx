@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { InteractiveCaptureCard } from "@/components/interactive-capture-card";
 import { ShareCaptureCard } from "@/components/share-capture-card";
+import { ShareToCommunity } from "@/components/share-to-community";
 import { CatName, DeleteCatButton } from "@/components/cat/cat-actions";
 import { getCapture } from "@/lib/captures";
 
@@ -40,6 +41,8 @@ export default async function CatDetailPage({
       </div>
 
       <ShareCaptureCard capture={capture} />
+
+      <ShareToCommunity capture={capture} />
 
       <DeleteCatButton id={capture.id} />
     </div>

@@ -1,71 +1,171 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Send } from "lucide-react";
 import { toast } from "sonner";
 
 import { sendChatAction } from "@/app/(app)/community/actions";
+import { UserAvatar } from "@/components/user-avatar";
+import type { ChatMessageWithAuthor } from "@/lib/community";
+import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-
-type ChatMessageRow = {
-  id: string;
-  user_id: string;
-  body: string;
-  created_at: string;
-  author_name: string;
-  channel: string;
-};
 
 const CHANNELS = [
   { key: "general", label: "General" },
-  { key: "cat_care", label: "Cat Care", badge: 0 },
-  { key: "rescue", label: "Rescue", badge: 0 },
+  { key: "cat_care", label: "Cat Care" },
+  { key: "rescue", label: "Rescue" },
   { key: "shelters", label: "Shelters" },
 ] as const;
 
+const READ_KEY = "catdex-chat-read";
+
+type ChatMessageRow = ChatMessageWithAuthor;
+
 type CommunityChatProps = {
-  messages: ChatMessageRow[];
+  initialMessages: ChatMessageRow[];
   currentUserId: string;
 };
 
-export function CommunityChat({ messages, currentUserId }: CommunityChatProps) {
-  const router = useRouter();
+function getLastRead(): Record<string, string> {
+  if (typeof localStorage === "undefined") return {};
+  try {
+    return JSON.parse(localStorage.getItem(READ_KEY) ?? "{}") as Record<
+      string,
+      string
+    >;
+  } catch {
+    return {};
+  }
+}
+
+function setLastRead(channel: string) {
+  const all = getLastRead();
+  all[channel] = new Date().toISOString();
+  localStorage.setItem(READ_KEY, JSON.stringify(all));
+}
+
+function countUnread(
+  channel: string,
+  messages: ChatMessageRow[],
+  activeChannel: string,
+): number {
+  if (channel === activeChannel) return 0;
+  const lastRead = getLastRead()[channel];
+  if (!lastRead) return messages.filter((m) => m.channel === channel).length;
+  return messages.filter(
+    (m) => m.channel === channel && m.created_at > lastRead,
+  ).length;
+}
+
+export function CommunityChat({
+  initialMessages,
+  currentUserId,
+}: CommunityChatProps) {
+  const [messages, setMessages] = useState(initialMessages);
   const [channel, setChannel] = useState("general");
   const [draft, setDraft] = useState("");
+  const [sending, setSending] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   const filtered = messages.filter((m) => m.channel === channel);
+
+  const scrollToBottom = useCallback(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [channel, filtered.length, scrollToBottom]);
+
+  useEffect(() => {
+    setLastRead(channel);
+  }, [channel, messages.length]);
+
+  useEffect(() => {
+    const supabase = createClient();
+    const sub = supabase
+      .channel("community-chat")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "chat_messages" },
+        async (payload) => {
+          const row = payload.new as ChatMessageRow;
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === row.id)) return prev;
+            return [...prev, { ...row, author_name: "Cat lover", author_avatar: null }];
+          });
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("username, avatar_url")
+            .eq("id", row.user_id)
+            .single();
+          if (profile) {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === row.id
+                  ? {
+                      ...m,
+                      author_name: profile.username ?? "Cat lover",
+                      author_avatar: profile.avatar_url,
+                    }
+                  : m,
+              ),
+            );
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(sub);
+    };
+  }, []);
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     if (!draft.trim()) return;
+    setSending(true);
     const result = await sendChatAction({ body: draft, channel });
+    setSending(false);
     if (!result.success) {
       toast.error(result.error ?? "Could not send.");
       return;
     }
+    if (result.message) {
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === result.message!.id)) return prev;
+        return [...prev, result.message!];
+      });
+    }
     setDraft("");
-    router.refresh();
   }
 
   return (
     <div className="flex min-h-[420px] flex-col gap-3">
       <div className="flex gap-2 overflow-x-auto pb-1">
-        {CHANNELS.map((ch) => (
-          <button
-            key={ch.key}
-            type="button"
-            onClick={() => setChannel(ch.key)}
-            className={cn(
-              "relative shrink-0 rounded-full px-3 py-1.5 text-xs font-bold",
-              channel === ch.key
-                ? "bg-primary text-primary-foreground"
-                : "border border-border bg-card text-muted-foreground",
-            )}
-          >
-            {ch.label}
-          </button>
-        ))}
+        {CHANNELS.map((ch) => {
+          const unread = countUnread(ch.key, messages, channel);
+          return (
+            <button
+              key={ch.key}
+              type="button"
+              onClick={() => setChannel(ch.key)}
+              className={cn(
+                "relative shrink-0 rounded-full px-3 py-1.5 text-xs font-bold",
+                channel === ch.key
+                  ? "bg-primary text-primary-foreground"
+                  : "border border-border bg-card text-muted-foreground",
+              )}
+            >
+              {ch.label}
+              {unread > 0 && (
+                <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-white">
+                  {unread > 9 ? "9+" : unread}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       <div className="flex flex-1 flex-col gap-3 overflow-y-auto rounded-2xl border border-border bg-card/50 p-3">
@@ -79,33 +179,48 @@ export function CommunityChat({ messages, currentUserId }: CommunityChatProps) {
             return (
               <div
                 key={msg.id}
-                className={cn("flex flex-col gap-0.5", mine && "items-end")}
+                className={cn("flex gap-2", mine && "flex-row-reverse")}
               >
                 {!mine && (
-                  <span className="text-xs font-bold text-foreground">
-                    {msg.author_name}
-                  </span>
+                  <UserAvatar
+                    name={msg.author_name}
+                    avatarUrl={msg.author_avatar}
+                    size="sm"
+                  />
                 )}
                 <div
                   className={cn(
-                    "max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-sm",
-                    mine
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card text-foreground",
+                    "flex max-w-[85%] flex-col gap-0.5",
+                    mine && "items-end",
                   )}
                 >
-                  {msg.body}
+                  {!mine && (
+                    <span className="text-xs font-bold text-foreground">
+                      {msg.author_name}
+                    </span>
+                  )}
+                  <div
+                    className={cn(
+                      "rounded-2xl px-3 py-2 text-sm shadow-sm",
+                      mine
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-card text-foreground",
+                    )}
+                  >
+                    {msg.body}
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">
+                    {new Date(msg.created_at).toLocaleTimeString(undefined, {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </span>
                 </div>
-                <span className="text-[10px] text-muted-foreground">
-                  {new Date(msg.created_at).toLocaleTimeString(undefined, {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
-                </span>
               </div>
             );
           })
         )}
+        <div ref={bottomRef} />
       </div>
 
       <form onSubmit={handleSend} className="flex gap-2">
@@ -117,8 +232,9 @@ export function CommunityChat({ messages, currentUserId }: CommunityChatProps) {
         />
         <button
           type="submit"
+          disabled={sending}
           aria-label="Send"
-          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground"
+          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-50"
         >
           <Send className="size-4" />
         </button>

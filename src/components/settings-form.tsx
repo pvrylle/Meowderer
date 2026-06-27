@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, MapPin } from "lucide-react";
@@ -10,7 +10,10 @@ import {
   backfillPlacesAction,
   getStorageEstimateAction,
 } from "@/app/(app)/settings/actions";
+import { updateAvatarAction } from "@/app/(app)/community/actions";
+import { UserAvatar } from "@/components/user-avatar";
 import { CatButton } from "@/components/ui/cat-button";
+import { uploadAvatar } from "@/lib/community-upload";
 import { pendingCaptureCount } from "@/lib/offline-capture-queue";
 import { useSettingsStore } from "@/stores/settings";
 
@@ -19,8 +22,17 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function SettingsForm() {
+export function SettingsForm({
+  initialAvatar,
+  displayName,
+}: {
+  initialAvatar?: string | null;
+  displayName?: string;
+}) {
   const router = useRouter();
+  const avatarRef = useRef<HTMLInputElement>(null);
+  const [avatarUrl, setAvatarUrl] = useState(initialAvatar ?? null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const gpsDefaultOn = useSettingsStore((s) => s.gpsDefaultOn);
   const setGpsDefaultOn = useSettingsStore((s) => s.setGpsDefaultOn);
   const [storage, setStorage] = useState<{
@@ -49,6 +61,27 @@ export function SettingsForm() {
     router.refresh();
   }
 
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAvatar(true);
+    try {
+      const url = await uploadAvatar(file);
+      const result = await updateAvatarAction(url);
+      if (!result.success) {
+        toast.error(result.error ?? "Could not update avatar.");
+        return;
+      }
+      setAvatarUrl(url);
+      toast.success("Avatar updated!");
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6 p-6 pb-28">
       <header className="flex items-center gap-3">
@@ -61,6 +94,30 @@ export function SettingsForm() {
         </Link>
         <h1 className="text-2xl font-extrabold text-foreground">Settings</h1>
       </header>
+
+      <section className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-6">
+        <UserAvatar
+          name={displayName ?? "You"}
+          avatarUrl={avatarUrl}
+          size="md"
+          className="!size-20 text-lg"
+        />
+        <input
+          ref={avatarRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleAvatarChange}
+        />
+        <CatButton
+          variant="outline"
+          size="sm"
+          loading={uploadingAvatar}
+          onClick={() => avatarRef.current?.click()}
+        >
+          Change avatar
+        </CatButton>
+      </section>
 
       <section className="space-y-3">
         <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">

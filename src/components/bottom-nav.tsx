@@ -2,47 +2,85 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Camera,
-  Home,
-  LayoutGrid,
-  Map,
-  Target,
-  Users,
-} from "lucide-react";
+import { Camera, Home, LayoutGrid, Map, User } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-const TABS = [
+const LEFT_TABS = [
   { href: "/home", label: "Home", icon: Home },
   { href: "/catdex", label: "CatDex", icon: LayoutGrid },
-  { href: "/map", label: "Map", icon: Map },
-  { href: "/missions", label: "Quests", icon: Target },
-  { href: "/community", label: "Community", icon: Users },
 ] as const;
+
+const RIGHT_TABS = [
+  { href: "/map", label: "Map", icon: Map },
+  { href: "/profile", label: "Profile", icon: User },
+] as const;
+
+/** Profile tab also covers settings, missions, and community sub-routes. */
+const PROFILE_PREFIXES = ["/profile", "/settings", "/missions", "/community"];
+
+function isTabActive(pathname: string, href: string): boolean {
+  if (href === "/profile") {
+    return PROFILE_PREFIXES.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    );
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function NavTab({
+  href,
+  label,
+  icon: Icon,
+  active,
+}: {
+  href: string;
+  label: string;
+  icon: typeof Home;
+  active: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl py-1.5 text-xs font-semibold transition-colors",
+        active ? "text-primary" : "text-muted-foreground",
+      )}
+    >
+      <Icon className="size-6 shrink-0" strokeWidth={active ? 2.5 : 2} />
+      <span className="truncate">{label}</span>
+    </Link>
+  );
+}
 
 export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="relative shrink-0 border-t border-border bg-card/95 backdrop-blur">
-      <div className="mx-auto flex max-w-md items-center justify-around px-1 py-2">
-        {TABS.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href || pathname.startsWith(`${href}/`);
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "flex flex-1 flex-col items-center gap-0.5 rounded-2xl py-1 text-[10px] font-semibold transition-colors",
-                active ? "text-primary" : "text-muted-foreground",
-              )}
-            >
-              <Icon className="size-5" strokeWidth={active ? 2.5 : 2} />
-              {label}
-            </Link>
-          );
-        })}
+    <nav className="relative shrink-0 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur">
+      <div className="mx-auto flex max-w-md items-end px-3 pt-2">
+        <div className="flex min-w-0 flex-1 items-end justify-around gap-1">
+          {LEFT_TABS.map((tab) => (
+            <NavTab
+              key={tab.href}
+              {...tab}
+              active={isTabActive(pathname, tab.href)}
+            />
+          ))}
+        </div>
+
+        {/* Center gap for the floating Catch button */}
+        <div className="w-[4.5rem] shrink-0" aria-hidden />
+
+        <div className="flex min-w-0 flex-1 items-end justify-around gap-1">
+          {RIGHT_TABS.map((tab) => (
+            <NavTab
+              key={tab.href}
+              {...tab}
+              active={isTabActive(pathname, tab.href)}
+            />
+          ))}
+        </div>
       </div>
 
       <Link

@@ -2,28 +2,22 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Building2, ChevronRight, Siren } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Building2, ChevronLeft, ChevronRight, Siren } from "lucide-react";
 
 import { CommunityChat } from "@/components/community-chat";
 import { CommunityFeed } from "@/components/community-feed";
-import type { PostWithAuthor } from "@/lib/community";
+import { useNearbyShelterCount } from "@/hooks/use-nearby-shelter-count";
+import type { PostWithAuthor, ChatMessageWithAuthor } from "@/lib/community";
 import type { RescueAlert } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 
 type CommunityTabsProps = {
   posts: PostWithAuthor[];
-  messages: Array<{
-    id: string;
-    user_id: string;
-    body: string;
-    created_at: string;
-    author_name: string;
-    channel: string;
-  }>;
+  messages: ChatMessageWithAuthor[];
   alerts: RescueAlert[];
   urgentCount: number;
   currentUserId: string;
-  shelterCount?: number;
 };
 
 export function CommunityTabs({
@@ -32,9 +26,9 @@ export function CommunityTabs({
   alerts,
   urgentCount,
   currentUserId,
-  shelterCount = 0,
 }: CommunityTabsProps) {
   const [tab, setTab] = useState<"feed" | "chat">("feed");
+  const shelterCount = useNearbyShelterCount();
 
   return (
     <div className="flex flex-col gap-5">
@@ -44,7 +38,7 @@ export function CommunityTabs({
 
       <div className="grid grid-cols-2 gap-3">
         <Link
-          href="/map?layer=shelters"
+          href="/community/alerts"
           className="flex items-center justify-between rounded-2xl border border-border bg-destructive/10 p-4"
         >
           <div>
@@ -59,7 +53,7 @@ export function CommunityTabs({
           <ChevronRight className="size-5 text-muted-foreground" />
         </Link>
         <Link
-          href="/map?layer=shelters"
+          href="/map"
           className="flex items-center justify-between rounded-2xl border border-border bg-green/15 p-4"
         >
           <div>
@@ -68,7 +62,9 @@ export function CommunityTabs({
               <span className="font-bold text-foreground">Shelters</span>
             </div>
             <p className="mt-1 text-sm font-semibold text-green">
-              {shelterCount > 0 ? `${shelterCount} nearby` : "On map"}
+              {shelterCount != null
+                ? `${shelterCount} nearby`
+                : "On map"}
             </p>
           </div>
           <ChevronRight className="size-5 text-muted-foreground" />
@@ -78,10 +74,11 @@ export function CommunityTabs({
       {alerts.length > 0 && (
         <div className="space-y-2">
           {alerts.slice(0, 2).map((alert) => (
-            <div
+            <Link
               key={alert.id}
+              href="/community/alerts"
               className={cn(
-                "rounded-xl border px-3 py-2 text-sm",
+                "block rounded-xl border px-3 py-2 text-sm",
                 alert.urgent
                   ? "border-destructive/30 bg-destructive/5"
                   : "border-border bg-muted/30",
@@ -89,9 +86,11 @@ export function CommunityTabs({
             >
               <p className="font-bold text-foreground">{alert.title}</p>
               {alert.body && (
-                <p className="text-xs text-muted-foreground">{alert.body}</p>
+                <p className="text-xs text-muted-foreground line-clamp-1">
+                  {alert.body}
+                </p>
               )}
-            </div>
+            </Link>
           ))}
         </div>
       )}
@@ -117,7 +116,10 @@ export function CommunityTabs({
       {tab === "feed" ? (
         <CommunityFeed posts={posts} />
       ) : (
-        <CommunityChat messages={messages} currentUserId={currentUserId} />
+        <CommunityChat
+          initialMessages={messages}
+          currentUserId={currentUserId}
+        />
       )}
     </div>
   );
