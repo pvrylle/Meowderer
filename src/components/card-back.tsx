@@ -55,17 +55,17 @@ export function CardBack({
   return (
     <div
       className={cn(
-        "flex h-full flex-col rounded-[2rem] bg-gradient-to-b p-1.5 shadow-xl",
+        "flex h-full flex-col rounded-[1.25rem] bg-gradient-to-b p-1 shadow-xl",
         rarityFrame(rarity),
       )}
     >
-      <div className="flex h-full flex-col gap-3 rounded-[1.7rem] bg-white/92 p-3">
+      <div className="flex h-full flex-col gap-2 rounded-[1rem] bg-white/92 p-2">
         <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-base font-extrabold text-foreground">
+          <span className="truncate text-sm font-extrabold text-foreground">
             {name}
           </span>
           {dex && (
-            <span className="shrink-0 text-xs font-bold text-foreground/55">
+            <span className="shrink-0 text-[10px] font-bold text-foreground/55">
               {dex}
             </span>
           )}
@@ -73,7 +73,7 @@ export function CardBack({
 
         <div
           className={cn(
-            "rounded-2xl border-2 border-white px-3 py-1.5 text-center text-[11px] font-bold uppercase tracking-wide text-foreground",
+            "rounded-lg border-2 border-white px-2 py-1 text-center text-[9px] font-bold uppercase tracking-wide text-foreground",
             rarityBanner(rarity),
           )}
         >
@@ -81,20 +81,22 @@ export function CardBack({
           {biome ? ` · ${BIOME_LABEL[biome]}` : ""}
         </div>
 
-        <div className="flex flex-1 flex-col justify-center gap-3">
-          <div className="space-y-1.5">
-            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-              <PawPrint className="size-3" />
+        <div className="flex min-h-0 flex-1 flex-col justify-center gap-2">
+          <div className="space-y-1">
+            <p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+              <PawPrint className="size-2.5" />
               Field notes
             </p>
-            <p className="text-sm leading-relaxed text-foreground/80">{bio}</p>
+            <p className="line-clamp-4 text-xs leading-relaxed text-foreground/80">
+              {bio}
+            </p>
           </div>
 
-          <div className="space-y-1.5 rounded-2xl bg-muted/60 p-3">
+          <div className="space-y-1 rounded-xl bg-muted/60 p-2">
             {stats.map((s) => (
               <PawRow key={s.label} label={s.label} value={s.value} />
             ))}
-            <div className="flex flex-wrap gap-3 pt-1 text-[11px] text-muted-foreground">
+            <div className="flex flex-wrap gap-2 pt-0.5 text-[10px] text-muted-foreground">
               {place && (
                 <span className="inline-flex items-center gap-1">
                   <MapPin className="size-3" />
@@ -111,7 +113,7 @@ export function CardBack({
           </div>
         </div>
 
-        <p className="flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
+        <p className="flex shrink-0 items-center justify-center gap-1 text-[10px] text-muted-foreground">
           <RotateCcw className="size-3" />
           Tap to flip back
         </p>

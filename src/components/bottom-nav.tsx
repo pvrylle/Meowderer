@@ -57,7 +57,7 @@ export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="relative shrink-0 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur">
+    <nav className="relative z-30 shrink-0 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur">
       <div className="mx-auto flex max-w-md items-end px-3 pt-2">
         <div className="flex min-w-0 flex-1 items-end justify-around gap-1">
           {LEFT_TABS.map((tab) => (

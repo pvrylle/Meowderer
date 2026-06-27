@@ -13,7 +13,10 @@ type ShareToCommunityProps = {
   capture: Capture;
 };
 
-export function ShareToCommunity({ capture }: ShareToCommunityProps) {
+export function ShareToCommunity({
+  capture,
+  compact = false,
+}: ShareToCommunityProps & { compact?: boolean }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -44,11 +47,13 @@ export function ShareToCommunity({ capture }: ShareToCommunityProps) {
     <CatButton
       variant="outline"
       block
+      size={compact ? "md" : "lg"}
       loading={loading}
       onClick={handleShare}
+      className={compact ? "h-11" : undefined}
     >
       <Share2 className="size-5" />
-      Share sighting to Community
+      {compact ? "Community" : "Share sighting to Community"}
     </CatButton>
   );
 }

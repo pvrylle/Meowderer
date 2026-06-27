@@ -20,6 +20,7 @@ export function InteractiveCaptureCard({ capture }: { capture: Capture }) {
   return (
     <InteractiveCard
       holo={capture.rarity === "epic"}
+      radiusClassName="rounded-[1.25rem]"
       back={
         <CardBack
           name={name}
@@ -43,7 +44,7 @@ export function InteractiveCaptureCard({ capture }: { capture: Capture }) {
         dex={dex}
         stats={stats}
         biome={biome}
-        size="lg"
+        size="tcg"
         priority
       />
     </InteractiveCard>

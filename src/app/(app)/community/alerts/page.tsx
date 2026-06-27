@@ -18,7 +18,7 @@ export default async function CommunityAlertsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6 pb-28">
+    <div className="flex flex-col gap-6 p-6 pb-nav">
       <header className="flex items-center gap-3">
         <Link
           href="/community"

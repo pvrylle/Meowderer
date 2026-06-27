@@ -54,7 +54,7 @@ export default async function MissionsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-6 pb-28">
+    <div className="flex flex-col gap-4 p-6 pb-nav">
       <div className="flex justify-end">
         <Link
           href="/profile"

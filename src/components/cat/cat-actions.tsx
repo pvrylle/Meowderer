@@ -100,7 +100,7 @@ export function DeleteCatButton({ id }: { id: string }) {
       block
       loading={isPending}
       onClick={handleDelete}
-      className="text-destructive"
+      className="h-10 text-destructive hover:text-destructive"
     >
       <Trash2 className="size-5" />
       Release cat

@@ -46,7 +46,7 @@ export default async function ProfilePage() {
   ];
 
   return (
-    <div className="flex flex-col gap-8 p-6 pb-28">
+    <div className="flex flex-col gap-8 p-6 pb-nav">
       <header className="flex flex-col items-center gap-3 pt-6 text-center">
         <BrandMark />
         <div>

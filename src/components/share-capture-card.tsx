@@ -19,7 +19,13 @@ async function exportCardPng(element: HTMLElement): Promise<Blob> {
   return blob;
 }
 
-export function ShareCaptureCard({ capture }: { capture: Capture }) {
+export function ShareCaptureCard({
+  capture,
+  compact = false,
+}: {
+  capture: Capture;
+  compact?: boolean;
+}) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [sharing, setSharing] = useState(false);
 
@@ -52,7 +58,7 @@ export function ShareCaptureCard({ capture }: { capture: Capture }) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-3">
+    <>
       <div
         ref={cardRef}
         className="pointer-events-none fixed -left-[9999px] top-0 w-[17rem] rounded-3xl bg-background p-2"
@@ -64,12 +70,14 @@ export function ShareCaptureCard({ capture }: { capture: Capture }) {
         type="button"
         variant="outline"
         block
+        size={compact ? "md" : "lg"}
         loading={sharing}
         onClick={share}
+        className={compact ? "h-11" : undefined}
       >
         <Share2 className="size-5" />
         Share card
       </CatButton>
-    </div>
+    </>
   );
 }

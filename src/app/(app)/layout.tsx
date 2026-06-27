@@ -15,7 +15,7 @@ export default async function AppLayout({
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
       <AchievementSessionToasts />
-      <main className="relative flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <main className="relative flex min-h-0 flex-1 flex-col overflow-y-auto scroll-pb-nav scrollbar-none">
         {children}
       </main>
       <BottomNav />

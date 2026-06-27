@@ -34,7 +34,7 @@ export default async function CommunityPage() {
   }
 
   return (
-    <div className="p-6 pb-28">
+    <div className="p-6 pb-nav">
       <CommunityTabs
         posts={posts}
         messages={messages}

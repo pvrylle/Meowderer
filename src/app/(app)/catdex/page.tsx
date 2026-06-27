@@ -12,7 +12,7 @@ export default async function CatDexPage() {
   const progress = computeCollectionProgress(captures);
 
   return (
-    <div className="flex flex-col gap-5 p-6 pb-28">
+    <div className="flex flex-col gap-5 p-6 pb-nav">
       <header className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold text-foreground">CatDex</h1>

@@ -11,7 +11,7 @@ export default async function HomePage() {
   const recent = captures.slice(0, 4);
 
   return (
-    <div className="flex flex-col gap-6 p-6 pb-28">
+    <div className="flex flex-col gap-6 p-6 pb-nav">
       <header className="flex items-center justify-between">
         <div>
           <p className="text-sm text-muted-foreground">Your collection</p>
