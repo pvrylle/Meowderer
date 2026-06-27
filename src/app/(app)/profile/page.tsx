@@ -73,7 +73,12 @@ export default async function ProfilePage() {
       </div>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-extrabold text-foreground">Achievements</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-extrabold text-foreground">Achievements</h2>
+          <Link href="/missions" className="text-sm font-semibold text-primary">
+            Missions & Badges →
+          </Link>
+        </div>
         <AchievementsGrid catalog={catalog} unlocked={unlocked} />
       </section>
 

@@ -66,7 +66,33 @@ const TRAIT_LINE: Record<string, string> = {
   Floof: "an unrepentant floofball",
   Sass: "powered entirely by sass",
   Stealth: "a master of the silent ambush",
+  Chonk: "a certified chonk of distinction",
 };
+
+const PERSONALITY_TITLES: Record<string, string[]> = {
+  Floof: ["Charming Trickster", "Fluffy Monarch", "Cloud Walker"],
+  Sass: ["Bold Wanderer", "Alley Royalty", "Mysterious Strut"],
+  Stealth: ["Mystic Wanderer", "Silent Hunter", "Shadow Prowler"],
+  Chonk: ["Loyal Companion", "Garden Guardian", "Patio Prince"],
+};
+
+/** Deterministic personality title for grid cards (wireframe parity). */
+export function personalityTitle(
+  capture: Pick<Capture, "id" | "rarity">,
+): string {
+  const stats = catStats(capture);
+  const top = [...stats].sort((a, b) => b.value - a.value)[0];
+  const options = PERSONALITY_TITLES[top.label] ?? ["Neighborhood Star"];
+  return options[hashString(capture.id) % options.length];
+}
+
+/** Charm rating 1.0–5.0 derived from top stat (visual parity, not user-submitted). */
+export function charmRating(capture: Pick<Capture, "id" | "rarity">): number {
+  const stats = catStats(capture);
+  const top = [...stats].sort((a, b) => b.value - a.value)[0];
+  const frac = (hashString(`charm:${capture.id}`) % 9) / 10;
+  return Math.min(5, Math.round((top.value + frac) * 10) / 10);
+}
 
 /** A short, deterministic flavour bio for the card back. */
 export function catBio(

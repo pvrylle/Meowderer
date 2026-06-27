@@ -26,6 +26,7 @@ import { uploadCapture } from "@/lib/capture/upload";
 import { coatToRarity } from "@/lib/coat-rarity";
 import { DEMO_COOKIE } from "@/lib/demo";
 import { getCurrentPosition } from "@/lib/geo";
+import { enqueueCapture } from "@/lib/offline-capture-queue";
 import { rarityLabel } from "@/lib/rarity";
 import type { Rarity } from "@/lib/supabase/types";
 import { useSettingsStore } from "@/stores/settings";
@@ -178,6 +179,28 @@ export default function CatchPage() {
       router.push(`/cat/${result.id}`);
     } catch (err) {
       console.error(err);
+      const offline =
+        typeof navigator !== "undefined" && !navigator.onLine;
+
+      if (offline && processed) {
+        try {
+          await enqueueCapture({
+            photoBlob: processed.original,
+            stickerBlob: processed.sticker,
+            nickname: nickname || null,
+            lat: null,
+            lng: null,
+            coat_type: classification?.coat_type ?? null,
+            rarity: previewRarity,
+          });
+          toast.success("Saved offline — will sync when you're back online.");
+          router.push("/catdex");
+          return;
+        } catch {
+          // fall through
+        }
+      }
+
       toast.error(err instanceof Error ? err.message : "Failed to save.");
       setSaving(false);
     }

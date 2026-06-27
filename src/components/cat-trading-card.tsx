@@ -1,10 +1,12 @@
 import Image from "next/image";
-import { CalendarDays, Cat, MapPin, PawPrint } from "lucide-react";
+import { CalendarDays, Cat, MapPin, PawPrint, Star } from "lucide-react";
 
 import { CardScene } from "@/components/card-scene";
 import {
   catStats,
+  charmRating,
   dexNumber,
+  personalityTitle,
   pickBiome,
   type Biome,
   type CatStat,
@@ -22,6 +24,8 @@ type CatTradingCardProps = {
   coat?: string | null;
   dex?: string | null;
   stats?: CatStat[] | null;
+  personality?: string | null;
+  charm?: number | null;
   biome?: Biome;
   size?: "sm" | "lg";
   priority?: boolean;
@@ -35,6 +39,18 @@ function formatShortDate(iso: string): string {
     day: "numeric",
     year: "numeric",
   });
+}
+
+function CharmStars({ value }: { value: number }) {
+  const full = Math.floor(value);
+  const hasHalf = value - full >= 0.5;
+  return (
+    <span className="flex items-center gap-0.5" aria-label={`Charm ${value}`}>
+      <Star className="size-3 fill-legendary text-legendary" />
+      <span className="text-[11px] font-bold text-foreground">{value.toFixed(1)}</span>
+      <span className="sr-only">{full} full stars{hasHalf ? ", half" : ""}</span>
+    </span>
+  );
 }
 
 function PawBar({ value }: { value: number }) {
@@ -77,6 +93,8 @@ export function CatTradingCard({
   coat,
   dex,
   stats,
+  personality,
+  charm,
   biome = "meadow",
   size = "lg",
   priority,
@@ -85,12 +103,14 @@ export function CatTradingCard({
 }: CatTradingCardProps) {
   const isLg = size === "lg";
   const isEpic = rarity === "epic";
+  const showLegendaryBorder = isEpic;
 
   return (
     <div
       className={cn(
         "bg-gradient-to-b shadow-lg",
         rarityFrame(rarity),
+        showLegendaryBorder && "ring-2 ring-legendary/60",
         isLg ? "rounded-[2rem] p-1.5 shadow-xl" : "rounded-3xl p-1",
       )}
     >
@@ -166,12 +186,12 @@ export function CatTradingCard({
           {/* rarity ribbon */}
           <span
             className={cn(
-              "absolute left-0 top-2 rounded-r-full border-y-2 border-r-2 border-white font-bold uppercase tracking-wide text-foreground",
-              rarityBanner(rarity),
+              "absolute right-0 top-2 rounded-l-full border-y-2 border-l-2 border-white font-bold uppercase tracking-wide text-foreground",
+              isEpic ? "bg-legendary text-foreground" : rarityBanner(rarity),
               isLg ? "px-2.5 py-0.5 text-[10px]" : "px-2 py-0.5 text-[9px]",
             )}
           >
-            {rarityLabel(rarity)}
+            {isEpic ? "Legendary" : rarityLabel(rarity)}
           </span>
         </div>
 
@@ -204,12 +224,22 @@ export function CatTradingCard({
             )}
           </div>
         ) : (
-          place && (
-            <p className="flex items-center gap-1 truncate px-1.5 pb-0.5 text-[11px] text-muted-foreground">
-              <MapPin className="size-3 shrink-0" />
-              <span className="truncate">{place}</span>
-            </p>
-          )
+          <div className="space-y-0.5 px-1.5 pb-1">
+            {personality && (
+              <p className="truncate text-[10px] text-muted-foreground">{personality}</p>
+            )}
+            {place && (
+              <p className="flex items-center gap-1 truncate text-[11px] text-muted-foreground">
+                <MapPin className="size-3 shrink-0" />
+                <span className="truncate">{place}</span>
+              </p>
+            )}
+            {charm != null && (
+              <div className="flex justify-end pt-0.5">
+                <CharmStars value={charm} />
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
@@ -238,6 +268,8 @@ export function CaptureCard({
       coat={capture.coat_type}
       dex={dexNumber(capture.id)}
       stats={size === "lg" ? catStats(capture) : null}
+      personality={size === "sm" ? personalityTitle(capture) : null}
+      charm={size === "sm" ? charmRating(capture) : null}
       biome={pickBiome(capture)}
       size={size}
       priority={priority}

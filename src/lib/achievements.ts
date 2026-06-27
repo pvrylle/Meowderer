@@ -159,7 +159,3 @@ export function countCoatTypes(captures: Capture[]): number {
     captures.map((c) => c.coat_type).filter((c): c is string => Boolean(c)),
   ).size;
 }
-
-export function isRareOrEpic(rarity: Rarity | null): boolean {
-  return rarity === "rare" || rarity === "epic";
-}

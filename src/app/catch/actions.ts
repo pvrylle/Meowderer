@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { unlockAchievementsAfterSave, type Achievement } from "@/lib/achievements";
+import { progressMissionsAndBadgesAfterSave } from "@/lib/missions";
 import { applyLocationEpicBonus, coatToRarity, maxRarity } from "@/lib/coat-rarity";
 import { reverseGeocode } from "@/lib/geocode";
 import { isDemoSession } from "@/lib/auth";
@@ -130,10 +131,13 @@ export async function saveCapture(input: unknown): Promise<SaveResult> {
     data,
   );
 
+  await progressMissionsAndBadgesAfterSave(supabase, user.id);
+
   revalidatePath("/home");
   revalidatePath("/catdex");
   revalidatePath("/map");
   revalidatePath("/profile");
+  revalidatePath("/missions");
 
   return { success: true, id: data.id, newAchievements };
 }

@@ -3,113 +3,87 @@
 import { useMemo, useState } from "react";
 
 import { CatCard } from "@/components/cat-card";
-import { RARITY_LABEL } from "@/lib/rarity";
-import type { Capture, Rarity } from "@/lib/supabase/types";
+import { DexPlaceholderCard } from "@/components/dex-placeholder-card";
+import { isRareOrEpic } from "@/lib/xp";
+import type { Capture } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 
-type RarityFilter = "all" | Rarity;
+type StatusFilter = "all" | "photographed" | "geotagged" | "rare";
 
 type CatDexGridProps = {
   captures: Capture[];
 };
 
-function uniqueSorted(values: (string | null | undefined)[]): string[] {
-  return [...new Set(values.filter((v): v is string => Boolean(v?.trim())))].sort(
-    (a, b) => a.localeCompare(b),
-  );
+const STATUS_TABS: { key: StatusFilter; label: string; disabled?: boolean }[] = [
+  { key: "all", label: "All" },
+  { key: "photographed", label: "Photographed" },
+  { key: "geotagged", label: "Geotagged" },
+  { key: "rare", label: "Rare+" },
+];
+
+const TEASER_TABS = [
+  { label: "Helped", disabled: true },
+  { label: "Rescued", disabled: true },
+];
+
+function filterByStatus(captures: Capture[], status: StatusFilter): Capture[] {
+  switch (status) {
+    case "photographed":
+      return captures;
+    case "geotagged":
+      return captures.filter((c) => c.lat != null && c.lng != null);
+    case "rare":
+      return captures.filter((c) => c.rarity && isRareOrEpic(c.rarity));
+    default:
+      return captures;
+  }
 }
 
 export function CatDexGrid({ captures }: CatDexGridProps) {
-  const [rarity, setRarity] = useState<RarityFilter>("all");
-  const [coat, setCoat] = useState<string>("all");
-  const [region, setRegion] = useState<string>("all");
+  const [status, setStatus] = useState<StatusFilter>("all");
 
-  const coatOptions = useMemo(
-    () => uniqueSorted(captures.map((c) => c.coat_type)),
-    [captures],
-  );
-  const regionOptions = useMemo(
-    () => uniqueSorted(captures.map((c) => c.country)),
-    [captures],
+  const filtered = useMemo(
+    () => filterByStatus(captures, status),
+    [captures, status],
   );
 
-  const filtered = useMemo(() => {
-    return captures.filter((c) => {
-      if (rarity !== "all" && c.rarity !== rarity) return false;
-      if (coat !== "all" && c.coat_type !== coat) return false;
-      if (region !== "all" && c.country !== region) return false;
-      return true;
-    });
-  }, [captures, rarity, coat, region]);
-
-  const rarityChips: { key: RarityFilter; label: string }[] = [
-    { key: "all", label: "All" },
-    ...(Object.entries(RARITY_LABEL) as [Rarity, string][]).map(([key, label]) => ({
-      key,
-      label,
-    })),
-  ];
+  const placeholderCount =
+    captures.length < 6 ? Math.min(4, 6 - captures.length) : 0;
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {rarityChips.map(({ key, label }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setRarity(key)}
-              className={cn(
-                "shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition-colors",
-                rarity === key
-                  ? "bg-primary text-primary-foreground"
-                  : "border border-border bg-card text-muted-foreground",
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {(coatOptions.length > 0 || regionOptions.length > 0) && (
-          <div className="flex flex-wrap gap-2">
-            {coatOptions.length > 0 && (
-              <select
-                value={coat}
-                onChange={(e) => setCoat(e.target.value)}
-                className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground"
-                aria-label="Filter by coat"
-              >
-                <option value="all">All coats</option>
-                {coatOptions.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+      <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {STATUS_TABS.map(({ key, label }) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setStatus(key)}
+            className={cn(
+              "shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition-colors",
+              status === key
+                ? "bg-primary text-primary-foreground"
+                : "border border-border bg-card text-muted-foreground",
             )}
-            {regionOptions.length > 0 && (
-              <select
-                value={region}
-                onChange={(e) => setRegion(e.target.value)}
-                className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground"
-                aria-label="Filter by region"
-              >
-                <option value="all">All regions</option>
-                {regionOptions.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-        )}
+          >
+            {label}
+          </button>
+        ))}
+        {TEASER_TABS.map(({ label }) => (
+          <button
+            key={label}
+            type="button"
+            disabled
+            title="Coming with Community"
+            className="shrink-0 cursor-not-allowed rounded-full border border-dashed border-border bg-muted/40 px-3 py-1.5 text-xs font-bold text-muted-foreground/60"
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       {filtered.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-border bg-card/50 px-4 py-10 text-center text-sm text-muted-foreground">
-          No cats match these filters.
+          No cats match this filter.
         </p>
       ) : (
         <div className="grid grid-cols-2 gap-4">
@@ -117,9 +91,16 @@ export function CatDexGrid({ captures }: CatDexGridProps) {
             <CatCard
               key={capture.id}
               capture={capture}
-              priority={i < 2 && rarity === "all" && coat === "all" && region === "all"}
+              priority={i < 2 && status === "all"}
             />
           ))}
+          {status === "all" &&
+            Array.from({ length: placeholderCount }).map((_, i) => (
+              <DexPlaceholderCard
+                key={`placeholder-${i}`}
+                variant={i % 2 === 0 ? "explore" : "undiscovered"}
+              />
+            ))}
         </div>
       )}
     </div>

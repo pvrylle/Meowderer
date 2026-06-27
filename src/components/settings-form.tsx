@@ -1,18 +1,39 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
-import { backfillPlacesAction } from "@/app/(app)/settings/actions";
+import {
+  backfillPlacesAction,
+  getStorageEstimateAction,
+} from "@/app/(app)/settings/actions";
 import { CatButton } from "@/components/ui/cat-button";
+import { pendingCaptureCount } from "@/lib/offline-capture-queue";
 import { useSettingsStore } from "@/stores/settings";
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 export function SettingsForm() {
   const router = useRouter();
   const gpsDefaultOn = useSettingsStore((s) => s.gpsDefaultOn);
   const setGpsDefaultOn = useSettingsStore((s) => s.setGpsDefaultOn);
+  const [storage, setStorage] = useState<{
+    captureCount: number;
+    estimatedBytes: number;
+    percentUsed: number;
+  } | null>(null);
+  const [pending, setPending] = useState(0);
+
+  useEffect(() => {
+    void getStorageEstimateAction().then(setStorage);
+    void pendingCaptureCount().then(setPending);
+  }, []);
 
   async function handleBackfill() {
     const result = await backfillPlacesAction();
@@ -73,6 +94,39 @@ export function SettingsForm() {
             />
           </span>
         </button>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+          Storage
+        </h2>
+        <div className="rounded-2xl border border-border bg-card p-4">
+          {storage ? (
+            <>
+              <div className="mb-2 flex items-center justify-between text-sm">
+                <span className="font-semibold text-foreground">Estimated usage</span>
+                <span className="font-bold text-primary">{storage.percentUsed}%</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-primary"
+                  style={{ width: `${storage.percentUsed}%` }}
+                />
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                ~{formatBytes(storage.estimatedBytes)} across {storage.captureCount}{" "}
+                catches (free tier ~1 GB)
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">Loading storage estimate…</p>
+          )}
+          {pending > 0 && (
+            <p className="mt-2 text-xs font-semibold text-orange">
+              {pending} capture{pending === 1 ? "" : "s"} waiting to sync offline
+            </p>
+          )}
+        </div>
       </section>
 
       <section className="space-y-3">

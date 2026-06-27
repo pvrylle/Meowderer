@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Camera, Home, LayoutGrid, Map, User } from "lucide-react";
+import {
+  Camera,
+  Home,
+  LayoutGrid,
+  Map,
+  Target,
+  Users,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -10,7 +17,8 @@ const TABS = [
   { href: "/home", label: "Home", icon: Home },
   { href: "/catdex", label: "CatDex", icon: LayoutGrid },
   { href: "/map", label: "Map", icon: Map },
-  { href: "/profile", label: "Profile", icon: User },
+  { href: "/missions", label: "Quests", icon: Target },
+  { href: "/community", label: "Community", icon: Users },
 ] as const;
 
 export function BottomNav() {
@@ -18,7 +26,7 @@ export function BottomNav() {
 
   return (
     <nav className="relative shrink-0 border-t border-border bg-card/95 backdrop-blur">
-      <div className="mx-auto flex max-w-md items-center justify-around px-2 py-2">
+      <div className="mx-auto flex max-w-md items-center justify-around px-1 py-2">
         {TABS.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
@@ -26,11 +34,11 @@ export function BottomNav() {
               key={href}
               href={href}
               className={cn(
-                "flex flex-1 flex-col items-center gap-1 rounded-2xl py-1.5 text-xs font-semibold transition-colors",
+                "flex flex-1 flex-col items-center gap-0.5 rounded-2xl py-1 text-[10px] font-semibold transition-colors",
                 active ? "text-primary" : "text-muted-foreground",
               )}
             >
-              <Icon className="size-6" strokeWidth={active ? 2.5 : 2} />
+              <Icon className="size-5" strokeWidth={active ? 2.5 : 2} />
               {label}
             </Link>
           );

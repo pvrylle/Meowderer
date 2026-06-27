@@ -3,7 +3,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import maplibregl from "maplibre-gl";
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import {
+  Building2,
+  Cat,
+  MapPin as MapPinIcon,
+  Search,
+  SlidersHorizontal,
+  Stethoscope,
+  X,
+} from "lucide-react";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import { MapPin } from "@/components/map/map-pin";
@@ -16,6 +24,7 @@ import {
   type CaptureGeoJSON,
   type CapturePointProps,
 } from "@/lib/map";
+import { fetchPois, osmLink, type Poi, type PoiType } from "@/lib/overpass";
 import type { Rarity } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 
@@ -23,10 +32,18 @@ type CatchMapProps = {
   geojson: CaptureGeoJSON;
 };
 
-type FilterKey = "all" | Rarity;
+type LayerTab = "all" | "cats" | "shelters" | "vets";
+type RarityFilter = "all" | Rarity;
 
-const FILTERS: { key: FilterKey; label: string }[] = [
-  { key: "all", label: "All" },
+const LAYER_TABS: { key: LayerTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { key: "all", label: "All", icon: MapPinIcon },
+  { key: "cats", label: "Cats", icon: Cat },
+  { key: "shelters", label: "Shelters", icon: Building2 },
+  { key: "vets", label: "Vets", icon: Stethoscope },
+];
+
+const RARITY_FILTERS: { key: RarityFilter; label: string }[] = [
+  { key: "all", label: "All rarities" },
   { key: "common", label: "Common" },
   { key: "uncommon", label: "Uncommon" },
   { key: "rare", label: "Rare" },
@@ -47,13 +64,17 @@ function fitToFeatures(map: maplibregl.Map, geojson: CaptureGeoJSON) {
       coords[0] as [number, number],
     ),
   );
-  map.fitBounds(bounds, { padding: { top: 100, bottom: 80, left: 40, right: 40 }, maxZoom: 11, duration: 800 });
+  map.fitBounds(bounds, {
+    padding: { top: 120, bottom: 100, left: 40, right: 40 },
+    maxZoom: 11,
+    duration: 800,
+  });
 }
 
 function filterGeoJSON(
   geojson: CaptureGeoJSON,
   query: string,
-  rarity: FilterKey,
+  rarity: RarityFilter,
 ): CaptureGeoJSON {
   const q = query.trim().toLowerCase();
   const features = geojson.features.filter((f) => {
@@ -68,8 +89,7 @@ function filterGeoJSON(
   return { type: "FeatureCollection", features };
 }
 
-/** Build a DOM pin button (plain img — safe for MapLibre markers). */
-function buildPinButton(
+function buildCatPinButton(
   props: CapturePointProps | { count: number },
   onClick: () => void,
 ): HTMLButtonElement {
@@ -105,27 +125,72 @@ function buildPinButton(
   return btn;
 }
 
+function buildPoiPinButton(poi: Poi, onClick: () => void): HTMLButtonElement {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className =
+    "block cursor-pointer border-0 bg-transparent p-0 transition-transform active:scale-95";
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    onClick();
+  });
+
+  const color = poi.type === "shelter" ? "#8fd6a6" : "#7fb4e8";
+  const icon = poi.type === "shelter" ? "🏠" : "🩺";
+  const size = 44;
+
+  btn.innerHTML = `
+    <div style="position:relative;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center">
+      <div style="width:36px;height:36px;border-radius:12px;background:${color};border:3px solid white;box-shadow:0 4px 8px rgba(58,53,80,0.2);display:flex;align-items:center;justify-content:center;font-size:16px">${icon}</div>
+    </div>`;
+
+  return btn;
+}
+
 export function CatchMap({ geojson }: CatchMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
-  const markersRef = useRef<maplibregl.Marker[]>([]);
+  const catMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const poiMarkersRef = useRef<maplibregl.Marker[]>([]);
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<FilterKey>("all");
-  const [selected, setSelected] = useState<CapturePointProps | null>(null);
+  const [layerTab, setLayerTab] = useState<LayerTab>("all");
+  const [rarityFilter, setRarityFilter] = useState<RarityFilter>("all");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [selectedCat, setSelectedCat] = useState<CapturePointProps | null>(null);
+  const [selectedPoi, setSelectedPoi] = useState<Poi | null>(null);
+  const [pois, setPois] = useState<Poi[]>([]);
+  const [poiLoading, setPoiLoading] = useState(false);
 
-  const filtered = useMemo(
-    () => filterGeoJSON(geojson, query, filter),
-    [geojson, query, filter],
+  const showCats = layerTab === "all" || layerTab === "cats";
+  const showShelters = layerTab === "all" || layerTab === "shelters";
+  const showVets = layerTab === "all" || layerTab === "vets";
+
+  const filteredCats = useMemo(
+    () => (showCats ? filterGeoJSON(geojson, query, rarityFilter) : { type: "FeatureCollection" as const, features: [] }),
+    [geojson, query, rarityFilter, showCats],
   );
 
-  const hasPoints = geojson.features.length > 0;
-  const hasFiltered = filtered.features.length > 0;
+  const filteredPois = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return pois.filter((p) => {
+      if (p.type === "shelter" && !showShelters) return false;
+      if (p.type === "vet" && !showVets) return false;
+      if (!q) return true;
+      return (
+        p.name.toLowerCase().includes(q) ||
+        (p.address?.toLowerCase().includes(q) ?? false)
+      );
+    });
+  }, [pois, query, showShelters, showVets]);
 
-  const syncMarkers = useCallback((map: maplibregl.Map) => {
-    markersRef.current.forEach((m) => m.remove());
-    markersRef.current = [];
+  const hasCatPoints = geojson.features.length > 0;
+  const hasFilteredCats = filteredCats.features.length > 0;
 
-    if (!map.getSource("captures")) return;
+  const syncCatMarkers = useCallback((map: maplibregl.Map) => {
+    catMarkersRef.current.forEach((m) => m.remove());
+    catMarkersRef.current = [];
+
+    if (!showCats || !map.getSource("captures")) return;
 
     const features = map.querySourceFeatures("captures");
     const placed = new Set<string>();
@@ -142,7 +207,7 @@ export function CatchMap({ geojson }: CatchMapProps) {
         placed.add(key);
 
         const count = props.point_count as number;
-        const el = buildPinButton({ count }, () => {
+        const el = buildCatPinButton({ count }, () => {
           const source = map.getSource("captures") as maplibregl.GeoJSONSource;
           source
             .getClusterExpansionZoom(clusterId)
@@ -152,7 +217,7 @@ export function CatchMap({ geojson }: CatchMapProps) {
             .catch(() => {});
         });
 
-        markersRef.current.push(
+        catMarkersRef.current.push(
           new maplibregl.Marker({ element: el, anchor: "bottom" })
             .setLngLat(coords)
             .addTo(map),
@@ -163,20 +228,68 @@ export function CatchMap({ geojson }: CatchMapProps) {
         placed.add(id);
 
         const pointProps = props as unknown as CapturePointProps;
-        const el = buildPinButton(pointProps, () => setSelected(pointProps));
+        const el = buildCatPinButton(pointProps, () => {
+          setSelectedPoi(null);
+          setSelectedCat(pointProps);
+        });
 
-        markersRef.current.push(
+        catMarkersRef.current.push(
           new maplibregl.Marker({ element: el, anchor: "bottom" })
             .setLngLat(coords)
             .addTo(map),
         );
       }
     }
-  }, []);
+  }, [showCats]);
+
+  const syncPoiMarkers = useCallback(
+    (map: maplibregl.Map) => {
+      poiMarkersRef.current.forEach((m) => m.remove());
+      poiMarkersRef.current = [];
+
+      for (const poi of filteredPois) {
+        const el = buildPoiPinButton(poi, () => {
+          setSelectedCat(null);
+          setSelectedPoi(poi);
+        });
+        poiMarkersRef.current.push(
+          new maplibregl.Marker({ element: el, anchor: "center" })
+            .setLngLat([poi.lng, poi.lat])
+            .addTo(map),
+        );
+      }
+    },
+    [filteredPois],
+  );
+
+  const loadPois = useCallback(async (map: maplibregl.Map) => {
+    if (!showShelters && !showVets) return;
+    const b = map.getBounds();
+    const types: PoiType[] = [];
+    if (showShelters) types.push("shelter");
+    if (showVets) types.push("vet");
+    if (types.length === 0) return;
+
+    setPoiLoading(true);
+    try {
+      const results = await fetchPois(
+        {
+          south: b.getSouth(),
+          west: b.getWest(),
+          north: b.getNorth(),
+          east: b.getEast(),
+        },
+        types,
+      );
+      setPois(results);
+    } finally {
+      setPoiLoading(false);
+    }
+  }, [showShelters, showVets]);
 
   // Init map once
   useEffect(() => {
-    if (!containerRef.current || !hasPoints) return;
+    if (!containerRef.current) return;
 
     let cancelled = false;
     const container = containerRef.current;
@@ -204,34 +317,43 @@ export function CatchMap({ geojson }: CatchMapProps) {
     const onLoad = () => {
       if (cancelled) return;
 
-      map.addSource("captures", {
-        type: "geojson",
-        data: filtered,
-        cluster: true,
-        clusterMaxZoom: 13,
-        clusterRadius: 55,
-      });
+      if (hasCatPoints) {
+        map.addSource("captures", {
+          type: "geojson",
+          data: filteredCats,
+          cluster: true,
+          clusterMaxZoom: 13,
+          clusterRadius: 55,
+        });
 
-      map.addLayer({
-        id: "captures-points",
-        type: "circle",
-        source: "captures",
-        paint: {
-          "circle-radius": 0,
-          "circle-opacity": 0,
-        },
-      });
+        map.addLayer({
+          id: "captures-points",
+          type: "circle",
+          source: "captures",
+          paint: {
+            "circle-radius": 0,
+            "circle-opacity": 0,
+          },
+        });
 
-      fitToFeatures(map, filtered);
-      syncMarkers(map);
+        fitToFeatures(map, filteredCats);
+        syncCatMarkers(map);
+      }
+
+      void loadPois(map);
       map.resize();
     };
 
     map.on("load", onLoad);
-    map.on("moveend", () => syncMarkers(map));
-    map.on("click", () => setSelected(null));
+    map.on("moveend", () => {
+      syncCatMarkers(map);
+      void loadPois(map);
+    });
+    map.on("click", () => {
+      setSelectedCat(null);
+      setSelectedPoi(null);
+    });
 
-    // Ensure canvas picks up flex layout dimensions after paint
     const ro = new ResizeObserver(() => {
       if (!cancelled) map.resize();
     });
@@ -240,50 +362,65 @@ export function CatchMap({ geojson }: CatchMapProps) {
     return () => {
       cancelled = true;
       ro.disconnect();
-      markersRef.current.forEach((m) => m.remove());
-      markersRef.current = [];
+      catMarkersRef.current.forEach((m) => m.remove());
+      poiMarkersRef.current.forEach((m) => m.remove());
+      catMarkersRef.current = [];
+      poiMarkersRef.current = [];
       map.remove();
       mapRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- init once per mount
-  }, [hasPoints]);
+  }, [hasCatPoints]);
 
-  // Update pins when search/filter changes
+  // Update cat pins when search/filter/layer changes
   useEffect(() => {
     const map = mapRef.current;
-    if (!map?.getSource("captures")) return;
+    if (!map) return;
 
-    const source = map.getSource("captures") as maplibregl.GeoJSONSource;
-    source.setData(filtered);
-    map.once("idle", () => syncMarkers(map));
-  }, [filtered, syncMarkers]);
+    if (hasCatPoints && map.getSource("captures")) {
+      const source = map.getSource("captures") as maplibregl.GeoJSONSource;
+      source.setData(filteredCats);
+      map.once("idle", () => syncCatMarkers(map));
+    } else if (hasCatPoints && !map.getSource("captures") && showCats) {
+      map.addSource("captures", {
+        type: "geojson",
+        data: filteredCats,
+        cluster: true,
+        clusterMaxZoom: 13,
+        clusterRadius: 55,
+      });
+      map.addLayer({
+        id: "captures-points",
+        type: "circle",
+        source: "captures",
+        paint: { "circle-radius": 0, "circle-opacity": 0 },
+      });
+      syncCatMarkers(map);
+    }
 
-  // Re-fit map when rarity filter changes (not on every keystroke)
+    if (!showCats) {
+      catMarkersRef.current.forEach((m) => m.remove());
+      catMarkersRef.current = [];
+    }
+  }, [filteredCats, syncCatMarkers, hasCatPoints, showCats]);
+
   useEffect(() => {
     const map = mapRef.current;
-    if (!map?.getSource("captures") || filtered.features.length === 0) return;
-    fitToFeatures(map, filtered);
-  }, [filter, filtered]);
+    if (!map) return;
+    syncPoiMarkers(map);
+    void loadPois(map);
+  }, [filteredPois, syncPoiMarkers, loadPois, layerTab]);
 
-  if (!hasPoints) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-        <span className="text-5xl" aria-hidden>
-          🗺️
-        </span>
-        <p className="font-bold text-foreground">No mapped catches yet</p>
-        <p className="max-w-xs text-sm text-muted-foreground">
-          Turn on location when you catch a cat and your pins will show up here.
-        </p>
-      </div>
-    );
-  }
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map?.getSource("captures") || filteredCats.features.length === 0) return;
+    fitToFeatures(map, filteredCats);
+  }, [rarityFilter, filteredCats]);
 
   return (
     <div className="relative h-full min-h-0 w-full">
       <div ref={containerRef} className="absolute inset-0 z-0" />
 
-      {/* Overlay: search + filters (reference: public/screens/Container.png) */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 space-y-3 p-4">
         <div className="pointer-events-auto flex items-center gap-2 rounded-2xl border border-border/60 bg-card/95 px-3 py-2.5 shadow-md backdrop-blur-sm">
           <Search className="size-5 shrink-0 text-muted-foreground" />
@@ -296,71 +433,164 @@ export function CatchMap({ geojson }: CatchMapProps) {
           />
           <button
             type="button"
-            aria-label="Filters"
-            className="flex size-8 shrink-0 items-center justify-center rounded-xl text-muted-foreground"
+            aria-label="Advanced filters"
+            onClick={() => setFiltersOpen(true)}
+            className={cn(
+              "flex size-8 shrink-0 items-center justify-center rounded-xl transition-colors",
+              filtersOpen || rarityFilter !== "all"
+                ? "bg-primary/15 text-primary"
+                : "text-muted-foreground",
+            )}
           >
             <SlidersHorizontal className="size-4" />
           </button>
         </div>
 
         <div className="pointer-events-auto flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {FILTERS.map(({ key, label }) => (
+          {LAYER_TABS.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
               type="button"
-              onClick={() => setFilter(key)}
+              onClick={() => setLayerTab(key)}
               className={cn(
-                "shrink-0 rounded-full px-4 py-2 text-xs font-bold transition-colors",
-                filter === key
+                "flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition-colors",
+                layerTab === key
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "border border-border bg-card/95 text-muted-foreground shadow-sm backdrop-blur-sm",
               )}
             >
+              <Icon className="size-3.5" />
               {label}
             </button>
           ))}
         </div>
 
-        {!hasFiltered && (
+        {poiLoading && (showShelters || showVets) && (
+          <p className="pointer-events-auto rounded-2xl bg-card/95 px-4 py-2 text-center text-xs text-muted-foreground shadow-sm backdrop-blur-sm">
+            Loading nearby places…
+          </p>
+        )}
+
+        {showCats && hasCatPoints && !hasFilteredCats && (
           <p className="pointer-events-auto rounded-2xl bg-card/95 px-4 py-2 text-center text-xs text-muted-foreground shadow-sm backdrop-blur-sm">
             No cats match your search.
           </p>
         )}
+
+        {!hasCatPoints && layerTab === "cats" && (
+          <p className="pointer-events-auto rounded-2xl bg-card/95 px-4 py-2 text-center text-xs text-muted-foreground shadow-sm backdrop-blur-sm">
+            No mapped catches yet. Turn on location when you catch a cat.
+          </p>
+        )}
       </div>
 
-      {/* Selected cat bottom sheet */}
-      {selected && (
+      {filtersOpen && (
+        <div className="absolute inset-0 z-30 flex items-end bg-black/30">
+          <div className="w-full rounded-t-3xl border border-border bg-card p-5 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-extrabold text-foreground">Filters</h2>
+              <button
+                type="button"
+                aria-label="Close filters"
+                onClick={() => setFiltersOpen(false)}
+                className="flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              Cat rarity
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {RARITY_FILTERS.map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setRarityFilter(key)}
+                  className={cn(
+                    "rounded-full px-3 py-1.5 text-xs font-bold transition-colors",
+                    rarityFilter === key
+                      ? "bg-primary text-primary-foreground"
+                      : "border border-border bg-muted text-muted-foreground",
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setFiltersOpen(false)}
+              className="mt-5 w-full rounded-2xl bg-primary py-3 text-sm font-bold text-primary-foreground"
+            >
+              Apply
+            </button>
+          </div>
+        </div>
+      )}
+
+      {selectedCat && (
         <div className="absolute inset-x-4 bottom-4 z-20 rounded-3xl border border-border bg-card p-4 shadow-xl">
           <button
             type="button"
             aria-label="Close"
-            onClick={() => setSelected(null)}
+            onClick={() => setSelectedCat(null)}
             className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground"
           >
             <X className="size-4" />
           </button>
           <div className="flex items-center gap-4">
             <MapPin
-              stickerUrl={selected.sticker_url}
-              rarity={selected.rarity}
+              stickerUrl={selectedCat.sticker_url}
+              rarity={selectedCat.rarity}
               size="lg"
             />
             <div className="min-w-0 flex-1 pr-6">
               <p className="truncate font-extrabold text-foreground">
-                {selected.name}
+                {selectedCat.name}
               </p>
-              {selected.place && (
+              {selectedCat.place && (
                 <p className="truncate text-sm text-muted-foreground">
-                  {selected.place}
+                  {selectedCat.place}
                 </p>
               )}
               <Link
-                href={`/cat/${selected.id}`}
+                href={`/cat/${selectedCat.id}`}
                 className="mt-2 inline-block text-sm font-bold text-primary"
               >
                 View cat →
               </Link>
             </div>
+          </div>
+        </div>
+      )}
+
+      {selectedPoi && (
+        <div className="absolute inset-x-4 bottom-4 z-20 rounded-3xl border border-border bg-card p-4 shadow-xl">
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={() => setSelectedPoi(null)}
+            className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground"
+          >
+            <X className="size-4" />
+          </button>
+          <div className="pr-8">
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              {selectedPoi.type === "shelter" ? "Animal shelter" : "Veterinary"}
+            </p>
+            <p className="mt-1 font-extrabold text-foreground">{selectedPoi.name}</p>
+            {selectedPoi.address && (
+              <p className="mt-1 text-sm text-muted-foreground">{selectedPoi.address}</p>
+            )}
+            <a
+              href={osmLink(selectedPoi)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-block text-sm font-bold text-primary"
+            >
+              Open in Maps →
+            </a>
           </div>
         </div>
       )}
