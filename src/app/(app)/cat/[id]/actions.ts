@@ -42,6 +42,8 @@ export async function renameCapture(input: unknown): Promise<ActionResult> {
   revalidatePath(`/cat/${id}`);
   revalidatePath("/catdex");
   revalidatePath("/home");
+  revalidatePath("/map");
+  revalidatePath("/profile");
   return { success: true };
 }
 
@@ -75,5 +77,7 @@ export async function deleteCapture(id: string): Promise<void> {
 
   revalidatePath("/catdex");
   revalidatePath("/home");
+  revalidatePath("/map");
+  revalidatePath("/profile");
   redirect("/catdex");
 }

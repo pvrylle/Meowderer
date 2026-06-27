@@ -1,23 +1,48 @@
-import { Cat, Globe, MapPin } from "lucide-react";
+import Link from "next/link";
+import { Cat, Globe, MapPin, Palette, Settings } from "lucide-react";
 
 import { signOut } from "@/app/auth/actions";
+import { AchievementsGrid } from "@/components/achievements-grid";
 import { BrandMark } from "@/components/brand-mark";
 import { CatButton } from "@/components/ui/cat-button";
-import { getCurrentUser } from "@/lib/auth";
+import {
+  countCoatTypes,
+  getAchievementsCatalog,
+  getUserAchievements,
+} from "@/lib/achievements";
+import { getCurrentUser, isDemoSession } from "@/lib/auth";
 import { getCaptures } from "@/lib/captures";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function ProfilePage() {
-  const [user, captures] = await Promise.all([getCurrentUser(), getCaptures()]);
+  const [user, captures, demo] = await Promise.all([
+    getCurrentUser(),
+    getCaptures(),
+    isDemoSession(),
+  ]);
 
   const countries = new Set(
     captures.map((c) => c.country).filter(Boolean),
   ).size;
   const cities = new Set(captures.map((c) => c.city).filter(Boolean)).size;
+  const coatTypes = countCoatTypes(captures);
+
+  let catalog: Awaited<ReturnType<typeof getAchievementsCatalog>> = [];
+  let unlocked: Awaited<ReturnType<typeof getUserAchievements>> = [];
+
+  if (!demo && user) {
+    const supabase = await createClient();
+    [catalog, unlocked] = await Promise.all([
+      getAchievementsCatalog(supabase),
+      getUserAchievements(supabase, user.id),
+    ]);
+  }
 
   const stats = [
     { label: "Cats", value: captures.length, icon: Cat },
     { label: "Cities", value: cities, icon: MapPin },
     { label: "Countries", value: countries, icon: Globe },
+    { label: "Coats", value: coatTypes, icon: Palette },
   ];
 
   return (
@@ -32,7 +57,7 @@ export default async function ProfilePage() {
         </div>
       </header>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {stats.map(({ label, value, icon: Icon }) => (
           <div
             key={label}
@@ -46,6 +71,18 @@ export default async function ProfilePage() {
           </div>
         ))}
       </div>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-extrabold text-foreground">Achievements</h2>
+        <AchievementsGrid catalog={catalog} unlocked={unlocked} />
+      </section>
+
+      <Link href="/settings">
+        <CatButton variant="outline" block>
+          <Settings className="size-5" />
+          Settings
+        </CatButton>
+      </Link>
 
       <form action={signOut} className="mt-auto">
         <CatButton type="submit" variant="outline" block>

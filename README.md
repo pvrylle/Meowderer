@@ -31,11 +31,9 @@ subfolder. Open http://localhost:3000.
 ## Supabase setup (required for auth + saving cats)
 
 1. Create a free project at [supabase.com](https://supabase.com).
-2. In the project's **SQL Editor**, paste and run
-   [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql).
-   This creates the `profiles`, `captures`, `achievements`, and
-   `user_achievements` tables (all with RLS), plus the `captures` (private) and
-   `stickers` (public) storage buckets and their policies.
+2. In the project's **SQL Editor**, paste and run these migrations in order:
+   - [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql) — tables, RLS, storage
+   - [`supabase/migrations/0002_achievements_seed.sql`](supabase/migrations/0002_achievements_seed.sql) — achievement catalog
 3. Copy `.env.example` to `.env.local` and fill in:
 
    ```

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { InteractiveCaptureCard } from "@/components/interactive-capture-card";
+import { ShareCaptureCard } from "@/components/share-capture-card";
 import { CatName, DeleteCatButton } from "@/components/cat/cat-actions";
 import { getCapture } from "@/lib/captures";
 
@@ -37,6 +38,8 @@ export default async function CatDetailPage({
         </p>
         <CatName id={capture.id} initialName={capture.nickname} />
       </div>
+
+      <ShareCaptureCard capture={capture} />
 
       <DeleteCatButton id={capture.id} />
     </div>

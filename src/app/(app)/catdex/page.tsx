@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { CatCard } from "@/components/cat-card";
+import { CatDexGrid } from "@/components/catdex-grid";
 import { CatButton } from "@/components/ui/cat-button";
 import { getCaptures } from "@/lib/captures";
 
@@ -28,15 +28,7 @@ export default async function CatDexPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4">
-          {captures.map((capture, i) => (
-            <CatCard
-              key={capture.id}
-              capture={capture}
-              priority={i < 2}
-            />
-          ))}
-        </div>
+        <CatDexGrid captures={captures} />
       )}
     </div>
   );

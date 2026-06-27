@@ -1,24 +1,34 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { MapPin, RotateCcw, X } from "lucide-react";
 import { toast } from "sonner";
 
+import { persistNewAchievements } from "@/components/achievement-session-toasts";
 import { CatTradingCard } from "@/components/cat-trading-card";
 import { InteractiveCard } from "@/components/interactive-card";
 import { Camera } from "@/components/capture/camera";
 import { CatButton } from "@/components/ui/cat-button";
 import { Input } from "@/components/ui/input";
+import { isLikelyCat, preloadCoatClassifier } from "@/lib/capture/cat-guard";
+import {
+  classifyCoat,
+  type CoatClassification,
+} from "@/lib/capture/classify-coat";
 import {
   processCatPhoto,
   type CaptureProgress,
   type ProcessedCapture,
 } from "@/lib/capture/pipeline";
 import { uploadCapture } from "@/lib/capture/upload";
-import { getCurrentPosition } from "@/lib/geo";
+import { coatToRarity } from "@/lib/coat-rarity";
 import { DEMO_COOKIE } from "@/lib/demo";
+import { getCurrentPosition } from "@/lib/geo";
+import { rarityLabel } from "@/lib/rarity";
+import type { Rarity } from "@/lib/supabase/types";
+import { useSettingsStore } from "@/stores/settings";
 import { saveCapture } from "./actions";
 
 function isDemoSession(): boolean {
@@ -36,13 +46,23 @@ export default function CatchPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [progress, setProgress] = useState<CaptureProgress | null>(null);
   const [processed, setProcessed] = useState<ProcessedCapture | null>(null);
+  const [classification, setClassification] = useState<CoatClassification | null>(
+    null,
+  );
+  const [previewRarity, setPreviewRarity] = useState<Rarity | null>(null);
 
   const [nickname, setNickname] = useState("");
-  const [gpsOn, setGpsOn] = useState(false);
+  const gpsDefaultOn = useSettingsStore((s) => s.gpsDefaultOn);
+  const [gpsOverride, setGpsOverride] = useState<boolean | null>(null);
+  const gpsOn = gpsOverride ?? gpsDefaultOn;
   const [saving, setSaving] = useState(false);
 
   const previewUrlRef = useRef<string | null>(null);
   const stickerUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    preloadCoatClassifier();
+  }, []);
 
   const revokePreview = useCallback(() => {
     if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
@@ -69,18 +89,37 @@ export default function CatchPage() {
     setFile(null);
     setPreviewUrl(null);
     setProcessed(null);
+    setClassification(null);
+    setPreviewRarity(null);
     setNickname("");
     setPhase("capture");
   }
 
   async function develop() {
     if (!file) return;
+
+    const guard = await isLikelyCat(file);
+    if (!guard.ok) {
+      toast.error(guard.reason);
+      return;
+    }
+
     setPhase("processing");
     setProgress({ stage: "compressing", label: "Compressing photo…", pct: 5 });
     try {
       const result = await processCatPhoto(file, setProgress);
       stickerUrlRef.current = result.stickerPreviewUrl;
       setProcessed(result);
+
+      setProgress({
+        stage: "finishing",
+        label: "Classifying coat…",
+        pct: 92,
+      });
+      const coatResult = await classifyCoat(result.sticker);
+      setClassification(coatResult);
+      setPreviewRarity(coatToRarity(coatResult.coat_type));
+
       setPhase("review");
     } catch (err) {
       console.error(err);
@@ -119,12 +158,18 @@ export default function CatchPage() {
         nickname: nickname || null,
         lat,
         lng,
+        coat_type: classification?.coat_type ?? null,
+        rarity: previewRarity,
       });
 
       if (!result.success) {
         toast.error(result.error);
         setSaving(false);
         return;
+      }
+
+      if (result.newAchievements.length > 0) {
+        persistNewAchievements(result.newAchievements);
       }
 
       revokePreview();
@@ -221,6 +266,8 @@ export default function CatchPage() {
                 <CatTradingCard
                   name={nickname.trim() || "New friend"}
                   stickerUrl={processed.stickerPreviewUrl}
+                  rarity={previewRarity}
+                  coat={classification?.coat_type}
                   unoptimizedSticker
                   sparkle
                   size="lg"
@@ -228,6 +275,16 @@ export default function CatchPage() {
               </InteractiveCard>
             </motion.div>
           </AnimatePresence>
+
+          {classification && (
+            <p className="text-center text-sm text-muted-foreground">
+              Detected{" "}
+              <span className="font-semibold text-foreground">
+                {classification.coat_type}
+              </span>{" "}
+              · {rarityLabel(previewRarity)}
+            </p>
+          )}
 
           <div className="space-y-4">
             <div className="space-y-1.5">
@@ -246,7 +303,7 @@ export default function CatchPage() {
 
             <button
               type="button"
-              onClick={() => setGpsOn((v) => !v)}
+              onClick={() => setGpsOverride((v) => !(v ?? gpsDefaultOn))}
               className="flex w-full items-center justify-between rounded-2xl border border-border bg-card p-4"
             >
               <span className="flex items-center gap-3">

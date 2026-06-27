@@ -3,8 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { createClient } from "@/lib/supabase/server";
+import { unlockAchievementsAfterSave, type Achievement } from "@/lib/achievements";
+import { applyLocationEpicBonus, coatToRarity, maxRarity } from "@/lib/coat-rarity";
+import { reverseGeocode } from "@/lib/geocode";
 import { isDemoSession } from "@/lib/auth";
+import type { Rarity } from "@/lib/supabase/types";
+import { createClient } from "@/lib/supabase/server";
 
 const saveCaptureSchema = z.object({
   photoPath: z.string().min(1).max(200),
@@ -13,10 +17,12 @@ const saveCaptureSchema = z.object({
   nickname: z.string().trim().max(40).optional().nullable(),
   lat: z.number().min(-90).max(90).nullable(),
   lng: z.number().min(-180).max(180).nullable(),
+  coat_type: z.string().trim().max(40).optional().nullable(),
+  rarity: z.enum(["common", "uncommon", "rare", "epic"]).optional().nullable(),
 });
 
 export type SaveResult =
-  | { success: true; id: string }
+  | { success: true; id: string; newAchievements: Achievement[] }
   | { success: false; error: string };
 
 export async function saveCapture(input: unknown): Promise<SaveResult> {
@@ -35,14 +41,66 @@ export async function saveCapture(input: unknown): Promise<SaveResult> {
     return { success: false, error: "Invalid input." };
   }
 
-  const { photoPath, stickerPath, stickerUrl, nickname, lat, lng } = parsed.data;
+  const {
+    photoPath,
+    stickerPath,
+    stickerUrl,
+    nickname,
+    lat,
+    lng,
+    coat_type,
+    rarity: clientRarity,
+  } = parsed.data;
 
-  // Defense in depth: uploaded files must live under the user's own folder.
   if (
     !photoPath.startsWith(`${user.id}/`) ||
     !stickerPath.startsWith(`${user.id}/`)
   ) {
     return { success: false, error: "Invalid file path." };
+  }
+
+  let city: string | null = null;
+  let country: string | null = null;
+
+  if (lat != null && lng != null) {
+    const place = await reverseGeocode(lat, lng);
+    city = place.city;
+    country = place.country;
+  }
+
+  const { data: existingCaptures } = await supabase
+    .from("captures")
+    .select("city, country")
+    .eq("user_id", user.id);
+
+  const existingCities = new Set(
+    (existingCaptures ?? [])
+      .map((c) => c.city)
+      .filter((c): c is string => Boolean(c)),
+  );
+  const existingCountries = new Set(
+    (existingCaptures ?? [])
+      .map((c) => c.country)
+      .filter((c): c is string => Boolean(c)),
+  );
+
+  const normalizedCoat = coat_type?.trim() || null;
+  let rarity: Rarity | null = null;
+
+  if (normalizedCoat) {
+    const base = coatToRarity(normalizedCoat);
+    const withEpic = applyLocationEpicBonus(
+      base,
+      city,
+      country,
+      existingCities,
+      existingCountries,
+    );
+    rarity = clientRarity
+      ? maxRarity(clientRarity, withEpic)
+      : withEpic;
+  } else if (clientRarity) {
+    rarity = clientRarity;
   }
 
   const { data, error } = await supabase
@@ -54,15 +112,28 @@ export async function saveCapture(input: unknown): Promise<SaveResult> {
       nickname: nickname?.trim() || null,
       lat,
       lng,
+      city,
+      country,
+      coat_type: normalizedCoat,
+      rarity,
     })
-    .select("id")
+    .select("*")
     .single();
 
   if (error || !data) {
     return { success: false, error: "Failed to save your cat." };
   }
 
+  const newAchievements = await unlockAchievementsAfterSave(
+    supabase,
+    user.id,
+    data,
+  );
+
   revalidatePath("/home");
   revalidatePath("/catdex");
-  return { success: true, id: data.id };
+  revalidatePath("/map");
+  revalidatePath("/profile");
+
+  return { success: true, id: data.id, newAchievements };
 }

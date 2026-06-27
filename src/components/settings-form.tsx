@@ -1,0 +1,92 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ChevronLeft, MapPin } from "lucide-react";
+import { toast } from "sonner";
+
+import { backfillPlacesAction } from "@/app/(app)/settings/actions";
+import { CatButton } from "@/components/ui/cat-button";
+import { useSettingsStore } from "@/stores/settings";
+
+export function SettingsForm() {
+  const router = useRouter();
+  const gpsDefaultOn = useSettingsStore((s) => s.gpsDefaultOn);
+  const setGpsDefaultOn = useSettingsStore((s) => s.setGpsDefaultOn);
+
+  async function handleBackfill() {
+    const result = await backfillPlacesAction();
+    if (!result.success) {
+      toast.error(result.error ?? "Could not backfill places.");
+      return;
+    }
+    if (result.updated === 0) {
+      toast.info("All mapped catches already have place names.");
+    } else {
+      toast.success(`Updated ${result.updated} catch${result.updated === 1 ? "" : "es"} with place names.`);
+    }
+    router.refresh();
+  }
+
+  return (
+    <div className="flex flex-col gap-6 p-6 pb-28">
+      <header className="flex items-center gap-3">
+        <Link
+          href="/profile"
+          className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground"
+          aria-label="Back to profile"
+        >
+          <ChevronLeft className="size-5" />
+        </Link>
+        <h1 className="text-2xl font-extrabold text-foreground">Settings</h1>
+      </header>
+
+      <section className="space-y-3">
+        <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+          Location
+        </h2>
+        <button
+          type="button"
+          onClick={() => setGpsDefaultOn(!gpsDefaultOn)}
+          className="flex w-full items-center justify-between rounded-2xl border border-border bg-card p-4"
+        >
+          <span className="flex items-center gap-3">
+            <MapPin className="size-5 text-primary" />
+            <span className="text-left">
+              <span className="block font-semibold text-foreground">
+                Tag location by default
+              </span>
+              <span className="block text-xs text-muted-foreground">
+                Turn on GPS when saving new catches
+              </span>
+            </span>
+          </span>
+          <span
+            className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+              gpsDefaultOn ? "bg-primary" : "bg-muted-foreground/30"
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 size-5 rounded-full bg-white transition-transform ${
+                gpsDefaultOn ? "translate-x-5" : "translate-x-0.5"
+              }`}
+            />
+          </span>
+        </button>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+          Map data
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Fill in city and country for older catches that have GPS but no place
+          name yet.
+        </p>
+        <CatButton variant="outline" block onClick={handleBackfill}>
+          Backfill place names
+        </CatButton>
+      </section>
+    </div>
+  );
+}
