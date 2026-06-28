@@ -6,7 +6,7 @@ import { z } from "zod";
 import { unlockAchievementsAfterSave, type Achievement } from "@/lib/achievements";
 import { isCloudinaryAssetUrl } from "@/lib/cloudinary";
 import { progressMissionsAndBadgesAfterSave } from "@/lib/missions";
-import { applyLocationEpicBonus, coatToRarity, maxRarity } from "@/lib/coat-rarity";
+import { applyLocationEpicBonus, COAT_TYPES, coatToRarity, maxRarity } from "@/lib/coat-rarity";
 import { reverseGeocode } from "@/lib/geocode";
 import { isDemoSession } from "@/lib/auth";
 import { updateStreakOnSave } from "@/lib/retention";
@@ -18,9 +18,9 @@ const saveCaptureSchema = z.object({
   photoUrl: z.string().url(),
   stickerUrl: z.string().url(),
   nickname: z.string().trim().max(40).optional().nullable(),
-  lat: z.number().min(-90).max(90).nullable(),
-  lng: z.number().min(-180).max(180).nullable(),
-  coat_type: z.string().trim().max(40).optional().nullable(),
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+  coat_type: z.enum(COAT_TYPES).optional().nullable(),
   rarity: z.enum(["common", "uncommon", "rare", "epic"]).optional().nullable(),
 });
 
@@ -73,12 +73,10 @@ export async function saveCapture(input: unknown): Promise<SaveResult> {
   let country: string | null = null;
   let place_label: string | null = null;
 
-  if (lat != null && lng != null) {
-    const place = await reverseGeocode(lat, lng);
-    city = place.city;
-    country = place.country;
-    place_label = place.place_label;
-  }
+  const place = await reverseGeocode(lat, lng);
+  city = place.city;
+  country = place.country;
+  place_label = place.place_label;
 
   const { data: existingCaptures } = await supabase
     .from("captures")

@@ -9,6 +9,7 @@ export const COAT_TYPES = [
   "ginger",
   "brown tabby",
   "tuxedo",
+  "bicolor",
   "calico",
   "tortoiseshell",
   "pointed",

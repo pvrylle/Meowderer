@@ -208,3 +208,97 @@
   transform: scale(var(--card-scale));
   transform-origin: center center;
 }
+
+/* Catch review — card preview + bottom sheet, no overlap on short screens */
+.catch-review-layout {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.catch-preview-stage {
+  container-type: size;
+  container-name: catch-preview;
+  flex: 1 1 0;
+  min-height: 0;
+  max-height: min(42dvh, 20rem);
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0.25rem 0.75rem 0.375rem;
+}
+
+@media (min-height: 720px) {
+  .catch-preview-stage {
+    max-height: min(46dvh, 22rem);
+    align-items: center;
+    padding-bottom: 0.5rem;
+  }
+}
+
+.catch-preview-slot {
+  --catch-card-w: 17.5rem;
+  --catch-card-h: 24.5rem;
+  --catch-scale: min(
+    1,
+    calc(100cqh / var(--catch-card-h)),
+    calc(100cqw / var(--catch-card-w))
+  );
+  width: calc(var(--catch-card-w) * var(--catch-scale));
+  height: calc(var(--catch-card-h) * var(--catch-scale));
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.catch-preview-scale {
+  width: var(--catch-card-w);
+  flex-shrink: 0;
+  transform: scale(var(--catch-scale));
+  transform-origin: center center;
+}
+
+.catch-review-sheet {
+  flex: 0 1 auto;
+  min-height: min(14rem, 38dvh);
+  max-height: min(58dvh, 26rem);
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-height: 720px) {
+  .catch-review-sheet {
+    min-height: min(16rem, 36dvh);
+    max-height: min(52dvh, 28rem);
+  }
+}
+
+.catch-size-slider {
+  cursor: pointer;
+  appearance: none;
+  border-radius: 9999px;
+  background: var(--border);
+}
+
+.catch-size-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 9999px;
+  background: var(--primary);
+  box-shadow: 0 1px 4px rgba(58, 53, 80, 0.25);
+}
+
+.catch-size-slider::-moz-range-thumb {
+  width: 1rem;
+  height: 1rem;
+  border: none;
+  border-radius: 9999px;
+  background: var(--primary);
+  box-shadow: 0 1px 4px rgba(58, 53, 80, 0.25);
+}

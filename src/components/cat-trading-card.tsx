@@ -24,6 +24,8 @@ type CatTradingCardProps = {
   priority?: boolean;
   unoptimizedSticker?: boolean;
   sparkle?: boolean;
+  /** Visual scale of the sticker art inside the card (1 = default). */
+  stickerScale?: number;
 };
 
 function formatShortDate(iso: string): string {
@@ -100,6 +102,7 @@ export function CatTradingCard({
   priority,
   unoptimizedSticker,
   sparkle,
+  stickerScale = 1,
 }: CatTradingCardProps) {
   const isTcg = size === "tcg";
   const isLg = size === "lg";
@@ -175,22 +178,27 @@ export function CatTradingCard({
               !isLg && !isTcg && "aspect-square",
             )}
           >
-            <Image
-              src={stickerUrl}
-              alt={name}
-              fill
-              unoptimized={unoptimizedSticker}
-              priority={priority}
-              sizes={
-                isTcg || isLg
-                  ? "(max-width: 420px) 90vw, 360px"
-                  : "(max-width: 420px) 45vw, 200px"
-              }
-              className={cn(
-                "object-contain drop-shadow-[0_6px_10px_rgba(0,0,0,0.18)] transition-transform",
-                isTcg ? "p-3" : isLg ? "p-5" : "p-3",
-              )}
-            />
+            <div
+              className="absolute inset-0 flex items-center justify-center transition-transform duration-200"
+              style={{ transform: `scale(${stickerScale})` }}
+            >
+              <Image
+                src={stickerUrl}
+                alt={name}
+                fill
+                unoptimized={unoptimizedSticker}
+                priority={priority}
+                sizes={
+                  isTcg || isLg
+                    ? "(max-width: 420px) 90vw, 360px"
+                    : "(max-width: 420px) 45vw, 200px"
+                }
+                className={cn(
+                  "object-contain drop-shadow-[0_6px_10px_rgba(0,0,0,0.18)]",
+                  isTcg ? "p-3" : isLg ? "p-5" : "p-3",
+                )}
+              />
+            </div>
           </CardScene>
 
           {/* idle holographic shimmer on Epic cards */}
