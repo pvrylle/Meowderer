@@ -16,6 +16,8 @@ let pipelinePromise: Promise<ImageClassificationPipeline> | null = null;
 async function getClassifier(): Promise<ImageClassificationPipeline> {
   if (!pipelinePromise) {
     pipelinePromise = (async () => {
+      const { ensureSingleThreadWasm } = await import("./configure-wasm");
+      await ensureSingleThreadWasm();
       const { pipeline, env } = await import("@huggingface/transformers");
       env.allowLocalModels = false;
       env.useBrowserCache = true;

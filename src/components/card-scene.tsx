@@ -219,7 +219,7 @@ export function CardScene({
 }) {
   const Scene = SCENES[biome];
   return (
-    <div className={cn("relative overflow-hidden", className)}>
+    <div className={cn("relative overflow-hidden [transform:translateZ(0)]", className)}>
       <Scene />
 
       {sparkle && (

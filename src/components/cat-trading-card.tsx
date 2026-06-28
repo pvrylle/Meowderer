@@ -4,7 +4,7 @@ import { CalendarDays, Cat, MapPin, PawPrint, Star } from "lucide-react";
 import { CardScene } from "@/components/card-scene";
 import { catStats, charmRating, dexNumber, personalityTitle, pickBiome, type Biome, type CatStat } from "@/lib/cat-stats";
 import { capturePlaceLabel } from "@/lib/capture-place";
-import { rarityBanner, rarityFrame, rarityLabel } from "@/lib/rarity";
+import { rarityBanner, rarityCardBorder, rarityLabel } from "@/lib/rarity";
 import type { Capture, Rarity } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +26,8 @@ type CatTradingCardProps = {
   sparkle?: boolean;
   /** Visual scale of the sticker art inside the card (1 = default). */
   stickerScale?: number;
+  /** Extra classes on the outer frame (e.g. softer shadow in scaled previews). */
+  className?: string;
 };
 
 function formatShortDate(iso: string): string {
@@ -103,6 +105,7 @@ export function CatTradingCard({
   unoptimizedSticker,
   sparkle,
   stickerScale = 1,
+  className,
 }: CatTradingCardProps) {
   const isTcg = size === "tcg";
   const isLg = size === "lg";
@@ -112,30 +115,23 @@ export function CatTradingCard({
   return (
     <div
       className={cn(
-        "bg-gradient-to-b shadow-lg",
-        rarityFrame(rarity),
+        "flex flex-col overflow-hidden bg-white",
+        rarityCardBorder(rarity),
         showLegendaryBorder && "ring-2 ring-legendary/60",
-        isTcg && "aspect-[5/7] w-[17.5rem] rounded-[1.25rem] p-1 shadow-xl",
-        isLg && "rounded-[2rem] p-1.5 shadow-xl",
-        !isLg && !isTcg && "rounded-3xl p-1",
+        isTcg && "aspect-[5/7] w-[17.5rem] rounded-[1.25rem] border-[3px] p-1.5",
+        isLg && "rounded-[2rem] border-4 p-2 shadow-xl",
+        !isLg && !isTcg && "rounded-3xl border-[3px] p-1.5 shadow-lg",
+        className,
       )}
     >
-      <div
-        className={cn(
-          "flex flex-col bg-white/90",
-          isTcg && "h-full gap-1 rounded-[1rem] p-1.5",
-          isLg && "gap-2 rounded-[1.7rem] p-2",
-          !isLg && !isTcg && "gap-1.5 rounded-[1.35rem] p-1.5",
-        )}
-      >
         {/* name banner */}
         <div
           className={cn(
-            "flex shrink-0 items-center justify-between gap-2 border-2 border-white",
+            "flex shrink-0 items-center justify-between gap-2",
             rarityBanner(rarity),
-            isTcg && "rounded-lg px-2.5 py-1.5",
-            isLg && "rounded-2xl px-3 py-2",
-            !isLg && !isTcg && "rounded-xl px-2.5 py-1.5",
+            isTcg && "rounded-md px-2.5 py-1.5",
+            isLg && "rounded-xl px-3 py-2",
+            !isLg && !isTcg && "rounded-lg px-2.5 py-1.5",
           )}
         >
           <span
@@ -163,20 +159,16 @@ export function CatTradingCard({
         {/* art window */}
         <div
           className={cn(
-            "relative min-h-0 overflow-hidden border-2 border-white",
-            isTcg && "flex-1 rounded-lg",
-            isLg && "rounded-2xl",
-            !isLg && !isTcg && "rounded-xl",
+            "relative min-h-0 overflow-hidden",
+            isTcg && "mt-1 flex-1 rounded-md",
+            isLg && "mt-2 aspect-[4/5] w-full rounded-xl",
+            !isLg && !isTcg && "mt-1.5 aspect-square w-full rounded-lg",
           )}
         >
           <CardScene
             biome={biome}
             sparkle={sparkle ?? isEpic}
-            className={cn(
-              isTcg && "h-full min-h-0",
-              isLg && "aspect-[4/5]",
-              !isLg && !isTcg && "aspect-square",
-            )}
+            className="absolute inset-0 size-full"
           >
             <div
               className="absolute inset-0 flex items-center justify-center transition-transform duration-200"
@@ -209,7 +201,7 @@ export function CatTradingCard({
           {/* rarity ribbon */}
           <span
             className={cn(
-              "absolute right-0 top-2 rounded-l-full border-y-2 border-l-2 border-white font-bold uppercase tracking-wide text-foreground",
+              "absolute right-0 top-2 rounded-l-full font-bold uppercase tracking-wide text-foreground",
               isEpic ? "bg-legendary text-foreground" : rarityBanner(rarity),
               isTcg ? "px-2 py-0.5 text-[9px]" : isLg ? "px-2.5 py-0.5 text-[10px]" : "px-2 py-0.5 text-[9px]",
             )}
@@ -222,8 +214,8 @@ export function CatTradingCard({
         {isTcg || isLg ? (
           <div
             className={cn(
-              "shrink-0 rounded-2xl bg-white",
-              isTcg ? "space-y-1 px-2 py-1.5" : "space-y-2 px-3 py-2.5",
+              "shrink-0",
+              isTcg ? "mt-1 space-y-1 px-0.5 py-1" : "mt-2 space-y-2 px-1 py-2",
             )}
           >
             {stats && stats.length > 0 && (
@@ -284,7 +276,6 @@ export function CatTradingCard({
             )}
           </div>
         )}
-      </div>
     </div>
   );
 }

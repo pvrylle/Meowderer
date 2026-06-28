@@ -1,3 +1,4 @@
+import { runWithSingleThreadWasm } from "./configure-wasm";
 import { addStickerOutline } from "./outline";
 
 export type CaptureStage =
@@ -41,19 +42,21 @@ export async function processCatPhoto(
     maxSizeMB: 0.8,
     fileType: "image/jpeg",
     initialQuality: 0.8,
-    useWebWorker: true,
+    useWebWorker: false,
   });
 
   onProgress?.({ stage: "removing", label: "Removing background…", pct: 20 });
 
   const { removeBackground } = await import("@imgly/background-removal");
 
-  const cutout = await removeBackground(file, {
-    progress: (_key, current, total) => {
-      const pct = 20 + Math.round((current / Math.max(total, 1)) * 50);
-      onProgress?.({ stage: "removing", label: "Removing background…", pct });
-    },
-  });
+  const cutout = await runWithSingleThreadWasm(() =>
+    removeBackground(file, {
+      progress: (_key, current, total) => {
+        const pct = 20 + Math.round((current / Math.max(total, 1)) * 50);
+        onProgress?.({ stage: "removing", label: "Removing background…", pct });
+      },
+    }),
+  );
 
   onProgress?.({ stage: "outlining", label: "Adding sticker outline…", pct: 75 });
 
@@ -68,7 +71,7 @@ export async function processCatPhoto(
       maxSizeMB: 0.4,
       fileType: "image/webp",
       initialQuality: 0.9,
-      useWebWorker: true,
+      useWebWorker: false,
     },
   );
 

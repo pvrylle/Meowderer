@@ -1,7 +1,7 @@
 import { CalendarDays, MapPin, PawPrint, RotateCcw } from "lucide-react";
 
 import { BIOME_LABEL, type Biome, type CatStat } from "@/lib/cat-stats";
-import { rarityBanner, rarityFrame, rarityLabel } from "@/lib/rarity";
+import { rarityBanner, rarityCardBorder, rarityLabel } from "@/lib/rarity";
 import type { Rarity } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 
@@ -55,11 +55,10 @@ export function CardBack({
   return (
     <div
       className={cn(
-        "flex h-full flex-col rounded-[1.25rem] bg-gradient-to-b p-1 shadow-xl",
-        rarityFrame(rarity),
+        "flex h-full flex-col gap-2 overflow-hidden rounded-[1.25rem] border-[3px] bg-white p-2 shadow-xl",
+        rarityCardBorder(rarity),
       )}
     >
-      <div className="flex h-full flex-col gap-2 rounded-[1rem] bg-white/92 p-2">
         <div className="flex items-center justify-between gap-2">
           <span className="truncate text-sm font-extrabold text-foreground">
             {name}
@@ -73,7 +72,7 @@ export function CardBack({
 
         <div
           className={cn(
-            "rounded-lg border-2 border-white px-2 py-1 text-center text-[9px] font-bold uppercase tracking-wide text-foreground",
+            "rounded-md px-2 py-1 text-center text-[9px] font-bold uppercase tracking-wide text-foreground",
             rarityBanner(rarity),
           )}
         >
@@ -117,7 +116,6 @@ export function CardBack({
           <RotateCcw className="size-3" />
           Tap to flip back
         </p>
-      </div>
     </div>
   );
 }

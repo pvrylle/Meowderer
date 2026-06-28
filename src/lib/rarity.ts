@@ -27,12 +27,12 @@ export function rarityTint(rarity: Rarity | null) {
   return rarity ? RARITY_TINT[rarity] : "bg-muted";
 }
 
-// Outer trading-card frame gradient per tier (literal classes so Tailwind keeps them).
-export const RARITY_FRAME: Record<Rarity, string> = {
-  common: "from-common to-common/50",
-  uncommon: "from-uncommon to-uncommon/50",
-  rare: "from-rare to-rare/50",
-  epic: "from-epic to-epic/50",
+// Solid outer border per tier (single-layer frame — no gradient padding ring).
+export const RARITY_CARD_BORDER: Record<Rarity, string> = {
+  common: "border-common",
+  uncommon: "border-uncommon",
+  rare: "border-rare",
+  epic: "border-epic",
 };
 
 // Solid-ish name banner background per tier.
@@ -43,8 +43,22 @@ export const RARITY_BANNER: Record<Rarity, string> = {
   epic: "bg-epic",
 };
 
-const NEUTRAL_FRAME = "from-secondary to-secondary/50";
+const NEUTRAL_BORDER = "border-secondary";
 const NEUTRAL_BANNER = "bg-secondary";
+
+/** @deprecated Use rarityCardBorder — gradient padding rings cause corner fringing. */
+export const RARITY_FRAME: Record<Rarity, string> = {
+  common: "from-common to-common/50",
+  uncommon: "from-uncommon to-uncommon/50",
+  rare: "from-rare to-rare/50",
+  epic: "from-epic to-epic/50",
+};
+
+const NEUTRAL_FRAME = "from-secondary to-secondary/50";
+
+export function rarityCardBorder(rarity: Rarity | null) {
+  return rarity ? RARITY_CARD_BORDER[rarity] : NEUTRAL_BORDER;
+}
 
 export function rarityFrame(rarity: Rarity | null) {
   return rarity ? RARITY_FRAME[rarity] : NEUTRAL_FRAME;

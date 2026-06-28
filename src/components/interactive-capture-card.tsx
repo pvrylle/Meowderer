@@ -46,6 +46,7 @@ export function InteractiveCaptureCard({ capture }: { capture: Capture }) {
         biome={biome}
         size="tcg"
         priority
+        className="shadow-none shadow-[0_4px_14px_rgba(58,53,80,0.1)]"
       />
     </InteractiveCard>
   );
