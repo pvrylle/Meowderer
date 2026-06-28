@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Cat, Globe, MapPin, Palette, Settings, Target, Users } from "lucide-react";
+import { Cat, Globe, Map, MapPin, Palette, Settings, Target, Users } from "lucide-react";
 
 import { signOut } from "@/app/auth/actions";
 import { AchievementsGrid } from "@/components/achievements-grid";
@@ -75,6 +75,20 @@ export default async function ProfilePage() {
       <section className="space-y-3">
         <h2 className="text-lg font-extrabold text-foreground">Explore</h2>
         <div className="grid grid-cols-2 gap-3">
+          <Link
+            href="/home"
+            className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 transition-colors active:bg-muted/50"
+          >
+            <Cat className="size-5 shrink-0 text-primary" />
+            <span className="text-sm font-bold text-foreground">Home</span>
+          </Link>
+          <Link
+            href="/map"
+            className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 transition-colors active:bg-muted/50"
+          >
+            <Map className="size-5 shrink-0 text-primary" />
+            <span className="text-sm font-bold text-foreground">Map</span>
+          </Link>
           <Link
             href="/missions"
             className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 transition-colors active:bg-muted/50"

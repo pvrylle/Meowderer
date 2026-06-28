@@ -17,12 +17,14 @@ export default async function CatDexPage() {
 
   let helpedIds: string[] = [];
   let rescuedIds: string[] = [];
+  let seenIds: string[] = [];
 
   if (user) {
     const supabase = await createClient();
     const tags = await getCaptureCommunityTags(supabase, user.id, captures);
     helpedIds = [...tags.helpedIds];
     rescuedIds = [...tags.rescuedIds];
+    seenIds = [...tags.seenIds];
   }
 
   return (
@@ -72,6 +74,7 @@ export default async function CatDexPage() {
       ) : (
         <CatDexGrid
           captures={captures}
+          seenIds={seenIds}
           helpedIds={helpedIds}
           rescuedIds={rescuedIds}
         />

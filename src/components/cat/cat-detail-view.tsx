@@ -3,6 +3,8 @@ import { ArrowLeft } from "lucide-react";
 
 import { CatDetailDock } from "@/components/cat/cat-detail-dock";
 import { InteractiveCaptureCard } from "@/components/interactive-capture-card";
+import { NamePollCard } from "@/components/name-poll-card";
+import type { NamePollWithCounts } from "@/app/(app)/cat/[id]/poll-actions";
 import { dexNumber, pickBiome } from "@/lib/cat-stats";
 import type { Capture } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
@@ -18,7 +20,15 @@ const BIOME_HERO: Record<
   snow: "from-rare/15 via-muted/40 to-card",
 };
 
-export function CatDetailView({ capture }: { capture: Capture }) {
+export function CatDetailView({
+  capture,
+  poll,
+  isOwner,
+}: {
+  capture: Capture;
+  poll: NamePollWithCounts | null;
+  isOwner: boolean;
+}) {
   const biome = pickBiome(capture);
   const dex = dexNumber(capture.id);
 
@@ -56,6 +66,8 @@ export function CatDetailView({ capture }: { capture: Capture }) {
           </div>
         </div>
       </div>
+
+      <NamePollCard capture={capture} poll={poll} isOwner={isOwner} />
 
       <CatDetailDock capture={capture} />
     </div>

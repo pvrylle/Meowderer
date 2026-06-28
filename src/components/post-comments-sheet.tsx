@@ -11,6 +11,7 @@ import {
 import { UserAvatar } from "@/components/user-avatar";
 import { CatButton } from "@/components/ui/cat-button";
 import type { CommentWithAuthor } from "@/lib/community";
+import { formatRelativeTime } from "@/lib/format-time";
 
 type PostCommentsSheetProps = {
   postId: string | null;
@@ -120,12 +121,7 @@ export function PostCommentsSheet({
                     </p>
                     <p className="text-sm text-foreground">{c.body}</p>
                     <p className="text-[10px] text-muted-foreground">
-                      {new Date(c.created_at).toLocaleString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })}
+                      {formatRelativeTime(c.created_at)}
                     </p>
                   </div>
                 </li>

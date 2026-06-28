@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Zap } from "lucide-react";
+import { Check, Zap } from "lucide-react";
 import { toast } from "sonner";
 
 import { claimMissionAction } from "@/app/(app)/missions/actions";
 import { CatButton } from "@/components/ui/cat-button";
+import { MissionIcon } from "@/lib/mission-icons";
 import type { UserMission } from "@/lib/mission-types";
 import { cn } from "@/lib/utils";
 
@@ -57,14 +58,25 @@ export function MissionsList({ missions }: MissionsListProps) {
             )}
           >
             <div className="flex items-start gap-3">
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-xl">
-                {mission.icon ?? "🎯"}
+              <div
+                className={cn(
+                  "flex size-11 shrink-0 items-center justify-center rounded-xl",
+                  complete && !claimed
+                    ? "bg-green/15 text-green"
+                    : "bg-primary/15 text-primary",
+                )}
+              >
+                {complete && !claimed ? (
+                  <Check className="size-5" strokeWidth={2.5} />
+                ) : (
+                  <MissionIcon missionId={mission.id} className="size-5" />
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-bold text-foreground">{mission.title}</p>
-                  <span className="flex shrink-0 items-center gap-0.5 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
-                    <Zap className="size-3" />
+                  <span className="flex shrink-0 items-center gap-0.5 rounded-full bg-legendary/20 px-2 py-0.5 text-xs font-bold text-legendary">
+                    <Zap className="size-3 fill-legendary" />
                     {mission.xp_reward}XP
                   </span>
                 </div>

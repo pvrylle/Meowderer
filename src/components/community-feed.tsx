@@ -14,6 +14,7 @@ import { PostCommentsSheet } from "@/components/post-comments-sheet";
 import { UserAvatar } from "@/components/user-avatar";
 import { CatButton } from "@/components/ui/cat-button";
 import { uploadPostImage } from "@/lib/community-upload";
+import { formatRelativeTime } from "@/lib/format-time";
 import type { PostWithAuthor } from "@/lib/community";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +25,12 @@ const CATEGORY_STYLE: Record<string, string> = {
   general: "bg-primary/15 text-primary",
 };
 
+const COMPOSE_CATEGORIES = [
+  { key: "sighting" as const, label: "Sighting" },
+  { key: "shelter" as const, label: "Shelter" },
+  { key: "rescue" as const, label: "Rescue" },
+];
+
 type CommunityFeedProps = {
   posts: PostWithAuthor[];
 };
@@ -33,6 +40,7 @@ export function CommunityFeed({ posts: initialPosts }: CommunityFeedProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [posts, setPosts] = useState(initialPosts);
   const [body, setBody] = useState("");
+  const [category, setCategory] = useState<(typeof COMPOSE_CATEGORIES)[number]["key"]>("sighting");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
@@ -87,7 +95,7 @@ export function CommunityFeed({ posts: initialPosts }: CommunityFeedProps) {
       }
       const result = await createPostAction({
         body: body.trim(),
-        category: "sighting",
+        category,
         imagePath,
       });
       if (!result.success) {
@@ -130,6 +138,23 @@ export function CommunityFeed({ posts: initialPosts }: CommunityFeedProps) {
           className="w-full resize-none bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           required
         />
+        <div className="flex flex-wrap gap-2">
+          {COMPOSE_CATEGORIES.map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setCategory(key)}
+              className={cn(
+                "rounded-full px-3 py-1 text-xs font-bold capitalize transition-colors",
+                category === key
+                  ? CATEGORY_STYLE[key]
+                  : "border border-border bg-muted/40 text-muted-foreground",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         {imagePreview && (
           <div className="relative overflow-hidden rounded-xl">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -185,12 +210,7 @@ export function CommunityFeed({ posts: initialPosts }: CommunityFeedProps) {
                 <div>
                   <p className="font-bold text-foreground">{post.author_name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(post.created_at).toLocaleString(undefined, {
-                      hour: "numeric",
-                      minute: "2-digit",
-                      month: "short",
-                      day: "numeric",
-                    })}
+                    {formatRelativeTime(post.created_at)}
                   </p>
                 </div>
               </div>
@@ -245,9 +265,9 @@ export function CommunityFeed({ posts: initialPosts }: CommunityFeedProps) {
                 type="button"
                 onClick={() => handleShare(post)}
                 className="flex items-center gap-1 text-xs font-semibold"
+                aria-label="Share post"
               >
                 <Share2 className="size-4" />
-                Share
               </button>
             </div>
           </article>

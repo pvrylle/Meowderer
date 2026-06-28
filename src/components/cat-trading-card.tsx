@@ -2,15 +2,8 @@ import Image from "next/image";
 import { CalendarDays, Cat, MapPin, PawPrint, Star } from "lucide-react";
 
 import { CardScene } from "@/components/card-scene";
-import {
-  catStats,
-  charmRating,
-  dexNumber,
-  personalityTitle,
-  pickBiome,
-  type Biome,
-  type CatStat,
-} from "@/lib/cat-stats";
+import { catStats, charmRating, dexNumber, personalityTitle, pickBiome, type Biome, type CatStat } from "@/lib/cat-stats";
+import { capturePlaceLabel } from "@/lib/capture-place";
 import { rarityBanner, rarityFrame, rarityLabel } from "@/lib/rarity";
 import type { Capture, Rarity } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
@@ -298,7 +291,7 @@ export function CaptureCard({
   size?: "sm" | "lg" | "tcg";
   priority?: boolean;
 }) {
-  const place = [capture.city, capture.country].filter(Boolean).join(", ") || null;
+  const place = capturePlaceLabel(capture);
 
   return (
     <CatTradingCard

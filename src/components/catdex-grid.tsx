@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 
 type StatusFilter =
   | "all"
+  | "seen"
   | "photographed"
   | "geotagged"
   | "rare"
@@ -18,12 +19,14 @@ type StatusFilter =
 
 type CatDexGridProps = {
   captures: Capture[];
+  seenIds?: string[];
   helpedIds?: string[];
   rescuedIds?: string[];
 };
 
 const STATUS_TABS: { key: StatusFilter; label: string }[] = [
   { key: "all", label: "All" },
+  { key: "seen", label: "Seen" },
   { key: "photographed", label: "Photographed" },
   { key: "geotagged", label: "Geotagged" },
   { key: "rare", label: "Rare+" },
@@ -34,10 +37,13 @@ const STATUS_TABS: { key: StatusFilter; label: string }[] = [
 function filterByStatus(
   captures: Capture[],
   status: StatusFilter,
+  seenSet: Set<string>,
   helpedSet: Set<string>,
   rescuedSet: Set<string>,
 ): Capture[] {
   switch (status) {
+    case "seen":
+      return captures.filter((c) => seenSet.has(c.id));
     case "photographed":
       return captures;
     case "geotagged":
@@ -55,17 +61,20 @@ function filterByStatus(
 
 export function CatDexGrid({
   captures,
+  seenIds = [],
   helpedIds = [],
   rescuedIds = [],
 }: CatDexGridProps) {
   const [status, setStatus] = useState<StatusFilter>("all");
 
+  const seenSet = useMemo(() => new Set(seenIds), [seenIds]);
   const helpedSet = useMemo(() => new Set(helpedIds), [helpedIds]);
   const rescuedSet = useMemo(() => new Set(rescuedIds), [rescuedIds]);
 
   const filtered = useMemo(
-    () => filterByStatus(captures, status, helpedSet, rescuedSet),
-    [captures, status, helpedSet, rescuedSet],
+    () =>
+      filterByStatus(captures, status, seenSet, helpedSet, rescuedSet),
+    [captures, status, seenSet, helpedSet, rescuedSet],
   );
 
   const placeholderCount =
@@ -93,11 +102,13 @@ export function CatDexGrid({
 
       {filtered.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-border bg-card/50 px-4 py-10 text-center text-sm text-muted-foreground">
-          {status === "helped"
-            ? "No helped cats yet — visit a shelter on the map or check in nearby."
-            : status === "rescued"
-              ? "No rescue stories yet — share a catch as a rescue story from its detail page."
-              : "No cats match this filter."}
+          {status === "seen"
+            ? "No shared sightings yet — share a catch to Community to mark it as seen."
+            : status === "helped"
+              ? "No helped cats yet — visit a shelter on the map or check in nearby."
+              : status === "rescued"
+                ? "No rescue stories yet — share a catch as a rescue story from its detail page."
+                : "No cats match this filter."}
         </p>
       ) : (
         <div className="grid grid-cols-2 gap-4">

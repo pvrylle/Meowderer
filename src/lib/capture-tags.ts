@@ -11,6 +11,7 @@ type Supabase = SupabaseClient<Database>;
 export type CaptureCommunityTags = {
   helpedIds: Set<string>;
   rescuedIds: Set<string>;
+  seenIds: Set<string>;
 };
 
 const HELPED_RADIUS_M = 500;
@@ -33,8 +34,11 @@ export async function getCaptureCommunityTags(
   ]);
 
   const rescuedIds = new Set<string>();
+  const seenIds = new Set<string>();
   for (const post of posts ?? []) {
-    if (post.capture_id && post.category === "rescue") {
+    if (!post.capture_id) continue;
+    seenIds.add(post.capture_id);
+    if (post.category === "rescue") {
       rescuedIds.add(post.capture_id);
     }
   }
@@ -60,5 +64,5 @@ export async function getCaptureCommunityTags(
     }
   }
 
-  return { helpedIds, rescuedIds };
+  return { helpedIds, rescuedIds, seenIds };
 }

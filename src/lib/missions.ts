@@ -35,6 +35,7 @@ export function computeMetrics(captures: Capture[]): MetricSnapshot {
     rare_catches: rare.length,
     shelter_visits: 0,
     verify_rescue: 0,
+    name_votes: 0,
   };
 }
 
@@ -45,7 +46,8 @@ export async function computeExtendedMetrics(
 ): Promise<MetricSnapshot> {
   const base = computeMetrics(captures);
 
-  const [{ count: shelterVisits }, { count: verifyRescue }] = await Promise.all([
+  const [{ count: shelterVisits }, { count: verifyRescue }, { count: nameVotes }] =
+    await Promise.all([
     supabase
       .from("user_shelter_visits")
       .select("*", { count: "exact", head: true })
@@ -54,12 +56,17 @@ export async function computeExtendedMetrics(
       .from("rescue_alerts")
       .select("*", { count: "exact", head: true })
       .eq("resolved_by", userId),
+    supabase
+      .from("name_poll_votes")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId),
   ]);
 
   return {
     ...base,
     shelter_visits: shelterVisits ?? 0,
     verify_rescue: verifyRescue ?? 0,
+    name_votes: nameVotes ?? 0,
   };
 }
 

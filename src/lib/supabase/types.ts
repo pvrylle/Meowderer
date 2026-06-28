@@ -21,6 +21,7 @@ export type Capture = {
   lng: number | null;
   city: string | null;
   country: string | null;
+  place_label: string | null;
   coat_type: string | null;
   rarity: Rarity | null;
   nickname: string | null;
@@ -36,6 +37,7 @@ export type CaptureInsert = {
   lng?: number | null;
   city?: string | null;
   country?: string | null;
+  place_label?: string | null;
   coat_type?: string | null;
   rarity?: Rarity | null;
   nickname?: string | null;
@@ -120,6 +122,22 @@ export type UserShelterVisit = {
   lng: number;
   name: string | null;
   visited_at: string;
+};
+
+export type NamePoll = {
+  id: string;
+  capture_id: string;
+  user_id: string;
+  option_a: string;
+  option_b: string;
+  created_at: string;
+};
+
+export type NamePollVote = {
+  poll_id: string;
+  user_id: string;
+  choice: "a" | "b";
+  created_at: string;
 };
 
 export type Database = {
@@ -232,6 +250,30 @@ export type Database = {
           visited_at?: string;
         };
         Update: Partial<UserShelterVisit>;
+        Relationships: [];
+      };
+      name_polls: {
+        Row: NamePoll;
+        Insert: {
+          capture_id: string;
+          user_id: string;
+          option_a: string;
+          option_b: string;
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<Pick<NamePoll, "option_a" | "option_b">>;
+        Relationships: [];
+      };
+      name_poll_votes: {
+        Row: NamePollVote;
+        Insert: {
+          poll_id: string;
+          user_id: string;
+          choice: "a" | "b";
+          created_at?: string;
+        };
+        Update: Partial<{ choice: "a" | "b" }>;
         Relationships: [];
       };
       chat_messages: {

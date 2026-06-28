@@ -3,6 +3,7 @@ import "server-only";
 export type GeocodeResult = {
   city: string | null;
   country: string | null;
+  place_label: string | null;
 };
 
 const CACHE = new Map<string, GeocodeResult>();
@@ -23,6 +24,19 @@ async function throttle(): Promise<void> {
     await new Promise((r) => setTimeout(r, MIN_INTERVAL_MS - elapsed));
   }
   lastRequestAt = Date.now();
+}
+
+function pickPlaceLabel(address: Record<string, string | undefined>): string | null {
+  return (
+    address.suburb ??
+    address.neighbourhood ??
+    address.quarter ??
+    address.village ??
+    address.hamlet ??
+    address.road ??
+    address.pedestrian ??
+    null
+  );
 }
 
 function pickCity(address: Record<string, string | undefined>): string | null {
@@ -59,7 +73,7 @@ export async function reverseGeocode(
   url.searchParams.set("lon", String(lng));
   url.searchParams.set("format", "json");
   url.searchParams.set("addressdetails", "1");
-  url.searchParams.set("zoom", "10");
+  url.searchParams.set("zoom", "16");
 
   const res = await fetch(url.toString(), {
     headers: {
@@ -70,7 +84,7 @@ export async function reverseGeocode(
   });
 
   if (!res.ok) {
-    return { city: null, country: null };
+    return { city: null, country: null, place_label: null };
   }
 
   const data = (await res.json()) as {
@@ -81,6 +95,7 @@ export async function reverseGeocode(
   const result: GeocodeResult = {
     city: pickCity(address),
     country: address.country ?? null,
+    place_label: pickPlaceLabel(address),
   };
 
   CACHE.set(key, result);

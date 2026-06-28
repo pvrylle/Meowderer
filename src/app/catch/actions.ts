@@ -71,11 +71,13 @@ export async function saveCapture(input: unknown): Promise<SaveResult> {
 
   let city: string | null = null;
   let country: string | null = null;
+  let place_label: string | null = null;
 
   if (lat != null && lng != null) {
     const place = await reverseGeocode(lat, lng);
     city = place.city;
     country = place.country;
+    place_label = place.place_label;
   }
 
   const { data: existingCaptures } = await supabase
@@ -125,6 +127,7 @@ export async function saveCapture(input: unknown): Promise<SaveResult> {
       lng,
       city,
       country,
+      place_label,
       coat_type: normalizedCoat,
       rarity,
     })

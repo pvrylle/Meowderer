@@ -1,4 +1,5 @@
 import { xpForBadgeLevel } from "@/lib/xp";
+import { BadgeIcon } from "@/lib/mission-icons";
 import type { UserBadge } from "@/lib/mission-types";
 import { cn } from "@/lib/utils";
 
@@ -34,10 +35,10 @@ export function BadgesGrid({ badges }: BadgesGridProps) {
             )}
           >
             <div
-              className="relative flex size-14 items-center justify-center rounded-2xl text-2xl"
+              className="relative flex size-14 items-center justify-center rounded-2xl text-primary"
               style={{ backgroundColor: badge.color ?? "#d9ccf6" }}
             >
-              {badge.icon ?? "🏆"}
+              <BadgeIcon badgeId={badge.id} className="size-6" />
               {unlocked && (
                 <span className="absolute -bottom-1 -right-1 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-bold text-primary-foreground">
                   Lv.{badge.level}

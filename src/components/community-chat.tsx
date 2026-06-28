@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { sendChatAction } from "@/app/(app)/community/actions";
 import { UserAvatar } from "@/components/user-avatar";
 import type { ChatMessageWithAuthor } from "@/lib/community";
+import { formatChatTime } from "@/lib/format-time";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -210,10 +211,7 @@ export function CommunityChat({
                     {msg.body}
                   </div>
                   <span className="text-[10px] text-muted-foreground">
-                    {new Date(msg.created_at).toLocaleTimeString(undefined, {
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })}
+                    {formatChatTime(msg.created_at)}
                   </span>
                 </div>
               </div>

@@ -74,8 +74,8 @@
   --green: #8fd6a6;
   --orange: #f6a96b;
 
-  /* FAB floats above tab bar into the scroll area */
-  --nav-clearance: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  /* FAB floats above tab bar into the scroll area (3 tabs per side + center FAB) */
+  --nav-clearance: calc(5rem + env(safe-area-inset-bottom, 0px));
 
   /* Rarity tiers (PRD section 9 + screen mockups) */
   --common: #c9d3e3;
