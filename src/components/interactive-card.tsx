@@ -47,7 +47,7 @@ export function InteractiveCard({
 
     if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     rafRef.current = requestAnimationFrame(() => {
-      const max = 10;
+      const max = 8;
       el.style.setProperty("--rx", `${(0.5 - py) * 2 * max}deg`);
       el.style.setProperty("--ry", `${(px - 0.5) * 2 * max}deg`);
       el.style.setProperty("--mx", `${Math.max(0, Math.min(1, px)) * 100}%`);

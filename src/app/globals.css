@@ -128,6 +128,103 @@
   .holo-idle {
     animation: none;
   }
+
+  .epic-foil-frame,
+  .epic-holo-sheen {
+    animation: none;
+  }
+}
+
+/* Epic card — cosmic holo foil */
+@keyframes epic-foil {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.epic-foil-frame {
+  background: linear-gradient(
+    135deg,
+    #a855f7,
+    #22d3ee,
+    #ec4899,
+    #8b5cf6,
+    #06b6d4,
+    #d946ef
+  );
+  background-size: 400% 400%;
+  animation: epic-foil 5s ease-in-out infinite;
+}
+
+.epic-starfield {
+  background-color: #160d2e;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 18%, rgba(255, 255, 255, 0.55), transparent),
+    radial-gradient(1px 1px at 78% 12%, rgba(255, 255, 255, 0.45), transparent),
+    radial-gradient(1.5px 1.5px at 88% 72%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1px 1px at 32% 82%, rgba(255, 255, 255, 0.35), transparent),
+    radial-gradient(1px 1px at 55% 45%, rgba(255, 255, 255, 0.25), transparent),
+    radial-gradient(ellipse at 50% 0%, rgba(168, 85, 247, 0.35), transparent 55%),
+    radial-gradient(ellipse at 80% 100%, rgba(34, 211, 238, 0.15), transparent 45%);
+}
+
+.epic-art-glow {
+  box-shadow:
+    inset 0 0 20px rgba(168, 85, 247, 0.35),
+    0 0 16px rgba(236, 72, 153, 0.25);
+}
+
+.epic-badge {
+  background: linear-gradient(135deg, #a855f7, #ec4899, #22d3ee);
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.6);
+}
+
+.epic-strip {
+  background: linear-gradient(
+    90deg,
+    rgba(168, 85, 247, 0.35),
+    rgba(236, 72, 153, 0.25),
+    rgba(34, 211, 238, 0.2)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.epic-panel {
+  background: linear-gradient(
+    180deg,
+    rgba(46, 16, 101, 0.85) 0%,
+    rgba(22, 13, 46, 0.95) 100%
+  );
+}
+
+.epic-stat-fill {
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.5);
+}
+
+.epic-holo-sheen {
+  background-image: linear-gradient(
+    125deg,
+    transparent 20%,
+    rgba(255, 120, 220, 0.15),
+    rgba(120, 210, 255, 0.2),
+    rgba(180, 140, 255, 0.15),
+    transparent 80%
+  );
+  background-size: 250% 250%;
+  mix-blend-mode: color-dodge;
+  animation: epic-foil 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.epic-stat-row {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(4px);
 }
 
 /* MapLibre controls — keep above bottom nav on mobile */
@@ -185,7 +282,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.25rem 1rem 0.5rem;
+  /* Extra inset so 3D tilt / flip doesn't clip corners */
+  padding: 1.25rem 1.5rem 1rem;
   background: var(--background);
 }
 
@@ -193,14 +291,19 @@
   /* Standard TCG ratio: 2.5 × 3.5 in → 5:7 (Pokémon card proportions) */
   --card-design-w: 17.5rem;
   --card-design-h: 24.5rem;
-  --card-scale: min(1, calc(100cqh / var(--card-design-h)), calc(100cqw / var(--card-design-w)));
+  --card-tilt-pad: 2.5rem;
+  --card-scale: min(
+    1,
+    calc((100cqh - var(--card-tilt-pad)) / var(--card-design-h)),
+    calc((100cqw - var(--card-tilt-pad)) / var(--card-design-w))
+  );
   flex: 0 0 auto;
   width: calc(var(--card-design-w) * var(--card-scale));
   height: calc(var(--card-design-h) * var(--card-scale));
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .cat-detail-card-scale {

@@ -13,10 +13,15 @@ export default function HomeLoading() {
       </div>
       <Skeleton className="h-24 rounded-2xl" />
       <div className="space-y-3">
-        <Skeleton className="h-4 w-20" />
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-4 w-24" />
+        </div>
         <div className="grid grid-cols-2 gap-3">
-          <Skeleton className="aspect-[5/7] rounded-xl" />
-          <Skeleton className="aspect-[5/7] rounded-xl" />
+          <Skeleton className="aspect-[5/7] rounded-2xl" />
+          <Skeleton className="aspect-[5/7] rounded-2xl" />
+          <Skeleton className="aspect-[5/7] rounded-2xl" />
+          <Skeleton className="aspect-[5/7] rounded-2xl" />
         </div>
       </div>
     </div>

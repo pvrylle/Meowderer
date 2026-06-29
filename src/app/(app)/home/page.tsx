@@ -1,10 +1,12 @@
 import Link from "next/link";
-import { Camera, ChevronRight, Flame, Sparkles, Target } from "lucide-react";
+import { Camera, ChevronRight, Flame, Globe, MapPin, Palette, Target } from "lucide-react";
 
 import { BrandMark } from "@/components/brand-mark";
 import { CatCard } from "@/components/cat-card";
+import { DexPlaceholderCard } from "@/components/dex-placeholder-card";
 import { MascotEmpty } from "@/components/mascot-empty";
 import { CatButton } from "@/components/ui/cat-button";
+import { computeCollectionProgress } from "@/lib/collection-progress";
 import { getCurrentUser } from "@/lib/auth";
 import { getCaptures } from "@/lib/captures";
 import { countCapturesToday } from "@/lib/retention";
@@ -13,7 +15,7 @@ import { createClient } from "@/lib/supabase/server";
 export default async function HomePage() {
   const user = await getCurrentUser();
   const captures = await getCaptures();
-  const recent = captures.slice(0, 4);
+  const progress = computeCollectionProgress(captures);
 
   let streakCount = 0;
   let dailyGoal = 1;
@@ -31,116 +33,116 @@ export default async function HomePage() {
 
   const todayCount = countCapturesToday(captures.map((c) => c.caught_at));
   const goalDone = todayCount >= dailyGoal;
+  const placeholderCount = captures.length < 6 ? Math.min(2, 6 - captures.length) : 0;
 
   return (
-    <div className="flex flex-col pb-nav">
+    <div className="flex flex-col gap-5 px-5 pb-nav pt-4">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-4">
-        <BrandMark variant="logo" className="h-10 w-auto" priority />
+      <header className="flex items-center justify-between">
+        <BrandMark variant="logo" className="h-9 w-auto" priority />
         <Link
-          href="/catdex"
+          href="/profile"
           className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-semibold text-primary"
         >
-          <Sparkles className="size-4" />
-          {captures.length}
+          {progress.uniqueCoats}/{progress.totalCoatTypes} coats
         </Link>
-      </div>
+      </header>
 
-      {/* Stats */}
-      <div className="mt-5 grid grid-cols-2 gap-3 px-5">
+      {/* Stats row */}
+      <div className="grid grid-cols-2 gap-3">
         {/* Streak */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange/20 to-orange/5 p-4">
-          <div className="relative z-10">
-            <div className="flex items-center gap-2">
-              <Flame className="size-5 text-orange" fill="currentColor" />
-              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Streak
-              </span>
-            </div>
-            <p className="mt-1 text-2xl font-bold text-foreground">
-              {streakCount > 0 ? `${streakCount}` : "0"}
-              <span className="ml-1 text-sm font-medium text-muted-foreground">
-                {streakCount === 1 ? "day" : "days"}
-              </span>
+        <div className="flex items-center gap-3 rounded-2xl bg-orange/10 p-3">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-orange/20">
+            <Flame className="size-5 text-orange" fill="currentColor" />
+          </div>
+          <div>
+            <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              Streak
+            </p>
+            <p className="text-lg font-bold leading-tight text-foreground">
+              {streakCount > 0 ? `${streakCount}d` : "—"}
             </p>
           </div>
-          <div className="absolute -right-4 -top-4 size-20 rounded-full bg-orange/10 blur-2xl" />
         </div>
 
         {/* Daily goal */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green/20 to-green/5 p-4">
-          <div className="relative z-10">
+        <div className="flex items-center gap-3 rounded-2xl bg-green/10 p-3">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-green/20">
+            <Target className="size-5 text-green" />
+          </div>
+          <div className="flex-1">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Target className="size-5 text-green" />
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Today
-                </span>
-              </div>
-              <span className="text-sm font-bold text-green">
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                Today
+              </p>
+              <span className="text-xs font-bold text-green">
                 {todayCount}/{dailyGoal}
               </span>
             </div>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/50">
+            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-green/20">
               <div
-                className="h-full rounded-full bg-green transition-all"
+                className="h-full rounded-full bg-green"
                 style={{ width: `${Math.min(100, (todayCount / dailyGoal) * 100)}%` }}
               />
             </div>
-            {goalDone && (
-              <p className="mt-1 text-xs font-medium text-green">Complete! 🎉</p>
-            )}
           </div>
-          <div className="absolute -right-4 -top-4 size-20 rounded-full bg-green/10 blur-2xl" />
         </div>
       </div>
 
       {/* CTA */}
-      <div className="mt-5 px-5">
-        <Link href="/catch" className="block">
-          <div className="relative overflow-hidden rounded-2xl bg-primary p-5 text-white">
-            <div className="relative z-10 flex items-center justify-between">
-              <div>
-                <p className="text-lg font-bold">Catch a cat</p>
-                <p className="mt-0.5 text-sm text-white/70">
-                  Add a new friend to your collection
-                </p>
-              </div>
-              <div className="flex size-14 items-center justify-center rounded-2xl bg-white/20">
-                <Camera className="size-7" strokeWidth={2} />
-              </div>
+      <Link href="/catch" className="block">
+        <div className="relative overflow-hidden rounded-2xl bg-primary p-4 text-white">
+          <div className="relative z-10 flex items-center justify-between">
+            <div>
+              <p className="font-bold">Catch a cat</p>
+              <p className="text-sm text-white/70">Add to your collection</p>
             </div>
-            <div className="pointer-events-none absolute -right-8 -top-8 size-32 rounded-full bg-white/10" />
-            <div className="pointer-events-none absolute -bottom-6 -left-6 size-24 rounded-full bg-white/10" />
+            <div className="flex size-12 items-center justify-center rounded-xl bg-white/20">
+              <Camera className="size-6" />
+            </div>
           </div>
-        </Link>
-      </div>
+          <div className="pointer-events-none absolute -right-6 -top-6 size-24 rounded-full bg-white/10" />
+        </div>
+      </Link>
 
-      {/* Recent */}
-      <div className="mt-6 px-5">
+      {/* Collection section */}
+      <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-semibold text-foreground">Recent catches</h2>
-          {captures.length > 4 && (
-            <Link
-              href="/catdex"
-              className="flex items-center text-sm font-medium text-primary"
-            >
-              See all
-              <ChevronRight className="size-4" />
-            </Link>
+          <h2 className="font-semibold text-foreground">Your collection</h2>
+          {captures.length > 0 && (
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Palette className="size-3" />
+                {progress.totalCats}
+              </span>
+              <span className="flex items-center gap-1">
+                <MapPin className="size-3" />
+                {progress.cities}
+              </span>
+              <span className="flex items-center gap-1">
+                <Globe className="size-3" />
+                {progress.countries}
+              </span>
+            </div>
           )}
         </div>
 
-        {recent.length === 0 ? (
+        {captures.length === 0 ? (
           <EmptyState />
         ) : (
           <div className="grid grid-cols-2 gap-3">
-            {recent.map((capture, i) => (
-              <CatCard key={capture.id} capture={capture} priority={i === 0} />
+            {captures.map((capture, i) => (
+              <CatCard key={capture.id} capture={capture} priority={i < 2} />
+            ))}
+            {Array.from({ length: placeholderCount }).map((_, i) => (
+              <DexPlaceholderCard
+                key={`ph-${i}`}
+                variant={i % 2 === 0 ? "explore" : "undiscovered"}
+              />
             ))}
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

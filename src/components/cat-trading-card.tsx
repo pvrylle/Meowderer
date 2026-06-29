@@ -1,9 +1,20 @@
+"use client";
+
 import Image from "next/image";
-import { MapPin, Star } from "lucide-react";
+import { MapPin, PawPrint, Sparkles, Star, Zap } from "lucide-react";
 
 import { CardScene } from "@/components/card-scene";
-import { catStats, charmRating, dexNumber, personalityTitle, pickBiome, type Biome, type CatStat } from "@/lib/cat-stats";
+import {
+  catStats,
+  charmRating,
+  dexNumber,
+  personalityTitle,
+  pickBiome,
+  type Biome,
+  type CatStat,
+} from "@/lib/cat-stats";
 import { capturePlaceLabel } from "@/lib/capture-place";
+import { cardTheme } from "@/lib/card-theme";
 import { rarityLabel } from "@/lib/rarity";
 import type { Capture, Rarity } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
@@ -28,21 +39,105 @@ type CatTradingCardProps = {
   className?: string;
 };
 
-const RARITY_COLORS: Record<string, string> = {
-  common: "bg-[#e8e8e8]",
-  uncommon: "bg-[#d4f0dc]",
-  rare: "bg-[#d4e8f7]",
-  epic: "bg-[#e8dff7]",
-  legendary: "bg-[#faecd0]",
-};
+function ZigzagDivider({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 100 6"
+      preserveAspectRatio="none"
+      className={cn("h-1.5 w-full shrink-0", className)}
+      aria-hidden
+    >
+      <path
+        d="M0 3 L5 0 L10 3 L15 0 L20 3 L25 0 L30 3 L35 0 L40 3 L45 0 L50 3 L55 0 L60 3 L65 0 L70 3 L75 0 L80 3 L85 0 L90 3 L95 0 L100 3 L100 6 L0 6 Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
 
-const RARITY_ACCENT: Record<string, string> = {
-  common: "text-[#888]",
-  uncommon: "text-green",
-  rare: "text-[#4a90c2]",
-  epic: "text-primary",
-  legendary: "text-[#c9a030]",
-};
+function PawMeter({
+  value,
+  fillClass,
+  emptyClass,
+  size = "md",
+  onDark,
+}: {
+  value: number;
+  fillClass: string;
+  emptyClass: string;
+  size?: "sm" | "md" | "lg";
+  onDark?: boolean;
+}) {
+  const pawSize =
+    size === "lg" ? "size-5" : size === "md" ? "size-4" : "size-3";
+
+  return (
+    <div className="flex gap-0.5">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div
+          key={i}
+          className={cn(
+            "flex items-center justify-center rounded-full",
+            pawSize,
+            i < value ? fillClass : emptyClass,
+          )}
+        >
+          <PawPrint
+            className={cn(
+              size === "lg" ? "size-3" : size === "md" ? "size-2.5" : "size-2",
+              i < value
+                ? "fill-white text-white"
+                : onDark
+                  ? "text-white/20"
+                  : "text-black/15",
+            )}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function StatAttack({
+  stat,
+  theme,
+  compact,
+  onDark,
+}: {
+  stat: CatStat;
+  theme: ReturnType<typeof cardTheme>;
+  compact?: boolean;
+  onDark?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 shadow-sm",
+        onDark
+          ? "epic-stat-row"
+          : "bg-white/45",
+        compact && "py-1",
+      )}
+    >
+      <span
+        className={cn(
+          "font-black uppercase tracking-wide",
+          onDark ? "text-white/80" : "text-foreground/75",
+          compact ? "text-[8px]" : "text-[10px]",
+        )}
+      >
+        {stat.label}
+      </span>
+      <PawMeter
+        value={stat.value}
+        fillClass={theme.statFill}
+        emptyClass={theme.statEmpty}
+        size={compact ? "sm" : "md"}
+        onDark={onDark}
+      />
+    </div>
+  );
+}
 
 export function CatTradingCard({
   name,
@@ -63,139 +158,220 @@ export function CatTradingCard({
 }: CatTradingCardProps) {
   const isTcg = size === "tcg";
   const isLg = size === "lg";
-  const rarityKey = rarity ?? "common";
+  const isSm = !isLg && !isTcg;
+  const theme = cardTheme(rarity);
   const isEpic = rarity === "epic" || rarity === "legendary";
+  const isLegendary = rarity === "legendary";
+  const onDark = theme.textOnDark;
+  const hp = charm != null ? Math.round(charm * 20) : null;
 
   return (
     <div
       className={cn(
-        "flex flex-col overflow-hidden rounded-2xl bg-white",
-        isTcg && "aspect-[5/7] w-[17.5rem] p-2",
-        isLg && "p-2.5",
-        !isLg && !isTcg && "p-1.5",
+        "relative",
+        isTcg && "aspect-[5/7] w-[17.5rem]",
         className,
       )}
     >
-      {/* Header */}
       <div
         className={cn(
-          "flex shrink-0 items-center justify-between gap-2 rounded-lg px-2.5 py-1.5",
-          RARITY_COLORS[rarityKey],
+          "relative flex h-full flex-col overflow-hidden rounded-2xl",
+          theme.shellClass ?? cn("bg-gradient-to-b", theme.shell),
+          isEpic && theme.glow,
         )}
       >
-        <span className="truncate text-sm font-semibold text-foreground">
-          {name}
-        </span>
-        {dex && (
-          <span className="shrink-0 text-[10px] font-medium text-foreground/50">
-            {dex}
-          </span>
-        )}
-      </div>
+          {/* Epic holo sheen removed — too neon */}
 
-      {/* Art */}
-      <div
-        className={cn(
-          "relative overflow-hidden rounded-lg",
-          isTcg && "mt-1.5 flex-1",
-          isLg && "mt-2 aspect-[4/5] w-full",
-          !isLg && !isTcg && "mt-1.5 aspect-square w-full",
-        )}
-      >
-        <CardScene
-          biome={biome}
-          sparkle={sparkle ?? isEpic}
-          className="absolute inset-0"
-        >
+          {/* Decorative doodles */}
+          <PawPrint
+            className={cn(
+              "pointer-events-none absolute right-3 top-14 size-10 rotate-12",
+              theme.pattern,
+            )}
+          />
+          <PawPrint
+            className={cn(
+              "pointer-events-none absolute bottom-16 left-2 size-8 -rotate-12",
+              theme.pattern,
+            )}
+          />
+
+          {/* === HEADER (Pokémon-style name + HP) === */}
           <div
-            className="absolute inset-0 flex items-center justify-center"
-            style={{ transform: `scale(${stickerScale})` }}
+            className={cn(
+              "relative shrink-0 bg-gradient-to-r px-3 py-2",
+              theme.header,
+              isSm && "px-2 py-1.5",
+            )}
           >
-            <Image
-              src={stickerUrl}
-              alt={name}
-              fill
-              unoptimized={unoptimizedSticker}
-              priority={priority}
-              sizes="(max-width: 420px) 45vw, 200px"
-              className="object-contain p-3 drop-shadow-md"
-            />
-          </div>
-        </CardScene>
-
-        {/* Rarity tag */}
-        <span
-          className={cn(
-            "absolute right-1.5 top-1.5 rounded-md px-1.5 py-0.5 text-[9px] font-semibold uppercase",
-            RARITY_COLORS[rarityKey],
-            RARITY_ACCENT[rarityKey],
-          )}
-        >
-          {rarityLabel(rarity)}
-        </span>
-
-        {isEpic && (
-          <span className="holo-idle pointer-events-none absolute inset-0" />
-        )}
-      </div>
-
-      {/* Footer */}
-      {isTcg || isLg ? (
-        <div className="mt-1.5 space-y-1 px-0.5">
-          {stats && stats.length > 0 && (
-            <div className="space-y-0.5">
-              {stats.map((s) => (
-                <div key={s.label} className="flex items-center justify-between">
-                  <span className="text-[10px] text-muted-foreground">{s.label}</span>
-                  <StatBar value={s.value} />
+            <div className="relative z-10 flex items-end justify-between gap-2">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1">
+                  {isLegendary && (
+                    <Zap className="size-3.5 shrink-0 fill-yellow-300 text-yellow-300" />
+                  )}
+                  <span
+                    className={cn(
+                      "truncate font-black tracking-tight text-white drop-shadow",
+                      isSm ? "text-xs" : "text-base",
+                    )}
+                  >
+                    {name}
+                  </span>
                 </div>
-              ))}
-            </div>
-          )}
-          {place && (
-            <p className="flex items-center gap-1 text-[10px] text-muted-foreground">
-              <MapPin className="size-3" />
-              <span className="truncate">{place}</span>
-            </p>
-          )}
-        </div>
-      ) : (
-        <div className="mt-1 space-y-0.5 px-1">
-          {personality && (
-            <p className="truncate text-[10px] font-medium text-foreground/70">
-              {personality}
-            </p>
-          )}
-          {place && (
-            <p className="flex items-center gap-1 text-[10px] text-muted-foreground">
-              <MapPin className="size-2.5" />
-              <span className="truncate">{place}</span>
-            </p>
-          )}
-          {charm != null && (
-            <div className="flex items-center justify-end gap-0.5 pt-0.5">
-              <Star className="size-3 fill-amber-400 text-amber-400" />
-              <span className="text-[10px] font-medium">{charm.toFixed(1)}</span>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
+                {dex && (
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-white/70">
+                    {dex}
+                  </span>
+                )}
+              </div>
 
-function StatBar({ value }: { value: number }) {
-  return (
-    <div className="flex gap-0.5">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div
-          key={i}
-          className={cn(
-            "h-1.5 w-3 rounded-sm",
-            i < value ? "bg-primary" : "bg-muted",
+              {hp != null && !isSm && (
+                <div className="shrink-0 text-right">
+                  <div className="flex items-baseline gap-1">
+                    <Star className="size-3 fill-amber-200 text-amber-200" />
+                    <span className="text-lg font-black leading-none text-white">
+                      {hp}
+                    </span>
+                  </div>
+                  <span className="text-[8px] font-bold uppercase tracking-widest text-white/70">
+                    Charm
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* === ART WINDOW === */}
+          <div className={cn("relative shrink-0", isSm ? "px-1.5 pt-1.5" : "px-2 pt-2")}>
+            <div
+              className={cn(
+                "relative overflow-hidden rounded-xl border-[3px] p-[3px] shadow-inner",
+                theme.artFrame,
+              )}
+            >
+              <div
+                className={cn(
+                  "relative overflow-hidden rounded-lg bg-gradient-to-b",
+                  theme.artInner,
+                  isTcg && "aspect-[4/3]",
+                  isLg && "aspect-[4/5]",
+                  isSm && "aspect-square",
+                )}
+              >
+                <CardScene
+                  biome={biome}
+                  sparkle={sparkle ?? isLegendary}
+                  className="absolute inset-0"
+                >
+                  <div
+                    className="absolute inset-0 flex items-center justify-center"
+                    style={{ transform: `scale(${stickerScale})` }}
+                  >
+                    <Image
+                      src={stickerUrl}
+                      alt={name}
+                      fill
+                      unoptimized={unoptimizedSticker}
+                      priority={priority}
+                      sizes={isSm ? "(max-width: 420px) 45vw, 160px" : "260px"}
+                      className="object-contain p-3 drop-shadow-[0_8px_18px_rgba(0,0,0,0.22)]"
+                    />
+                  </div>
+                </CardScene>
+
+                <div
+                  className={cn(
+                    "absolute right-1.5 top-1.5 z-10 flex items-center gap-1 rounded-md px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-white shadow-md",
+                    theme.badge,
+                  )}
+                >
+                  {isLegendary && <Sparkles className="size-2.5" />}
+                  {rarityLabel(rarity)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* === TYPE STRIP === */}
+          {(personality || isSm) && (
+            <div
+              className={cn(
+                "mx-2 flex items-center justify-between gap-2 rounded-md px-2 py-1",
+                theme.strip,
+                isSm && "mx-1.5 py-0.5",
+              )}
+            >
+              <span
+                className={cn(
+                  "truncate font-black uppercase tracking-wide",
+                  onDark ? "text-white/90" : "text-foreground/80",
+                  isSm ? "text-[8px]" : "text-[10px]",
+                )}
+              >
+                {personality ?? "Stray cat"}
+              </span>
+              {isSm && charm != null && (
+                <div className="flex gap-0.5">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star
+                      key={i}
+                      className={cn(
+                        "size-2.5",
+                        i < Math.round(charm)
+                          ? "fill-amber-500 text-amber-500"
+                          : "fill-black/10 text-black/10",
+                      )}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           )}
-        />
-      ))}
+
+          <ZigzagDivider
+            className={cn(
+              isSm ? "mx-1.5" : "mx-2",
+              onDark ? theme.divider : "text-black/10",
+            )}
+          />
+
+          {/* === STATS PANEL === */}
+          <div
+            className={cn(
+              "relative z-10 flex flex-1 flex-col",
+              theme.panelClass ?? (theme.panel ? cn("bg-gradient-to-b", theme.panel) : ""),
+              isSm ? "gap-1 px-1.5 pb-2 pt-1" : "gap-1.5 px-3 pb-3 pt-2",
+            )}
+          >
+            {stats && stats.length > 0 ? (
+              stats.map((s) => (
+                <StatAttack
+                  key={s.label}
+                  stat={s}
+                  theme={theme}
+                  compact={isSm}
+                  onDark={onDark}
+                />
+              ))
+            ) : null}
+
+            {place && (
+              <div
+                className={cn(
+                  "mt-auto flex items-center gap-1 rounded-md px-2 py-1 font-semibold",
+                  onDark
+                    ? "bg-white/8 text-white/60"
+                    : "bg-black/5 text-foreground/60",
+                  isSm ? "text-[8px]" : "text-[10px]",
+                )}
+              >
+                <MapPin className={cn(isSm ? "size-2.5" : "size-3")} />
+                <span className="truncate">{place}</span>
+              </div>
+            )}
+          </div>
+      </div>
     </div>
   );
 }
@@ -221,8 +397,8 @@ export function CaptureCard({
       coat={capture.coat_type}
       dex={dexNumber(capture.id)}
       stats={size === "lg" || size === "tcg" ? catStats(capture) : null}
-      personality={size === "sm" ? personalityTitle(capture) : null}
-      charm={size === "sm" ? charmRating(capture) : null}
+      personality={personalityTitle(capture)}
+      charm={charmRating(capture)}
       biome={pickBiome(capture)}
       size={size}
       priority={priority}

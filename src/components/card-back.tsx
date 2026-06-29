@@ -1,25 +1,84 @@
-import { CalendarDays, MapPin, PawPrint, RotateCcw } from "lucide-react";
+"use client";
+
+import { CalendarDays, MapPin, PawPrint, RotateCcw, Sparkles, Zap } from "lucide-react";
 
 import { BIOME_LABEL, type Biome, type CatStat } from "@/lib/cat-stats";
-import { rarityBanner, rarityCardBorder, rarityLabel } from "@/lib/rarity";
+import { cardTheme } from "@/lib/card-theme";
+import { rarityLabel } from "@/lib/rarity";
 import type { Rarity } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 
-function PawRow({ label, value }: { label: string; value: number }) {
+function PawMeter({
+  value,
+  fillClass,
+  emptyClass,
+  onDark,
+}: {
+  value: number;
+  fillClass: string;
+  emptyClass: string;
+  onDark?: boolean;
+}) {
   return (
-    <div className="flex items-center justify-between">
-      <span className="text-xs font-semibold text-muted-foreground">{label}</span>
-      <span className="flex gap-0.5" aria-label={`${value} of 5`}>
-        {Array.from({ length: 5 }).map((_, i) => (
+    <div className="flex gap-1">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div
+          key={i}
+          className={cn(
+            "flex size-5 items-center justify-center rounded-full",
+            i < value ? fillClass : emptyClass,
+          )}
+        >
           <PawPrint
-            key={i}
             className={cn(
-              "size-3.5",
-              i < value ? "fill-primary text-primary" : "text-muted-foreground/30",
+              "size-3",
+              i < value
+                ? "fill-white text-white"
+                : onDark
+                  ? "text-white/20"
+                  : "text-black/15",
             )}
           />
-        ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function StatRow({
+  label,
+  value,
+  fillClass,
+  emptyClass,
+  onDark,
+}: {
+  label: string;
+  value: number;
+  fillClass: string;
+  emptyClass: string;
+  onDark?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-between gap-2 rounded-xl px-2.5 py-2 shadow-sm",
+        onDark ? "epic-stat-row" : "bg-white/50",
+      )}
+    >
+      <span
+        className={cn(
+          "text-xs font-black uppercase tracking-wide",
+          onDark ? "text-white/80" : "text-foreground/75",
+        )}
+      >
+        {label}
       </span>
+      <PawMeter
+        value={value}
+        fillClass={fillClass}
+        emptyClass={emptyClass}
+        onDark={onDark}
+      />
     </div>
   );
 }
@@ -52,70 +111,161 @@ export function CardBack({
       })
     : null;
 
+  const theme = cardTheme(rarity);
+  const isLegendary = rarity === "legendary";
+  const onDark = theme.textOnDark;
+
   return (
-    <div
-      className={cn(
-        "flex h-full flex-col gap-2 overflow-hidden rounded-[1.25rem] border-[3px] bg-white p-2 shadow-xl",
-        rarityCardBorder(rarity),
-      )}
-    >
-        <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-sm font-extrabold text-foreground">
-            {name}
-          </span>
-          {dex && (
-            <span className="shrink-0 text-[10px] font-bold text-foreground/55">
-              {dex}
-            </span>
-          )}
-        </div>
+    <div className="relative h-full w-full">
+      <div
+        className={cn(
+          "relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl",
+          theme.shellClass ?? cn("bg-gradient-to-b", theme.shell),
+        )}
+      >
+          <PawPrint
+            className={cn(
+              "pointer-events-none absolute right-3 top-20 size-9 rotate-12",
+              theme.pattern,
+            )}
+          />
+          <PawPrint
+            className={cn(
+              "pointer-events-none absolute bottom-24 left-3 size-7 -rotate-12",
+              theme.pattern,
+            )}
+          />
 
-        <div
-          className={cn(
-            "rounded-md px-2 py-1 text-center text-[9px] font-bold uppercase tracking-wide text-foreground",
-            rarityBanner(rarity),
-          )}
-        >
-          {rarityLabel(rarity)}
-          {biome ? ` · ${BIOME_LABEL[biome]}` : ""}
-        </div>
+          {/* Header */}
+          <div
+            className={cn(
+              "relative shrink-0 bg-gradient-to-r px-3 py-2",
+              theme.header,
+            )}
+          >
+            <div className="relative z-10 flex items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-1.5">
+                {isLegendary && (
+                  <Zap className="size-3.5 shrink-0 fill-yellow-300 text-yellow-300" />
+                )}
+                <span className="truncate text-sm font-black text-white drop-shadow">
+                  {name}
+                </span>
+              </div>
+              {dex && (
+                <span className="shrink-0 rounded-full bg-black/25 px-2 py-0.5 text-[9px] font-bold text-white">
+                  {dex}
+                </span>
+              )}
+            </div>
+          </div>
 
-        <div className="flex min-h-0 flex-1 flex-col justify-center gap-2">
-          <div className="space-y-1">
-            <p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-              <PawPrint className="size-2.5" />
-              Field notes
-            </p>
-            <p className="line-clamp-4 text-xs leading-relaxed text-foreground/80">
+          {/* Rarity badge */}
+          <div className="relative z-10 flex shrink-0 justify-center py-2">
+            <div
+              className={cn(
+                "flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-md",
+                theme.badge,
+              )}
+            >
+              {isLegendary && <Sparkles className="size-3" />}
+              <span>{rarityLabel(rarity)}</span>
+              {biome && (
+                <>
+                  <span className="text-white/40">·</span>
+                  <span className="text-white/90">{BIOME_LABEL[biome]}</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Field notes */}
+          <div
+            className={cn(
+              "relative z-10 mx-2.5 shrink-0 rounded-xl p-2.5 shadow-sm",
+              onDark
+                ? "border border-white/10 bg-white/8 backdrop-blur-sm"
+                : "bg-white/55",
+            )}
+          >
+            <div className="mb-1 flex items-center gap-1">
+              <PawPrint
+                className={cn(
+                  "size-3",
+                  onDark ? "text-fuchsia-300/70" : "text-foreground/50",
+                )}
+              />
+              <span
+                className={cn(
+                  "text-[9px] font-black uppercase tracking-widest",
+                  onDark ? "text-fuchsia-200/70" : "text-foreground/50",
+                )}
+              >
+                Field Notes
+              </span>
+            </div>
+            <p
+              className={cn(
+                "line-clamp-4 text-[11px] leading-relaxed",
+                onDark ? "text-white/75" : "text-foreground/80",
+              )}
+            >
               {bio}
             </p>
           </div>
 
-          <div className="space-y-1 rounded-xl bg-muted/60 p-2">
+          {/* Stats */}
+          <div className="relative z-10 min-h-0 flex-1 space-y-1.5 overflow-y-auto px-2.5 py-2">
             {stats.map((s) => (
-              <PawRow key={s.label} label={s.label} value={s.value} />
+              <StatRow
+                key={s.label}
+                label={s.label}
+                value={s.value}
+                fillClass={theme.statFill}
+                emptyClass={theme.statEmpty}
+                onDark={onDark}
+              />
             ))}
-            <div className="flex flex-wrap gap-2 pt-0.5 text-[10px] text-muted-foreground">
+          </div>
+
+          {/* Footer */}
+          <div
+            className={cn(
+              "relative z-10 flex shrink-0 items-center justify-between gap-2 px-3 py-2",
+              theme.panelClass ?? cn("bg-gradient-to-b", theme.panel),
+            )}
+          >
+            <div
+              className={cn(
+                "flex min-w-0 flex-wrap gap-2 text-[9px] font-semibold",
+                onDark ? "text-white/55" : "text-foreground/60",
+              )}
+            >
               {place && (
-                <span className="inline-flex items-center gap-1">
-                  <MapPin className="size-3" />
+                <span className="inline-flex max-w-[55%] items-center gap-0.5 truncate">
+                  <MapPin className="size-3 shrink-0" />
                   {place}
                 </span>
               )}
               {caught && (
-                <span className="inline-flex items-center gap-1">
+                <span className="inline-flex items-center gap-0.5">
                   <CalendarDays className="size-3" />
                   {caught}
                 </span>
               )}
             </div>
-          </div>
-        </div>
 
-        <p className="flex shrink-0 items-center justify-center gap-1 text-[10px] text-muted-foreground">
-          <RotateCcw className="size-3" />
-          Tap to flip back
-        </p>
+            <div
+              className={cn(
+                "flex shrink-0 items-center gap-1 text-[9px] font-semibold",
+                onDark ? "text-white/45" : "text-foreground/50",
+              )}
+            >
+              <RotateCcw className="size-3" />
+              <span>Flip</span>
+            </div>
+          </div>
+      </div>
     </div>
   );
 }
