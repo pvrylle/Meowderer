@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { BRAND_ICON } from "@/lib/brand";
 
 type MascotEmptyProps = {
   title: string;
@@ -8,7 +8,7 @@ type MascotEmptyProps = {
   size?: number;
 };
 
-/** Branded empty state using the app mascot (public/icon.svg). */
+/** Branded empty state using the app mascot. */
 export function MascotEmpty({
   title,
   description,
@@ -16,12 +16,15 @@ export function MascotEmpty({
 }: MascotEmptyProps) {
   return (
     <div className="flex flex-col items-center gap-3 text-center">
-      <Image
-        src="/icon.svg"
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={BRAND_ICON}
         alt=""
         width={size}
         height={size}
-        className="opacity-90"
+        decoding="async"
+        className="object-contain opacity-95"
+        style={{ width: size, height: size }}
         aria-hidden
       />
       <div>

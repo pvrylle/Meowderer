@@ -17,8 +17,8 @@ export const metadata: Metadata = {
   applicationName: "CatDex",
   manifest: "/manifest.json",
   icons: {
-    icon: "/icon.svg",
-    apple: "/icon.svg",
+    icon: "/assets/iconnotext.svg",
+    apple: "/assets/iconnotext.svg",
   },
   appleWebApp: {
     capable: true,

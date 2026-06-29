@@ -7,7 +7,10 @@ const nextConfig: NextConfig = {
   // config" error. Production builds use `next build --webpack`.
   turbopack: {},
   async redirects() {
-    return [{ source: "/maps", destination: "/map", permanent: true }];
+    return [
+      { source: "/maps", destination: "/map", permanent: true },
+      { source: "/icon.svg", destination: "/assets/iconnotext.svg", permanent: true },
+    ];
   },
   images: {
     remotePatterns: [

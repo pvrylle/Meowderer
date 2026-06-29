@@ -1,4 +1,5 @@
-import type { ImageClassificationPipeline } from "@huggingface/transformers";
+import { resizeBlobForInference } from "./image-utils";
+import { getMobileNetClassifier } from "./mobilenet-classifier";
 
 const CAT_KEYWORDS = [
   "cat",
@@ -11,23 +12,7 @@ const CAT_KEYWORDS = [
   "kitten",
 ];
 
-let pipelinePromise: Promise<ImageClassificationPipeline> | null = null;
-
-async function getClassifier(): Promise<ImageClassificationPipeline> {
-  if (!pipelinePromise) {
-    pipelinePromise = (async () => {
-      const { ensureSingleThreadWasm } = await import("./configure-wasm");
-      await ensureSingleThreadWasm();
-      const { pipeline, env } = await import("@huggingface/transformers");
-      env.allowLocalModels = false;
-      env.useBrowserCache = true;
-      return pipeline("image-classification", "Xenova/mobilenet_v1_1.0_224");
-    })();
-  }
-  return pipelinePromise;
-}
-
-function fileToDataUrl(file: File): Promise<string> {
+function fileToDataUrl(file: File | Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
@@ -46,8 +31,9 @@ export type CatGuardResult =
  */
 export async function isLikelyCat(file: File): Promise<CatGuardResult> {
   try {
-    const classify = await getClassifier();
-    const dataUrl = await fileToDataUrl(file);
+    const thumb = await resizeBlobForInference(file, 384);
+    const classify = await getMobileNetClassifier();
+    const dataUrl = await fileToDataUrl(thumb);
     const results = await classify(dataUrl, { top_k: 5 });
 
     const catHit = results.find(
@@ -73,3 +59,5 @@ export async function isLikelyCat(file: File): Promise<CatGuardResult> {
 }
 
 export { preloadCoatClassifier } from "./classify-coat";
+export { preloadCaptureAssets } from "./preload-capture";
+export { preloadMobileNet } from "./mobilenet-classifier";

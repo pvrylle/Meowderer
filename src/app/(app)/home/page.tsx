@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Camera, Sparkles, User } from "lucide-react";
 
+import { BrandMark } from "@/components/brand-mark";
 import { CatCard } from "@/components/cat-card";
 import { HomeRetention } from "@/components/home-retention";
 import { MascotEmpty } from "@/components/mascot-empty";
@@ -36,7 +37,7 @@ export default async function HomePage() {
       <header className="flex items-center justify-between">
         <div>
           <p className="text-sm text-muted-foreground">Your collection</p>
-          <h1 className="text-2xl font-extrabold text-foreground">CatDex</h1>
+          <BrandMark variant="logo" className="mt-0.5 w-[7.5rem]" />
         </div>
         <div className="flex items-center gap-2">
           <Link

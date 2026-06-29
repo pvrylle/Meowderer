@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { PawPrint } from "lucide-react";
 
+import { BrandMark } from "@/components/brand-mark";
 import { CatDexGrid } from "@/components/catdex-grid";
 import { MascotEmpty } from "@/components/mascot-empty";
 import { CatButton } from "@/components/ui/cat-button";
@@ -31,13 +31,13 @@ export default async function CatDexPage() {
     <div className="flex flex-col gap-5 p-6 pb-nav">
       <header className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-foreground">CatDex</h1>
-          <p className="text-sm text-muted-foreground">
+          <BrandMark variant="logo" className="w-[7.5rem]" />
+          <p className="mt-1 text-sm text-muted-foreground">
             Your collection of community cats
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5 rounded-2xl bg-primary px-3 py-2 text-sm font-bold text-primary-foreground">
-          <PawPrint className="size-4" />
+          <BrandMark variant="icon" size={20} />
           {progress.uniqueCoats}/{progress.totalCoatTypes}
         </div>
       </header>

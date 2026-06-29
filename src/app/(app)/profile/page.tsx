@@ -48,7 +48,7 @@ export default async function ProfilePage() {
   return (
     <div className="flex flex-col gap-8 p-6 pb-nav">
       <header className="flex flex-col items-center gap-3 pt-6 text-center">
-        <BrandMark />
+        <BrandMark variant="icon" size={88} />
         <div>
           <h1 className="text-xl font-extrabold text-foreground">
             {user?.email ?? "Cat catcher"}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { RotateCcw, X } from "lucide-react";
@@ -23,7 +23,9 @@ import {
   STICKER_SCALE_MAX,
   STICKER_SCALE_MIN,
 } from "@/lib/capture/scale-sticker";
+import { preloadCaptureAssets } from "@/lib/capture/preload-capture";
 import { uploadCapture } from "@/lib/capture/upload";
+import { yieldToMain } from "@/lib/capture/yield-to-main";
 import { coatToRarity, type CoatType } from "@/lib/coat-rarity";
 import { DEMO_COOKIE } from "@/lib/demo";
 import { getCurrentPosition, type Coords } from "@/lib/geo";
@@ -59,6 +61,7 @@ export default function CatchPageClient() {
   const [coords, setCoords] = useState<Coords | null>(null);
   const [locationStatus, setLocationStatus] = useState<LocationStatus>("idle");
   const [saving, setSaving] = useState(false);
+  const [coatClassifying, setCoatClassifying] = useState(false);
 
   const previewUrlRef = useRef<string | null>(null);
   const stickerUrlRef = useRef<string | null>(null);
@@ -88,18 +91,14 @@ export default function CatchPageClient() {
   }, []);
 
   useEffect(() => {
-    const preload = () => {
-      void import("@/lib/capture/cat-guard").then(({ preloadCoatClassifier }) =>
-        preloadCoatClassifier(),
-      );
-    };
-    if (typeof window.requestIdleCallback === "function") {
-      const id = window.requestIdleCallback(preload, { timeout: 5000 });
-      return () => window.cancelIdleCallback(id);
-    }
-    const id = setTimeout(preload, 2000);
-    return () => clearTimeout(id);
+    void preloadCaptureAssets().catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    if (phase === "preview") {
+      void preloadCaptureAssets().catch(() => undefined);
+    }
+  }, [phase]);
 
   const revokePreview = useCallback(() => {
     if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
@@ -151,6 +150,7 @@ export default function CatchPageClient() {
     setPreviewUrl(null);
     setProcessed(null);
     setClassification(null);
+    setCoatClassifying(false);
     setPreviewRarity(null);
     setSelectedCoat("gray tabby");
     setStickerScale(STICKER_SCALE_DEFAULT);
@@ -163,42 +163,53 @@ export default function CatchPageClient() {
   async function develop() {
     if (!file) return;
 
+    setPhase("processing");
+    setProgress({ stage: "compressing", label: "Preparing…", pct: 2 });
+    await yieldToMain();
+
     const location = coords ?? (await requestLocation());
     if (!location) {
+      setPhase("preview");
       toast.error("Turn on location access to catch cats.");
       return;
     }
 
-    const [{ isLikelyCat }, { processCatPhoto }, { classifyCoat }] =
-      await Promise.all([
+    setProgress({ stage: "compressing", label: "Checking photo…", pct: 8 });
+    await yieldToMain();
+
+    try {
+      await preloadCaptureAssets();
+
+      const [{ isLikelyCat }, { processCatPhoto }] = await Promise.all([
         import("@/lib/capture/cat-guard"),
         import("@/lib/capture/pipeline"),
-        import("@/lib/capture/classify-coat"),
       ]);
 
-    const guard = await isLikelyCat(file);
-    if (!guard.ok) {
-      toast.error(guard.reason);
-      return;
-    }
+      const guard = await isLikelyCat(file);
+      if (!guard.ok) {
+        setPhase("preview");
+        toast.error(guard.reason);
+        return;
+      }
 
-    setPhase("processing");
-    setProgress({ stage: "compressing", label: "Compressing photo…", pct: 5 });
-    try {
-      const result = await processCatPhoto(file, setProgress);
+      const reportProgress = (update: CaptureProgress) => {
+        startTransition(() => setProgress(update));
+      };
+
+      const result = await processCatPhoto(file, reportProgress);
       stickerUrlRef.current = result.stickerPreviewUrl;
       setProcessed(result);
-
-      setProgress({
-        stage: "finishing",
-        label: "Classifying coat…",
-        pct: 92,
-      });
-      const coatResult = await classifyCoat(result.sticker);
-      setClassification(coatResult);
-      setSelectedCoat(coatResult.coat_type);
-
       setPhase("review");
+
+      setCoatClassifying(true);
+      void import("@/lib/capture/classify-coat")
+        .then(({ classifyCoat }) => classifyCoat(result.sticker))
+        .then((coatResult) => {
+          setClassification(coatResult);
+          setSelectedCoat(coatResult.coat_type);
+        })
+        .catch(() => undefined)
+        .finally(() => setCoatClassifying(false));
     } catch (err) {
       console.error(err);
       toast.error(
@@ -343,11 +354,7 @@ export default function CatchPageClient() {
       {phase === "processing" && (
         <div className="flex flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
           <div className="relative flex size-32 items-center justify-center">
-            <motion.div
-              className="absolute inset-0 rounded-full border-4 border-primary/20 border-t-primary"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            />
+            <div className="absolute inset-0 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
             <span className="text-4xl">🐱</span>
           </div>
           <div className="w-full max-w-xs space-y-2">
@@ -355,14 +362,13 @@ export default function CatchPageClient() {
               {progress?.label ?? "Developing…"}
             </p>
             <div className="h-2 overflow-hidden rounded-full bg-muted">
-              <motion.div
-                className="h-full rounded-full bg-primary"
-                animate={{ width: `${progress?.pct ?? 0}%` }}
-                transition={{ duration: 0.3 }}
+              <div
+                className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
+                style={{ width: `${progress?.pct ?? 0}%` }}
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              All on your device — this can take a moment the first time.
+              First run downloads models — later catches are faster.
             </p>
           </div>
         </div>
@@ -406,6 +412,7 @@ export default function CatchPageClient() {
               selectedCoat={selectedCoat}
               onCoatChange={setSelectedCoat}
               classification={classification}
+              coatClassifying={coatClassifying}
               previewRarity={previewRarity}
               nickname={nickname}
               onNicknameChange={setNickname}

@@ -44,6 +44,7 @@ export function CatchReviewPanel({
   selectedCoat,
   onCoatChange,
   classification,
+  coatClassifying = false,
   previewRarity,
   nickname,
   onNicknameChange,
@@ -60,6 +61,7 @@ export function CatchReviewPanel({
   selectedCoat: CoatType;
   onCoatChange: (coat: CoatType) => void;
   classification: CoatClassification | null;
+  coatClassifying?: boolean;
   previewRarity: Rarity | null;
   nickname: string;
   onNicknameChange: (value: string) => void;
@@ -140,6 +142,12 @@ export function CatchReviewPanel({
             </span>
           </div>
           <CoatTypePicker value={selectedCoat} onChange={onCoatChange} />
+          {coatClassifying && !classification && (
+            <p className="flex items-center gap-1.5 rounded-lg bg-muted/50 px-2.5 py-1.5 text-[11px] text-muted-foreground sm:px-3 sm:py-2 sm:text-xs">
+              <Loader2 className="size-3 shrink-0 animate-spin sm:size-3.5" />
+              Detecting coat type…
+            </p>
+          )}
           {classification && (
             <p
               className={cn(

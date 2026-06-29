@@ -1,12 +1,12 @@
 import type { CoatType } from "@/lib/coat-rarity";
 
+import { getMobileNetClassifier } from "./mobilenet-classifier";
+
 export type CoatClassification = {
   coat_type: CoatType;
   confidence: number;
   source: "transformers" | "color";
 };
-
-import type { ImageClassificationPipeline } from "@huggingface/transformers";
 
 const IMAGENET_CAT_LABELS: Record<string, CoatType> = {
   "tabby, tiger cat": "brown tabby",
@@ -30,22 +30,6 @@ const CAT_KEYWORDS = [
   "Angora",
 ];
 
-let pipelinePromise: Promise<ImageClassificationPipeline> | null = null;
-
-async function getClassifier(): Promise<ImageClassificationPipeline> {
-  if (!pipelinePromise) {
-    pipelinePromise = (async () => {
-      const { ensureSingleThreadWasm } = await import("./configure-wasm");
-      await ensureSingleThreadWasm();
-      const { pipeline, env } = await import("@huggingface/transformers");
-      env.allowLocalModels = false;
-      env.useBrowserCache = true;
-      return pipeline("image-classification", "Xenova/mobilenet_v1_1.0_224");
-    })();
-  }
-  return pipelinePromise;
-}
-
 function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -59,7 +43,7 @@ async function classifyWithTransformers(
   blob: Blob,
 ): Promise<CoatClassification | null> {
   try {
-    const classify = await getClassifier();
+    const classify = await getMobileNetClassifier();
     const dataUrl = await blobToDataUrl(blob);
     const results = await classify(dataUrl, { top_k: 5 });
 
@@ -215,5 +199,5 @@ export async function classifyCoat(blob: Blob): Promise<CoatClassification> {
 
 /** Pre-warm the Transformers.js model (optional, e.g. on catch page mount). */
 export function preloadCoatClassifier(): void {
-  void getClassifier().catch(() => undefined);
+  void getMobileNetClassifier().catch(() => undefined);
 }

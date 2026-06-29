@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Camera, LayoutGrid, Search, type LucideIcon } from "lucide-react";
 
+import { BrandMark } from "@/components/brand-mark";
 import { CatButton } from "@/components/ui/cat-button";
 import { PagerDots } from "@/components/ui/pager-dots";
 import { useOnboardingStore } from "@/stores/onboarding";
@@ -77,7 +78,8 @@ export default function OnboardingPage() {
 
   return (
     <div className="flex flex-1 flex-col px-7 py-10">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        <BrandMark variant="logo" className="w-[6.5rem]" priority />
         <button
           type="button"
           onClick={finish}

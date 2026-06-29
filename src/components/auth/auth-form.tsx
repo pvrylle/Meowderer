@@ -57,15 +57,12 @@ export function AuthForm() {
   return (
     <div className="flex flex-1 flex-col justify-center gap-8 px-7 py-10">
       <div className="flex flex-col items-center gap-4 text-center">
-        <BrandMark />
-        <div>
-          <h1 className="text-3xl font-extrabold text-foreground">CatDex</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {mode === "signin"
-              ? "Welcome back, cat catcher."
-              : "Start your collection today."}
-          </p>
-        </div>
+        <BrandMark variant="logo" priority />
+        <p className="text-sm text-muted-foreground">
+          {mode === "signin"
+            ? "Welcome back, cat catcher."
+            : "Start your collection today."}
+        </p>
       </div>
 
       <div className="flex rounded-full bg-muted p-1">
