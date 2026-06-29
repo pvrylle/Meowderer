@@ -465,7 +465,7 @@ export function CatchMap({ geojson }: CatchMapProps) {
   }, [rarityFilter, filteredCats]);
 
   return (
-    <div className="relative h-full min-h-0 w-full">
+    <div className="catch-map-root relative h-full min-h-0 w-full">
       <div ref={containerRef} className="absolute inset-0 z-0" />
 
       <div className="pointer-events-none absolute inset-x-0 top-0 z-10 space-y-3 p-4">

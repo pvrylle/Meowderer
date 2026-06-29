@@ -1,7 +1,8 @@
 import type { Capture, Rarity } from "@/lib/supabase/types";
 import type maplibregl from "maplibre-gl";
 
-export const MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
+/** Colorful but cleaner than Liberty — parks, water, and roads without heavy POI clutter. */
+export const MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/bright";
 
 /** Default view before bounds are fitted (roughly SE Asia). */
 export const MAP_DEFAULT_CENTER: [number, number] = [110, 15];

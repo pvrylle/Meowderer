@@ -341,6 +341,11 @@
   height: 100%;
 }
 
+/* Gentle warmth + extra saturation so water, parks, and land read clearly */
+.catch-map-root .maplibregl-canvas {
+  filter: saturate(1.18) contrast(1.03) hue-rotate(-3deg);
+}
+
 /* Pages with bottom nav — clears tab bar + center Catch FAB */
 .pb-nav {
   padding-bottom: var(--nav-clearance);
