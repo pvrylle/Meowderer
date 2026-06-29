@@ -8,6 +8,7 @@ type BrandMarkProps = {
   /** Icon variant size in px (ignored for logo). */
   size?: number;
   priority?: boolean;
+  alt?: string;
 };
 
 /** Native img — brand SVGs embed large PNGs; bypass Next/Image attachment headers. */
@@ -16,6 +17,7 @@ export function BrandMark({
   className,
   size = 80,
   priority,
+  alt,
 }: BrandMarkProps) {
   if (variant === "logo") {
     return (
@@ -34,14 +36,14 @@ export function BrandMark({
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={BRAND_ICON}
-      alt=""
+      alt={alt ?? ""}
       width={size}
       height={size}
       decoding="async"
       fetchPriority={priority ? "high" : undefined}
       className={cn("object-contain", className)}
       style={{ width: size, height: size }}
-      aria-hidden
+      aria-hidden={alt ? undefined : true}
     />
   );
 }

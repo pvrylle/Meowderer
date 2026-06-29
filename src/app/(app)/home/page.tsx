@@ -39,7 +39,7 @@ export default async function HomePage() {
     <div className="flex flex-col gap-5 px-5 pb-nav pt-4">
       {/* Header */}
       <header className="flex items-center justify-between">
-        <BrandMark variant="logo" className="h-9 w-auto" priority />
+        <BrandMark variant="icon" size={36} alt="CatDex" priority />
         <Link
           href="/profile"
           className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-semibold text-primary"
