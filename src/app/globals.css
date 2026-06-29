@@ -97,7 +97,7 @@
   }
 }
 
-/* Holographic shimmer used on Epic trading cards */
+/* Holographic shimmer — per rarity (Pokémon-style type colors) */
 @keyframes holo-pan {
   0% {
     background-position: 0% 50%;
@@ -110,22 +110,110 @@
   }
 }
 
-.holo-idle {
-  background-image: linear-gradient(
-    115deg,
-    transparent 25%,
-    rgba(255, 120, 220, 0.22),
-    rgba(120, 210, 255, 0.22),
-    rgba(180, 140, 255, 0.22),
-    transparent 75%
-  );
+.holo-idle-base {
   background-size: 220% 220%;
   mix-blend-mode: soft-light;
   animation: holo-pan 5s ease-in-out infinite;
 }
 
+.holo-tilt-base {
+  background-size: 200% 200%;
+  background-position: var(--mx, 50%) var(--my, 50%);
+  mix-blend-mode: color-dodge;
+  opacity: calc(var(--glow, 0) * 0.85);
+  transition: opacity 300ms ease;
+}
+
+/* Uncommon — grass / teal foil */
+.holo-idle-uncommon {
+  background-image: linear-gradient(
+    115deg,
+    transparent 25%,
+    rgba(52, 211, 153, 0.22),
+    rgba(16, 185, 129, 0.2),
+    rgba(134, 239, 172, 0.22),
+    transparent 75%
+  );
+}
+.holo-tilt-uncommon {
+  background-image: linear-gradient(
+    115deg,
+    transparent 18%,
+    rgba(52, 211, 153, 0.38),
+    rgba(16, 185, 129, 0.32),
+    rgba(134, 239, 172, 0.36),
+    transparent 82%
+  );
+}
+
+/* Rare — water / blue foil */
+.holo-idle-rare {
+  background-image: linear-gradient(
+    115deg,
+    transparent 25%,
+    rgba(56, 189, 248, 0.22),
+    rgba(14, 165, 233, 0.2),
+    rgba(125, 211, 252, 0.22),
+    transparent 75%
+  );
+}
+.holo-tilt-rare {
+  background-image: linear-gradient(
+    115deg,
+    transparent 18%,
+    rgba(56, 189, 248, 0.38),
+    rgba(14, 165, 233, 0.32),
+    rgba(125, 211, 252, 0.36),
+    transparent 82%
+  );
+}
+
+/* Epic — psychic / purple foil */
+.holo-idle-epic {
+  background-image: linear-gradient(
+    115deg,
+    transparent 25%,
+    rgba(192, 132, 252, 0.22),
+    rgba(168, 85, 247, 0.2),
+    rgba(232, 121, 249, 0.22),
+    transparent 75%
+  );
+}
+.holo-tilt-epic {
+  background-image: linear-gradient(
+    115deg,
+    transparent 18%,
+    rgba(192, 132, 252, 0.38),
+    rgba(168, 85, 247, 0.32),
+    rgba(232, 121, 249, 0.36),
+    transparent 82%
+  );
+}
+
+/* Legendary — gold / fire foil */
+.holo-idle-legendary {
+  background-image: linear-gradient(
+    115deg,
+    transparent 25%,
+    rgba(251, 191, 36, 0.24),
+    rgba(245, 158, 11, 0.22),
+    rgba(253, 224, 71, 0.24),
+    transparent 75%
+  );
+}
+.holo-tilt-legendary {
+  background-image: linear-gradient(
+    115deg,
+    transparent 18%,
+    rgba(251, 191, 36, 0.42),
+    rgba(245, 158, 11, 0.36),
+    rgba(253, 224, 71, 0.4),
+    transparent 82%
+  );
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .holo-idle {
+  .holo-idle-base {
     animation: none;
   }
 

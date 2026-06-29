@@ -14,6 +14,7 @@ import {
   type CatStat,
 } from "@/lib/cat-stats";
 import { capturePlaceLabel } from "@/lib/capture-place";
+import { cardHoloProfile } from "@/lib/card-holo";
 import { cardTheme } from "@/lib/card-theme";
 import { rarityLabel } from "@/lib/rarity";
 import type { Capture, Rarity } from "@/lib/supabase/types";
@@ -243,6 +244,7 @@ export function CatTradingCard({
   const isLg = size === "lg";
   const isSm = !isLg && !isTcg;
   const theme = cardTheme(rarity);
+  const holoProfile = cardHoloProfile(rarity);
   const isEpic = rarity === "epic" || rarity === "legendary";
   const isLegendary = rarity === "legendary";
   const onDark = theme.textOnDark;
@@ -363,7 +365,7 @@ export function CatTradingCard({
               >
                 <CardScene
                   biome={biome}
-                  sparkle={sparkle ?? isLegendary}
+                  sparkle={sparkle ?? holoProfile !== null}
                   className="absolute inset-0"
                 >
                   <div
@@ -381,6 +383,16 @@ export function CatTradingCard({
                     />
                   </div>
                 </CardScene>
+
+                {holoProfile && (
+                  <div
+                    className={cn(
+                      "pointer-events-none absolute inset-0 z-[1]",
+                      "holo-idle-base",
+                      holoProfile.idleClass,
+                    )}
+                  />
+                )}
 
                 <div
                   className={cn(

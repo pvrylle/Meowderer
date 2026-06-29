@@ -2,30 +2,24 @@
 
 import { useCallback, useRef, useState } from "react";
 
+import { cardHoloProfile } from "@/lib/card-holo";
+import type { Rarity } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 
 /**
  * Wraps a trading card with 3D tilt, a moving light glare and (optionally) a
  * holographic sheen. Tapping flips to `back` if provided.
- *
- * Input model:
- * - Mouse: tilt follows hover.
- * - Touch / pen: tilt follows the finger while pressed (drag to tilt); a quick
- *   tap (no drag) flips. `touch-action: none` lets the card own the gesture.
- *
- * Tilt/glare are written straight to the DOM via CSS variables inside a
- * requestAnimationFrame, so movement never triggers a React re-render.
  */
 export function InteractiveCard({
   children,
   back,
-  holo = false,
+  holoRarity = null,
   radiusClassName = "rounded-[2rem]",
   className,
 }: {
   children: React.ReactNode;
   back?: React.ReactNode;
-  holo?: boolean;
+  holoRarity?: Rarity | null;
   radiusClassName?: string;
   className?: string;
 }) {
@@ -37,6 +31,7 @@ export function InteractiveCard({
   const [flipped, setFlipped] = useState(false);
 
   const canFlip = Boolean(back);
+  const holo = cardHoloProfile(holoRarity);
 
   const apply = useCallback((clientX: number, clientY: number) => {
     const el = wrapRef.current;
@@ -81,7 +76,6 @@ export function InteractiveCard({
   const onPointerMove = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
       const isMouse = e.pointerType === "mouse";
-      // Touch/pen only tilt while pressed; mouse tilts on hover.
       if (!pressed.current && !isMouse) return;
       if (pressed.current) {
         const dx = e.clientX - start.current.x;
@@ -117,6 +111,10 @@ export function InteractiveCard({
     [reset],
   );
 
+  const glareColor = holo
+    ? `rgba(${holo.glareRgb}, 0.55)`
+    : "rgba(255,255,255,0.55)";
+
   return (
     <div className={cn("[perspective:1200px]", className)}>
       <div
@@ -144,7 +142,6 @@ export function InteractiveCard({
             transition: "transform 550ms cubic-bezier(0.22, 1, 0.36, 1)",
           }}
         >
-          {/* Front face */}
           <div className="relative [backface-visibility:hidden]">
             {children}
 
@@ -155,8 +152,7 @@ export function InteractiveCard({
                 radiusClassName,
               )}
               style={{
-                background:
-                  "radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,0.55), transparent 42%)",
+                background: `radial-gradient(circle at var(--mx, 50%) var(--my, 50%), ${glareColor}, transparent 42%)`,
                 opacity: "var(--glow, 0)",
                 transition: "opacity 300ms ease",
                 mixBlendMode: "soft-light",
@@ -167,23 +163,14 @@ export function InteractiveCard({
               <span
                 aria-hidden
                 className={cn(
-                  "pointer-events-none absolute inset-0",
+                  "pointer-events-none absolute inset-0 holo-tilt-base",
+                  holo.tiltClass,
                   radiusClassName,
                 )}
-                style={{
-                  backgroundImage:
-                    "linear-gradient(115deg, transparent 18%, rgba(255,110,210,0.38), rgba(90,210,255,0.38), rgba(180,130,255,0.38), transparent 82%)",
-                  backgroundSize: "200% 200%",
-                  backgroundPosition: "var(--mx, 50%) var(--my, 50%)",
-                  mixBlendMode: "color-dodge",
-                  opacity: "calc(var(--glow, 0) * 0.85)",
-                  transition: "opacity 300ms ease",
-                }}
               />
             )}
           </div>
 
-          {/* Back face */}
           {canFlip && (
             <div
               className="absolute inset-0 [backface-visibility:hidden]"

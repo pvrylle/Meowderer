@@ -388,7 +388,7 @@ export default function CatchPageClient() {
                 className="catch-preview-slot"
               >
                 <div className="catch-preview-scale">
-                  <InteractiveCard holo radiusClassName="rounded-[1.25rem]">
+                  <InteractiveCard holoRarity={previewRarity} radiusClassName="rounded-[1.25rem]">
                     <CatTradingCard
                       name={nickname.trim() || "New friend"}
                       stickerUrl={processed.stickerPreviewUrl}

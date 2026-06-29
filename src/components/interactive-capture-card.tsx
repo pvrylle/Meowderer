@@ -27,7 +27,7 @@ export function InteractiveCaptureCard({
 
   return (
     <InteractiveCard
-      holo={capture.rarity === "legendary"}
+      holoRarity={capture.rarity}
       radiusClassName="rounded-2xl"
       className={className ?? "mx-auto w-full max-w-[17.5rem]"}
       back={
