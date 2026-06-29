@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
+import { CatDetailCardStage } from "@/components/cat/cat-detail-card-stage";
 import { CatDetailDock } from "@/components/cat/cat-detail-dock";
-import { InteractiveCaptureCard } from "@/components/interactive-capture-card";
 import { NamePollCard } from "@/components/name-poll-card";
 import type { NamePollWithCounts } from "@/app/(app)/cat/[id]/poll-actions";
 import { dexNumber, pickBiome } from "@/lib/cat-stats";
@@ -50,22 +50,10 @@ export function CatDetailView({
         </span>
       </header>
 
-      <div
-        className={cn(
-          "cat-detail-stage relative bg-gradient-to-b",
-          BIOME_HERO[biome],
-        )}
-      >
-        <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-30">
-          <div className="absolute -right-6 top-0 size-32 rounded-full bg-white/60 blur-2xl" />
-          <div className="absolute -bottom-4 -left-4 size-24 rounded-full bg-primary/15 blur-2xl" />
-        </div>
-        <div className="cat-detail-card-slot relative z-0">
-          <div className="cat-detail-card-scale">
-            <InteractiveCaptureCard capture={capture} />
-          </div>
-        </div>
-      </div>
+      <CatDetailCardStage
+        capture={capture}
+        className={cn("bg-gradient-to-b", BIOME_HERO[biome])}
+      />
 
       <NamePollCard capture={capture} poll={poll} isOwner={isOwner} />
 

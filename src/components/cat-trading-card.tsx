@@ -451,7 +451,7 @@ export function CatTradingCard({
               ))
             ) : null}
 
-            {place && (
+            {place && !isTcg && (
               <div
                 className={cn(
                   "mt-auto flex items-center gap-1 rounded-md px-2 py-1 font-semibold",

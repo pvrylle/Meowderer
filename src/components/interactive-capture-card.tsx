@@ -10,7 +10,15 @@ import type { Capture } from "@/lib/supabase/types";
  * The full detail-page card: tilt + glare + (Epic) holo, flippable to a bio /
  * field-notes back.
  */
-export function InteractiveCaptureCard({ capture }: { capture: Capture }) {
+export function InteractiveCaptureCard({
+  capture,
+  className,
+  cardClassName,
+}: {
+  capture: Capture;
+  className?: string;
+  cardClassName?: string;
+}) {
   const name = capture.nickname?.trim() || "Unnamed cat";
   const place = [capture.city, capture.country].filter(Boolean).join(", ") || null;
   const dex = dexNumber(capture.id);
@@ -21,7 +29,7 @@ export function InteractiveCaptureCard({ capture }: { capture: Capture }) {
     <InteractiveCard
       holo={capture.rarity === "legendary"}
       radiusClassName="rounded-2xl"
-      className="mx-auto w-full max-w-[17.5rem]"
+      className={className ?? "mx-auto w-full max-w-[17.5rem]"}
       back={
         <CardBack
           name={name}
@@ -47,6 +55,7 @@ export function InteractiveCaptureCard({ capture }: { capture: Capture }) {
         biome={biome}
         size="tcg"
         priority
+        className={cardClassName}
       />
     </InteractiveCard>
   );
