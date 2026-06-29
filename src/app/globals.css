@@ -48,41 +48,41 @@
 }
 
 :root {
-  --radius: 1rem;
+  --radius: 0.875rem;
 
-  /* Core palette from PRD section 7 */
-  --background: #fdfaf4;
-  --foreground: #3a3550;
+  /* Warm cream palette */
+  --background: #faf8f5;
+  --foreground: #2d2a3e;
   --card: #ffffff;
-  --card-foreground: #3a3550;
+  --card-foreground: #2d2a3e;
   --popover: #ffffff;
-  --popover-foreground: #3a3550;
-  --primary: #9b7ede;
+  --popover-foreground: #2d2a3e;
+  --primary: #8b6cc7;
   --primary-foreground: #ffffff;
-  --secondary: #d9ccf6;
+  --secondary: #e8e1f5;
   --secondary-foreground: #4a3f6b;
-  --muted: #f3eee3;
-  --muted-foreground: #a8a2b8;
-  --accent: #d9ccf6;
+  --muted: #f0ede8;
+  --muted-foreground: #8c8699;
+  --accent: #e8e1f5;
   --accent-foreground: #4a3f6b;
-  --destructive: #e2685f;
-  --border: #efe4cf;
-  --input: #efe4cf;
-  --ring: #9b7ede;
+  --destructive: #d95550;
+  --border: #e8e4dd;
+  --input: #e8e4dd;
+  --ring: #8b6cc7;
 
-  --primary-light: #d9ccf6;
-  --green: #8fd6a6;
-  --orange: #f6a96b;
+  --primary-light: #e8e1f5;
+  --green: #5cb87a;
+  --orange: #e9995c;
 
-  /* FAB floats above tab bar into the scroll area (3 tabs per side + center FAB) */
-  --nav-clearance: calc(5rem + env(safe-area-inset-bottom, 0px));
+  /* Bottom nav */
+  --nav-clearance: calc(4rem + env(safe-area-inset-bottom, 0px));
 
-  /* Rarity tiers (PRD section 9 + screen mockups) */
-  --common: #c9d3e3;
-  --uncommon: #8fd6a6;
-  --rare: #7fb4e8;
-  --epic: #b79cf0;
-  --legendary: #f6c14b;
+  /* Rarity tiers */
+  --common: #b8c4d4;
+  --uncommon: #5cb87a;
+  --rare: #5a9fd4;
+  --epic: #9d7cd8;
+  --legendary: #e5a832;
 }
 
 @layer base {

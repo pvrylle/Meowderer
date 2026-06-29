@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, ImagePlus, MessageCircle, Share2, X } from "lucide-react";
+import { Heart, ImagePlus, MessageCircle, Send, Share2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -19,8 +19,8 @@ import type { PostWithAuthor } from "@/lib/community";
 import { cn } from "@/lib/utils";
 
 const CATEGORY_STYLE: Record<string, string> = {
-  sighting: "bg-orange/20 text-orange",
-  shelter: "bg-green/20 text-green",
+  sighting: "bg-orange/15 text-orange",
+  shelter: "bg-green/15 text-green",
   rescue: "bg-destructive/15 text-destructive",
   general: "bg-primary/15 text-primary",
 };
@@ -129,53 +129,60 @@ export function CommunityFeed({ posts: initialPosts }: CommunityFeedProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <form onSubmit={handlePost} className="space-y-3 rounded-2xl border border-border bg-card p-4">
+      {/* Composer */}
+      <form
+        onSubmit={handlePost}
+        className="rounded-xl bg-card shadow-sm ring-1 ring-border/50"
+      >
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          placeholder="Share a cat sighting…"
+          placeholder="Share a cat sighting..."
           rows={2}
-          className="w-full resize-none bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          className="w-full resize-none bg-transparent p-3 text-sm outline-none placeholder:text-muted-foreground"
           required
         />
-        <div className="flex flex-wrap gap-2">
+        
+        <div className="flex gap-2 px-3 pb-2">
           {COMPOSE_CATEGORIES.map(({ key, label }) => (
             <button
               key={key}
               type="button"
               onClick={() => setCategory(key)}
               className={cn(
-                "rounded-full px-3 py-1 text-xs font-bold capitalize transition-colors",
+                "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
                 category === key
                   ? CATEGORY_STYLE[key]
-                  : "border border-border bg-muted/40 text-muted-foreground",
+                  : "bg-muted text-muted-foreground",
               )}
             >
               {label}
             </button>
           ))}
         </div>
+        
         {imagePreview && (
-          <div className="relative overflow-hidden rounded-xl">
+          <div className="relative mx-3 mb-2 overflow-hidden rounded-lg">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={imagePreview} alt="" className="max-h-48 w-full object-cover" />
+            <img src={imagePreview} alt="" className="max-h-36 w-full object-cover" />
             <button
               type="button"
-              aria-label="Remove image"
+              aria-label="Remove"
               onClick={clearImage}
-              className="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full bg-black/50 text-white"
+              className="absolute right-1.5 top-1.5 flex size-6 items-center justify-center rounded-full bg-black/60 text-white"
             >
-              <X className="size-4" />
+              <X className="size-3.5" />
             </button>
           </div>
         )}
-        <div className="flex items-center justify-between gap-2">
+        
+        <div className="flex items-center justify-between border-t border-border/50 px-3 py-2">
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="flex items-center gap-1.5 text-sm font-semibold text-primary"
+            className="flex items-center gap-1.5 text-sm text-primary"
           >
-            <ImagePlus className="size-5" />
+            <ImagePlus className="size-4" />
             Photo
           </button>
           <input
@@ -185,93 +192,94 @@ export function CommunityFeed({ posts: initialPosts }: CommunityFeedProps) {
             className="hidden"
             onChange={handleImagePick}
           />
-          <CatButton type="submit" size="sm" loading={posting}>
+          <CatButton type="submit" size="xs" loading={posting}>
+            <Send className="size-3.5" />
             Post
           </CatButton>
         </div>
       </form>
 
+      {/* Posts */}
       {posts.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-border bg-card/50 px-4 py-10 text-center text-sm text-muted-foreground">
+        <p className="rounded-xl border border-dashed border-border bg-muted/30 px-4 py-8 text-center text-sm text-muted-foreground">
           No posts yet. Be the first to share a sighting!
         </p>
       ) : (
-        posts.map((post) => (
-          <article
-            key={post.id}
-            className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
-          >
-            <div className="flex items-start justify-between gap-2 p-4 pb-2">
-              <div className="flex items-center gap-3">
-                <UserAvatar
-                  name={post.author_name}
-                  avatarUrl={post.author_avatar}
-                />
-                <div>
-                  <p className="font-bold text-foreground">{post.author_name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatRelativeTime(post.created_at)}
-                  </p>
+        <div className="space-y-3">
+          {posts.map((post) => (
+            <article
+              key={post.id}
+              className="rounded-xl bg-card shadow-sm ring-1 ring-border/50"
+            >
+              <div className="flex items-start justify-between p-3 pb-2">
+                <div className="flex items-center gap-2">
+                  <UserAvatar name={post.author_name} avatarUrl={post.author_avatar} size="sm" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{post.author_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatRelativeTime(post.created_at)}
+                    </p>
+                  </div>
                 </div>
+                <span
+                  className={cn(
+                    "rounded-md px-2 py-0.5 text-[10px] font-medium capitalize",
+                    CATEGORY_STYLE[post.category] ?? CATEGORY_STYLE.general,
+                  )}
+                >
+                  {post.category}
+                </span>
               </div>
-              <span
-                className={cn(
-                  "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold capitalize",
-                  CATEGORY_STYLE[post.category] ?? CATEGORY_STYLE.general,
-                )}
-              >
-                {post.category}
-              </span>
-            </div>
 
-            <p className="px-4 pb-3 text-sm text-foreground">{post.body}</p>
+              <p className="px-3 pb-2 text-sm text-foreground">{post.body}</p>
 
-            {post.image_url && (
-              <div className="relative mx-4 mb-3 overflow-hidden rounded-xl bg-muted">
-                <Image
-                  src={post.image_url}
-                  alt=""
-                  width={400}
-                  height={300}
-                  unoptimized
-                  className="h-auto w-full object-cover"
-                />
+              {post.image_url && (
+                <div className="mx-3 mb-2 overflow-hidden rounded-lg bg-muted">
+                  <Image
+                    src={post.image_url}
+                    alt=""
+                    width={400}
+                    height={300}
+                    unoptimized
+                    className="h-auto w-full object-cover"
+                  />
+                </div>
+              )}
+
+              <div className="flex items-center gap-4 border-t border-border/50 px-3 py-2">
+                <button
+                  type="button"
+                  onClick={() => handleLike(post.id)}
+                  className={cn(
+                    "flex items-center gap-1 text-xs",
+                    post.liked_by_me ? "text-destructive" : "text-muted-foreground",
+                  )}
+                >
+                  <Heart
+                    className={cn("size-4", post.liked_by_me && "fill-current")}
+                  />
+                  {post.likes_count}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCommentsPostId(post.id)}
+                  className="flex items-center gap-1 text-xs text-muted-foreground"
+                >
+                  <MessageCircle className="size-4" />
+                  {post.comments_count}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleShare(post)}
+                  className="text-muted-foreground"
+                  aria-label="Share"
+                >
+                  <Share2 className="size-4" />
+                </button>
               </div>
-            )}
-
-            <div className="flex items-center justify-between border-t border-border px-4 py-3 text-muted-foreground">
-              <button
-                type="button"
-                onClick={() => handleLike(post.id)}
-                className={cn(
-                  "flex items-center gap-1 text-xs font-semibold",
-                  post.liked_by_me && "text-destructive",
-                )}
-              >
-                <Heart
-                  className={cn("size-4", post.liked_by_me && "fill-destructive")}
-                />
-                {post.likes_count}
-              </button>
-              <button
-                type="button"
-                onClick={() => setCommentsPostId(post.id)}
-                className="flex items-center gap-1 text-xs font-semibold"
-              >
-                <MessageCircle className="size-4" />
-                {post.comments_count}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleShare(post)}
-                className="flex items-center gap-1 text-xs font-semibold"
-                aria-label="Share post"
-              >
-                <Share2 className="size-4" />
-              </button>
-            </div>
-          </article>
-        ))
+            </article>
+          ))}
+        </div>
       )}
 
       <PostCommentsSheet

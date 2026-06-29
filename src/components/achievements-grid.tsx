@@ -1,5 +1,3 @@
-"use client";
-
 import type { UnlockedAchievement } from "@/lib/achievements";
 import { cn } from "@/lib/utils";
 
@@ -13,15 +11,15 @@ export function AchievementsGrid({ catalog, unlocked }: AchievementsGridProps) {
 
   if (catalog.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
-        Achievements will appear after you run the latest database migration.
+      <p className="rounded-xl border border-dashed border-border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
+        No achievements yet
       </p>
     );
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3">
-      {catalog.map((ach) => {
+    <div className="grid grid-cols-2 gap-2">
+      {catalog.slice(0, 4).map((ach) => {
         const isUnlocked = unlockedIds.has(ach.id);
         const unlockedAt = unlocked.find((u) => u.id === ach.id)?.unlocked_at;
 
@@ -29,21 +27,19 @@ export function AchievementsGrid({ catalog, unlocked }: AchievementsGridProps) {
           <div
             key={ach.id}
             className={cn(
-              "flex flex-col gap-1 rounded-2xl border p-3",
+              "rounded-xl p-3 ring-1",
               isUnlocked
-                ? "border-primary/30 bg-primary/5"
-                : "border-border bg-muted/30 opacity-60",
+                ? "bg-primary/5 ring-primary/20"
+                : "bg-muted/30 ring-border/50 opacity-60",
             )}
           >
-            <span className="text-2xl" aria-hidden>
-              {isUnlocked ? (ach.icon ?? "🏆") : "🔒"}
-            </span>
-            <p className="text-sm font-bold text-foreground">{ach.title}</p>
+            <span className="text-xl">{isUnlocked ? (ach.icon ?? "🏆") : "🔒"}</span>
+            <p className="mt-1 text-xs font-medium text-foreground">{ach.title}</p>
             {ach.description && (
-              <p className="text-xs text-muted-foreground">{ach.description}</p>
+              <p className="text-[10px] text-muted-foreground line-clamp-1">{ach.description}</p>
             )}
             {unlockedAt && (
-              <p className="mt-auto text-[10px] text-muted-foreground">
+              <p className="mt-1 text-[9px] text-muted-foreground">
                 {new Date(unlockedAt).toLocaleDateString()}
               </p>
             )}

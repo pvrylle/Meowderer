@@ -12,30 +12,20 @@ export function DexPlaceholderCard({ variant }: DexPlaceholderCardProps) {
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-2 rounded-3xl border border-dashed p-4 text-center",
-        isExplore
-          ? "border-border bg-muted/30"
-          : "border-border/80 bg-card/50",
+        "flex aspect-[5/7] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed text-center",
+        isExplore ? "border-border/60 bg-muted/20" : "border-border/40 bg-muted/10",
       )}
     >
-      <div
-        className={cn(
-          "flex size-16 items-center justify-center rounded-full",
-          isExplore ? "bg-muted" : "bg-muted/60",
-        )}
-      >
+      <div className="flex size-10 items-center justify-center rounded-lg bg-muted/50">
         {isExplore ? (
-          <MapPin className="size-7 text-muted-foreground/50" />
+          <MapPin className="size-5 text-muted-foreground/50" />
         ) : (
-          <span className="text-2xl text-muted-foreground/40">🐱</span>
+          <span className="text-lg text-muted-foreground/40">?</span>
         )}
       </div>
-      <div>
-        <p className="font-bold text-muted-foreground">???</p>
-        <p className="text-[11px] text-muted-foreground/70">
-          {isExplore ? "Keep exploring" : "Not discovered"}
-        </p>
-      </div>
+      <p className="text-[10px] text-muted-foreground/60">
+        {isExplore ? "Keep exploring" : "Not found"}
+      </p>
     </div>
   );
 }

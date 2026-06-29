@@ -353,22 +353,24 @@ export default function CatchPageClient() {
 
       {phase === "processing" && (
         <div className="flex flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
-          <div className="relative flex size-32 items-center justify-center">
-            <div className="absolute inset-0 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
-            <span className="text-4xl">🐱</span>
+          <div className="relative">
+            <div className="absolute -inset-3 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
+            <div className="flex size-16 items-center justify-center rounded-xl bg-primary/10">
+              <span className="text-3xl">🐱</span>
+            </div>
           </div>
           <div className="w-full max-w-xs space-y-2">
-            <p className="font-bold text-foreground">
-              {progress?.label ?? "Developing…"}
+            <p className="text-sm font-medium text-foreground">
+              {progress?.label ?? "Processing..."}
             </p>
             <div className="h-2 overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
+                className="h-full rounded-full bg-primary transition-all duration-300"
                 style={{ width: `${progress?.pct ?? 0}%` }}
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              First run downloads models — later catches are faster.
+              First run downloads models — later runs are faster
             </p>
           </div>
         </div>

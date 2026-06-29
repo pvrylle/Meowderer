@@ -33,37 +33,36 @@ export function MissionsList({ missions }: MissionsListProps) {
 
   if (missions.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
-        Missions will appear after you run the latest database migration.
+      <p className="rounded-xl border border-dashed border-border bg-muted/30 px-4 py-8 text-center text-sm text-muted-foreground">
+        No missions available
       </p>
     );
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="space-y-2">
       {missions.map((mission) => {
         const complete = mission.progress >= mission.target_count;
         const claimed = Boolean(mission.claimed_at);
-        const pct = Math.min(
-          100,
-          Math.round((mission.progress / mission.target_count) * 100),
-        );
+        const pct = Math.min(100, Math.round((mission.progress / mission.target_count) * 100));
 
         return (
           <div
             key={mission.id}
             className={cn(
-              "rounded-2xl border bg-card p-4",
-              complete && !claimed ? "border-green/50" : "border-border",
+              "rounded-xl bg-card p-3.5 shadow-sm ring-1",
+              complete && !claimed ? "ring-green/50" : "ring-border/50",
             )}
           >
-            <div className="flex items-start gap-3">
+            <div className="flex gap-3">
               <div
                 className={cn(
-                  "flex size-11 shrink-0 items-center justify-center rounded-xl",
+                  "flex size-10 shrink-0 items-center justify-center rounded-lg",
                   complete && !claimed
                     ? "bg-green/15 text-green"
-                    : "bg-primary/15 text-primary",
+                    : claimed
+                      ? "bg-muted text-muted-foreground"
+                      : "bg-primary/10 text-primary",
                 )}
               >
                 {complete && !claimed ? (
@@ -72,20 +71,31 @@ export function MissionsList({ missions }: MissionsListProps) {
                   <MissionIcon missionId={mission.id} className="size-5" />
                 )}
               </div>
+
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-bold text-foreground">{mission.title}</p>
-                  <span className="flex shrink-0 items-center gap-0.5 rounded-full bg-legendary/20 px-2 py-0.5 text-xs font-bold text-legendary">
-                    <Zap className="size-3 fill-legendary" />
-                    {mission.xp_reward}XP
+                  <p className={cn(
+                    "text-sm font-medium",
+                    claimed ? "text-muted-foreground" : "text-foreground",
+                  )}>
+                    {mission.title}
+                  </p>
+                  <span className={cn(
+                    "flex shrink-0 items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-semibold",
+                    claimed ? "bg-muted text-muted-foreground" : "bg-legendary/15 text-legendary",
+                  )}>
+                    <Zap className="size-3" />
+                    {mission.xp_reward}
                   </span>
                 </div>
+
                 {mission.description && (
-                  <p className="mt-0.5 text-xs text-muted-foreground">
+                  <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">
                     {mission.description}
                   </p>
                 )}
-                <div className="mt-3 flex items-center gap-2">
+
+                <div className="mt-2 flex items-center gap-2">
                   <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
                     <div
                       className={cn(
@@ -95,13 +105,13 @@ export function MissionsList({ missions }: MissionsListProps) {
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <span className="text-xs font-bold text-muted-foreground">
-                    {Math.min(mission.progress, mission.target_count)}/
-                    {mission.target_count}
+                  <span className="text-[10px] font-medium text-muted-foreground">
+                    {Math.min(mission.progress, mission.target_count)}/{mission.target_count}
                   </span>
                 </div>
               </div>
             </div>
+
             {complete && !claimed && (
               <CatButton
                 size="sm"
@@ -110,12 +120,13 @@ export function MissionsList({ missions }: MissionsListProps) {
                 disabled={claiming === mission.id}
                 onClick={() => handleClaim(mission.id)}
               >
-                {claiming === mission.id ? "Claiming…" : "Claim Reward"}
+                {claiming === mission.id ? "Claiming..." : "Claim"}
               </CatButton>
             )}
+
             {claimed && (
-              <p className="mt-2 text-center text-xs font-semibold text-green">
-                Reward claimed
+              <p className="mt-2 text-center text-[10px] font-medium text-green">
+                Claimed
               </p>
             )}
           </div>

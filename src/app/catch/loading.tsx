@@ -1,5 +1,5 @@
 import { CatchPageLoading } from "@/components/capture/catch-page-loading";
 
-export default function CatchLoading() {
+export default function Loading() {
   return <CatchPageLoading />;
 }

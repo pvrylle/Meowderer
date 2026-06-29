@@ -72,8 +72,8 @@ export function Camera({ onCapture }: { onCapture: (file: File) => void }) {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
-      <div className="relative flex-1 overflow-hidden rounded-3xl bg-foreground/90">
+    <div className="flex flex-1 flex-col gap-5 p-5">
+      <div className="relative flex-1 overflow-hidden rounded-2xl bg-foreground/95">
         {!unavailable && (
           <video
             ref={videoRef}
@@ -83,16 +83,14 @@ export function Camera({ onCapture }: { onCapture: (file: File) => void }) {
           />
         )}
         {!ready && !unavailable && (
-          <div className="absolute inset-0 flex items-center justify-center text-sm text-white/80">
-            Starting camera…
+          <div className="absolute inset-0 flex items-center justify-center text-sm text-white/70">
+            Starting camera...
           </div>
         )}
         {unavailable && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-8 text-center text-white/90">
-            <CameraIcon className="size-10" />
-            <p className="text-sm">
-              Camera unavailable. Upload a photo from your gallery instead.
-            </p>
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-8 text-center text-white/80">
+            <CameraIcon className="size-8" />
+            <p className="text-sm">Camera unavailable. Upload a photo instead.</p>
           </div>
         )}
       </div>
@@ -106,29 +104,30 @@ export function Camera({ onCapture }: { onCapture: (file: File) => void }) {
         className="hidden"
       />
 
-      <div className="flex items-center justify-center gap-4">
+      <div className="flex flex-col items-center gap-3">
         {!unavailable && (
           <button
             type="button"
             aria-label="Take photo"
             onClick={shoot}
             disabled={!ready}
-            className="flex size-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/40 ring-4 ring-background transition-transform active:scale-95 disabled:opacity-50"
+            className="flex size-16 items-center justify-center rounded-2xl bg-primary text-white shadow-lg disabled:opacity-50"
           >
-            <CameraIcon className="size-8" strokeWidth={2.5} />
+            <CameraIcon className="size-7" strokeWidth={2.2} />
           </button>
         )}
-      </div>
 
-      <CatButton
-        type="button"
-        variant={unavailable ? "primary" : "outline"}
-        block
-        onClick={() => fileRef.current?.click()}
-      >
-        <ImagePlus className="size-5" />
-        Upload from gallery
-      </CatButton>
+        <CatButton
+          type="button"
+          variant={unavailable ? "primary" : "outline"}
+          size="md"
+          block
+          onClick={() => fileRef.current?.click()}
+        >
+          <ImagePlus className="size-5" />
+          Upload from gallery
+        </CatButton>
+      </div>
     </div>
   );
 }

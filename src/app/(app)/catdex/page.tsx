@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Camera, Globe, MapPin, Palette } from "lucide-react";
 
 import { BrandMark } from "@/components/brand-mark";
 import { CatDexGrid } from "@/components/catdex-grid";
@@ -28,57 +29,89 @@ export default async function CatDexPage() {
   }
 
   return (
-    <div className="flex flex-col gap-5 p-6 pb-nav">
-      <header className="flex items-start justify-between gap-3">
-        <div>
-          <BrandMark variant="logo" className="w-[7.5rem]" />
-          <p className="mt-1 text-sm text-muted-foreground">
-            Your collection of community cats
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-1.5 rounded-2xl bg-primary px-3 py-2 text-sm font-bold text-primary-foreground">
-          <BrandMark variant="icon" size={20} />
-          {progress.uniqueCoats}/{progress.totalCoatTypes}
-        </div>
-      </header>
-
-      {captures.length > 0 && (
-        <div className="rounded-2xl border border-border bg-card p-4">
-          <div className="mb-2 flex items-center justify-between text-sm">
-            <span className="font-semibold text-foreground">Collection progress</span>
-            <span className="font-bold text-primary">{progress.coatPercent}%</span>
+    <div className="flex flex-col pb-nav">
+      {/* Header */}
+      <div className="relative overflow-hidden bg-gradient-to-b from-primary/15 to-background px-5 pb-5 pt-4">
+        <div className="absolute -right-10 -top-10 size-40 rounded-full bg-primary/10 blur-3xl" />
+        
+        <div className="relative flex items-start justify-between">
+          <div>
+            <BrandMark variant="logo" className="h-9 w-auto" priority />
+            <p className="mt-1 text-sm text-muted-foreground">
+              Your collection
+            </p>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-primary transition-all"
-              style={{ width: `${progress.coatPercent}%` }}
+          <div className="rounded-xl bg-primary px-3 py-2 text-center shadow-sm">
+            <p className="text-lg font-bold text-white">{progress.uniqueCoats}</p>
+            <p className="text-[10px] text-white/70">of {progress.totalCoatTypes}</p>
+          </div>
+        </div>
+
+        {/* Progress */}
+        {captures.length > 0 && (
+          <div className="mt-4 rounded-xl bg-white/80 p-4 shadow-sm">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm font-medium text-foreground">
+                Collection progress
+              </span>
+              <span className="text-sm font-bold text-primary">
+                {progress.coatPercent}%
+              </span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-muted/50">
+              <div
+                className="h-full rounded-full bg-primary"
+                style={{ width: `${progress.coatPercent}%` }}
+              />
+            </div>
+            
+            {/* Mini stats */}
+            <div className="mt-3 flex items-center justify-around border-t border-border/30 pt-3">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Palette className="size-3.5" />
+                <span className="font-medium text-foreground">{progress.totalCats}</span>
+                cats
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <MapPin className="size-3.5" />
+                <span className="font-medium text-foreground">{progress.cities}</span>
+                cities
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Globe className="size-3.5" />
+                <span className="font-medium text-foreground">{progress.countries}</span>
+                countries
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Grid */}
+      <div className="px-5 pt-4">
+        {captures.length === 0 ? (
+          <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border bg-muted/20 p-10">
+            <MascotEmpty
+              title="Empty collection"
+              description="Catch cats to start your collection"
+              size={72}
             />
+            <Link href="/catch">
+              <CatButton size="md">
+                <Camera className="size-5" />
+                Catch a cat
+              </CatButton>
+            </Link>
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            {progress.totalCats} cats · {progress.cities} cities · {progress.countries}{" "}
-            countries
-          </p>
-        </div>
-      )}
-
-      {captures.length === 0 ? (
-        <div className="flex flex-col items-center gap-4 rounded-3xl border border-dashed border-border bg-card/50 px-6 py-16">
-          <MascotEmpty
-            title="Your CatDex is empty"
-            description="Catch your first stray to start your collection."
+        ) : (
+          <CatDexGrid
+            captures={captures}
+            seenIds={seenIds}
+            helpedIds={helpedIds}
+            rescuedIds={rescuedIds}
           />
-          <Link href="/catch">
-            <CatButton size="md">Catch a cat</CatButton>
-          </Link>
-        </div>
-      ) : (
-        <CatDexGrid
-          captures={captures}
-          seenIds={seenIds}
-          helpedIds={helpedIds}
-          rescuedIds={rescuedIds}
-        />
-      )}
+        )}
+      </div>
     </div>
   );
 }
