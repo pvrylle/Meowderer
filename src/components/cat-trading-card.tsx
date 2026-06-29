@@ -39,22 +39,6 @@ type CatTradingCardProps = {
   className?: string;
 };
 
-function ZigzagDivider({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 100 6"
-      preserveAspectRatio="none"
-      className={cn("h-1.5 w-full shrink-0", className)}
-      aria-hidden
-    >
-      <path
-        d="M0 3 L5 0 L10 3 L15 0 L20 3 L25 0 L30 3 L35 0 L40 3 L45 0 L50 3 L55 0 L60 3 L65 0 L70 3 L75 0 L80 3 L85 0 L90 3 L95 0 L100 3 L100 6 L0 6 Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
-
 function PawMeter({
   value,
   fillClass,
@@ -139,6 +123,105 @@ function StatAttack({
   );
 }
 
+function CollectionGridCard({
+  name,
+  stickerUrl,
+  rarity = null,
+  place,
+  dex,
+  personality,
+  biome = "meadow",
+  priority,
+  unoptimizedSticker,
+  stickerScale = 1,
+}: Pick<
+  CatTradingCardProps,
+  | "name"
+  | "stickerUrl"
+  | "rarity"
+  | "place"
+  | "dex"
+  | "personality"
+  | "biome"
+  | "priority"
+  | "unoptimizedSticker"
+  | "stickerScale"
+>) {
+  const theme = cardTheme(rarity);
+  const rarityKey = rarity ?? "common";
+
+  const accent: Record<string, string> = {
+    common: "border-t-slate-400",
+    uncommon: "border-t-emerald-500",
+    rare: "border-t-sky-500",
+    epic: "border-t-violet-500",
+    legendary: "border-t-amber-500",
+  };
+
+  return (
+    <div
+      className={cn(
+        "flex flex-col overflow-hidden rounded-lg border border-border/60 bg-card shadow-sm",
+        "border-t-[3px]",
+        accent[rarityKey],
+      )}
+    >
+      <div className="relative aspect-square overflow-hidden bg-muted/30">
+        <CardScene biome={biome} className="absolute inset-0">
+          <div
+            className="absolute inset-0 flex items-center justify-center"
+            style={{ transform: `scale(${stickerScale})` }}
+          >
+            <Image
+              src={stickerUrl}
+              alt={name}
+              fill
+              unoptimized={unoptimizedSticker}
+              priority={priority}
+              sizes="(max-width: 420px) 45vw, 180px"
+              className="object-contain p-2.5 drop-shadow-[0_4px_10px_rgba(0,0,0,0.15)]"
+            />
+          </div>
+        </CardScene>
+        <span
+          className={cn(
+            "absolute right-1.5 top-1.5 rounded px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-wide text-white",
+            theme.badge,
+          )}
+        >
+          {rarityLabel(rarity)}
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-1 border-t border-border/40 px-2.5 py-2">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="truncate text-[13px] font-semibold leading-tight text-foreground">
+            {name}
+          </span>
+          {dex && (
+            <span className="shrink-0 text-[9px] font-medium tabular-nums text-muted-foreground">
+              {dex}
+            </span>
+          )}
+        </div>
+
+        {personality && (
+          <p className="truncate text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            {personality}
+          </p>
+        )}
+
+        {place && (
+          <p className="flex items-center gap-0.5 text-[9px] text-muted-foreground">
+            <MapPin className="size-2.5 shrink-0" />
+            <span className="truncate">{place}</span>
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function CatTradingCard({
   name,
   stickerUrl,
@@ -164,6 +247,25 @@ export function CatTradingCard({
   const isLegendary = rarity === "legendary";
   const onDark = theme.textOnDark;
   const hp = charm != null ? Math.round(charm * 20) : null;
+
+  if (isSm) {
+    return (
+      <div className={cn("relative", className)}>
+        <CollectionGridCard
+          name={name}
+          stickerUrl={stickerUrl}
+          rarity={rarity}
+          place={place}
+          dex={dex}
+          personality={personality}
+          biome={biome}
+          priority={priority}
+          unoptimizedSticker={unoptimizedSticker}
+          stickerScale={stickerScale}
+        />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -329,13 +431,6 @@ export function CatTradingCard({
             </div>
           )}
 
-          <ZigzagDivider
-            className={cn(
-              isSm ? "mx-1.5" : "mx-2",
-              onDark ? theme.divider : "text-black/10",
-            )}
-          />
-
           {/* === STATS PANEL === */}
           <div
             className={cn(
@@ -398,7 +493,7 @@ export function CaptureCard({
       dex={dexNumber(capture.id)}
       stats={size === "lg" || size === "tcg" ? catStats(capture) : null}
       personality={personalityTitle(capture)}
-      charm={charmRating(capture)}
+      charm={size === "lg" || size === "tcg" ? charmRating(capture) : null}
       biome={pickBiome(capture)}
       size={size}
       priority={priority}

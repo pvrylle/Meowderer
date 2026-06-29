@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Camera, ChevronRight, Flame, Globe, MapPin, Palette, Target } from "lucide-react";
+import { Camera, Flame, Globe, Palette, Target } from "lucide-react";
 
 import { BrandMark } from "@/components/brand-mark";
 import { CatCard } from "@/components/cat-card";
@@ -106,18 +106,23 @@ export default async function HomePage() {
       </Link>
 
       {/* Collection section */}
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-semibold text-foreground">Your collection</h2>
+      <section className="space-y-3">
+        <div className="flex items-end justify-between gap-3 border-b border-border/50 pb-2.5">
+          <div>
+            <h2 className="text-base font-semibold tracking-tight text-foreground">
+              Your collection
+            </h2>
+            {captures.length > 0 && (
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {progress.totalCats} cats · {progress.cities} cities
+              </p>
+            )}
+          </div>
           {captures.length > 0 && (
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="flex shrink-0 items-center gap-2.5 text-[11px] font-medium text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Palette className="size-3" />
-                {progress.totalCats}
-              </span>
-              <span className="flex items-center gap-1">
-                <MapPin className="size-3" />
-                {progress.cities}
+                {progress.uniqueCoats}
               </span>
               <span className="flex items-center gap-1">
                 <Globe className="size-3" />
@@ -130,7 +135,7 @@ export default async function HomePage() {
         {captures.length === 0 ? (
           <EmptyState />
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2.5">
             {captures.map((capture, i) => (
               <CatCard key={capture.id} capture={capture} priority={i < 2} />
             ))}
