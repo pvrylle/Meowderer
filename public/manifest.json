@@ -10,16 +10,22 @@
   "theme_color": "#9B7EDE",
   "icons": [
     {
-      "src": "/assets/iconnotext.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/assets/iconnotext.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "/assets/iconnotext.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/assets/iconnotext.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "maskable"
+      "purpose": "any"
     }
   ]
 }

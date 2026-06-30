@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Nunito } from "next/font/google";
 import "./globals.css";
 
-import { APP_NAME, APP_TAGLINE, BRAND_ICON } from "@/lib/brand";
+import { APP_NAME, APP_TAGLINE, BRAND_ICON, BRAND_ICON_PNG } from "@/lib/brand";
 import { MobileExperienceHost } from "@/components/mobile-experience-host";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -18,8 +18,11 @@ export const metadata: Metadata = {
   applicationName: APP_NAME,
   manifest: "/manifest.json",
   icons: {
-    icon: BRAND_ICON,
-    apple: BRAND_ICON,
+    icon: [
+      { url: BRAND_ICON_PNG, sizes: "512x512", type: "image/png" },
+      { url: BRAND_ICON, type: "image/svg+xml" },
+    ],
+    apple: [{ url: BRAND_ICON_PNG, sizes: "180x180", type: "image/png" }],
   },
   appleWebApp: {
     capable: true,

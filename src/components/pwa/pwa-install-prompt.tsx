@@ -4,10 +4,9 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Download, Share, X } from "lucide-react";
 
-import { BrandMark } from "@/components/brand-mark";
 import { CatButton } from "@/components/ui/cat-button";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
-import { APP_NAME } from "@/lib/brand";
+import { APP_NAME, BRAND_ICON_PNG } from "@/lib/brand";
 import { usePwaInstallStore } from "@/stores/pwa-install";
 
 export function PwaInstallPrompt({
@@ -77,7 +76,14 @@ export function PwaInstallPrompt({
           >
             <div className="mb-4 flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
-                <BrandMark variant="icon" size={48} alt="" />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={BRAND_ICON_PNG}
+                  alt=""
+                  width={48}
+                  height={48}
+                  className="size-12 object-contain"
+                />
                 <div>
                   <h2
                     id="pwa-install-title"

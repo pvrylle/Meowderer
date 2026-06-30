@@ -7,5 +7,8 @@ export const APP_TAGLINE =
 /** Full wordmark (logo + text). */
 export const BRAND_LOGO = "/assets/applogo.svg";
 
-/** App icon / mascot without text — favicon, PWA, empty states. */
+/** App icon / mascot without text — in-app UI, empty states. */
 export const BRAND_ICON = "/assets/iconnotext.svg";
+
+/** PNG mascot for favicon, bookmarks, and Add to Home Screen (iOS needs PNG). */
+export const BRAND_ICON_PNG = "/assets/iconnotext.png";

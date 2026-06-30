@@ -4,9 +4,8 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Camera, MapPin, Smartphone, X } from "lucide-react";
 
-import { BrandMark } from "@/components/brand-mark";
 import { CatButton } from "@/components/ui/cat-button";
-import { APP_NAME } from "@/lib/brand";
+import { APP_NAME, BRAND_ICON_PNG } from "@/lib/brand";
 import { useMobileExperienceHintStore } from "@/stores/mobile-experience-hint";
 
 export function MobileExperienceModal({
@@ -50,12 +49,19 @@ export function MobileExperienceModal({
             role="dialog"
             aria-labelledby="mobile-experience-title"
             aria-describedby="mobile-experience-desc"
-            className="fixed inset-x-4 top-1/2 z-[60] mx-auto w-full max-w-md -translate-y-1/2 rounded-[1.75rem] border border-border bg-card p-5 shadow-[0_24px_64px_rgba(45,42,62,0.22)] sm:inset-x-auto sm:p-6"
-            initial={{ opacity: 0, scale: 0.94, y: "-44%" }}
-            animate={{ opacity: 1, scale: 1, y: "-50%" }}
-            exit={{ opacity: 0, scale: 0.96, y: "-48%" }}
-            transition={{ type: "spring", stiffness: 380, damping: 32 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
           >
+            <motion.div
+              className="max-h-[min(90dvh,34rem)] w-full max-w-md overflow-y-auto rounded-[1.75rem] border border-border bg-card p-5 shadow-[0_24px_64px_rgba(45,42,62,0.22)] sm:p-6"
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98, y: 8 }}
+              transition={{ type: "spring", stiffness: 380, damping: 32 }}
+              onClick={(e) => e.stopPropagation()}
+            >
             <div className="mb-4 flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
                 <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/12 text-primary">
@@ -87,7 +93,14 @@ export function MobileExperienceModal({
             </div>
 
             <div className="mb-4 flex justify-center">
-              <BrandMark variant="icon" size={72} alt="" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={BRAND_ICON_PNG}
+                alt=""
+                width={72}
+                height={72}
+                className="size-[4.5rem] object-contain"
+              />
             </div>
 
             <ul className="mb-5 space-y-2.5 rounded-2xl bg-muted/45 px-4 py-3 text-sm text-foreground">
@@ -121,6 +134,7 @@ export function MobileExperienceModal({
                 Open this site on your phone to catch your first cat.
               </p>
             </div>
+            </motion.div>
           </motion.div>
         </>
       )}
