@@ -1,5 +1,6 @@
 import { AuthFooter } from "@/components/auth/auth-footer";
 import { InteractivePawField } from "@/components/decorative/interactive-paw-field";
+import { PwaInstallHost } from "@/components/pwa/pwa-install-host";
 
 export default function AuthLayout({
   children,
@@ -18,6 +19,7 @@ export default function AuthLayout({
         </div>
         <AuthFooter />
       </InteractivePawField>
+      <PwaInstallHost />
     </div>
   );
 }

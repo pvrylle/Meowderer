@@ -4,6 +4,7 @@ import { AchievementSessionToasts } from "@/components/achievement-session-toast
 import { BottomNav } from "@/components/bottom-nav";
 import { PhoneFrame } from "@/components/phone-frame";
 import { OfflineSyncProvider } from "@/components/offline-sync-provider";
+import { PwaInstallHost } from "@/components/pwa/pwa-install-host";
 import { TermsConsentModal } from "@/components/terms-consent-modal";
 import { getCurrentUser, isDemoSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -33,6 +34,7 @@ export default async function AppLayout({
         <div className="flex h-full min-h-0 flex-1 flex-col">
           <TermsConsentModal show={needsTermsConsent} />
           <AchievementSessionToasts />
+          <PwaInstallHost />
           <main className="relative flex min-h-0 flex-1 flex-col overflow-y-auto scroll-pb-nav scrollbar-none">
             {children}
           </main>

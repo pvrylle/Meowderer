@@ -2,7 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Nunito } from "next/font/google";
 import "./globals.css";
 
-import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
+import { APP_NAME, APP_TAGLINE, BRAND_ICON } from "@/lib/brand";
+import { MobileExperienceHost } from "@/components/mobile-experience-host";
 import { Toaster } from "@/components/ui/sonner";
 
 const nunito = Nunito({
@@ -17,8 +18,8 @@ export const metadata: Metadata = {
   applicationName: APP_NAME,
   manifest: "/manifest.json",
   icons: {
-    icon: "/icons/favicon.svg",
-    apple: "/icons/favicon.svg",
+    icon: BRAND_ICON,
+    apple: BRAND_ICON,
   },
   appleWebApp: {
     capable: true,
@@ -44,6 +45,7 @@ export default function RootLayout({
     <html lang="en" className={`${nunito.variable} antialiased`}>
       <body className="font-sans">
         {children}
+        <MobileExperienceHost />
         <Toaster position="top-center" richColors />
       </body>
     </html>
