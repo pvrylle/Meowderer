@@ -7,6 +7,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
+export const maxDuration = 30;
 
 const MAX_ORIGINAL_BYTES = 1_200_000;
 const MAX_STICKER_BYTES = 600_000;

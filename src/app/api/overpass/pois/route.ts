@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { clampPoiBounds, queryOverpassServer } from "@/lib/overpass";
 
 export const runtime = "nodejs";
+export const maxDuration = 25;
 
 const Schema = z.object({
   bounds: z.object({

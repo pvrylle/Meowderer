@@ -1,4 +1,4 @@
-export type Rarity = "common" | "uncommon" | "rare" | "epic";
+export type Rarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
 
 export type Profile = {
   id: string;

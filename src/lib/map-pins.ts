@@ -6,6 +6,7 @@ export const PIN_FRAME: Record<Rarity | "default", string> = {
   uncommon: "/assets/Background-2.svg",
   rare: "/assets/Background.svg",
   epic: "/assets/Background-1.svg",
+  legendary: "/assets/Background-1.svg",
   default: "/assets/Background-1.svg",
 };
 

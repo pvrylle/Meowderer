@@ -15,6 +15,7 @@ const RARITY_FLOOR: Record<Rarity, number> = {
   uncommon: 2,
   rare: 2,
   epic: 3,
+  legendary: 4,
 };
 
 function hashString(input: string): number {

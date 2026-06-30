@@ -5,6 +5,7 @@ export const RARITY_LABEL: Record<Rarity, string> = {
   uncommon: "Uncommon",
   rare: "Rare",
   epic: "Epic",
+  legendary: "Legendary",
 };
 
 // Background tint behind the sticker for each tier.
@@ -13,6 +14,7 @@ export const RARITY_TINT: Record<Rarity, string> = {
   uncommon: "bg-uncommon/25",
   rare: "bg-rare/25",
   epic: "bg-epic/30",
+  legendary: "bg-legendary/30",
 };
 
 // Badge styling for each tier.
@@ -21,6 +23,7 @@ export const RARITY_BADGE: Record<Rarity, string> = {
   uncommon: "bg-uncommon/30 text-foreground",
   rare: "bg-rare/30 text-foreground",
   epic: "bg-epic/40 text-foreground",
+  legendary: "bg-legendary/40 text-foreground",
 };
 
 export function rarityTint(rarity: Rarity | null) {
@@ -33,6 +36,7 @@ export const RARITY_CARD_BORDER: Record<Rarity, string> = {
   uncommon: "border-uncommon",
   rare: "border-rare",
   epic: "border-epic",
+  legendary: "border-legendary",
 };
 
 // Solid-ish name banner background per tier.
@@ -41,6 +45,7 @@ export const RARITY_BANNER: Record<Rarity, string> = {
   uncommon: "bg-uncommon",
   rare: "bg-rare",
   epic: "bg-epic",
+  legendary: "bg-legendary",
 };
 
 const NEUTRAL_BORDER = "border-secondary";
@@ -52,6 +57,7 @@ export const RARITY_FRAME: Record<Rarity, string> = {
   uncommon: "from-uncommon to-uncommon/50",
   rare: "from-rare to-rare/50",
   epic: "from-epic to-epic/50",
+  legendary: "from-legendary to-legendary/50",
 };
 
 const NEUTRAL_FRAME = "from-secondary to-secondary/50";

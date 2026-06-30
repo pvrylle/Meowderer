@@ -52,6 +52,7 @@ const RARITY_RANK: Record<Rarity, number> = {
   uncommon: 1,
   rare: 2,
   epic: 3,
+  legendary: 4,
 };
 
 export function maxRarity(a: Rarity, b: Rarity): Rarity {

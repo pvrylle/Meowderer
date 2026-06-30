@@ -14,6 +14,7 @@ export const RARITY_PIN_COLOR: Record<Rarity | "default", string> = {
   uncommon: "#8fd6a6",
   rare: "#7fb4e8",
   epic: "#b79cf0",
+  legendary: "#f5b942",
   default: "#9b7ede",
 };
 

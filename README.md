@@ -65,6 +65,17 @@ subfolder. Open http://localhost:3000.
    Original photos upload as **authenticated** assets (private). Stickers are
    public delivery URLs used in the CatDex and map.
 
+## Deploy to Vercel
+
+1. Push the repo to GitHub and import it in [Vercel](https://vercel.com/new).
+2. Framework preset: **Next.js** (uses `npm run build`, which runs webpack for Serwist).
+3. Set **Node.js 20** or newer in Project Settings → General.
+4. Add every variable from [`.env.example`](.env.example) under Environment Variables.
+5. In Supabase → **Authentication → URL Configuration**:
+   - **Site URL:** `https://<your-vercel-domain>`
+   - **Redirect URLs:** `https://<your-vercel-domain>/auth/callback`
+6. Deploy. The service worker (`public/sw.js`) is generated at build time; do not commit it.
+
 ## Project structure
 
 ```
