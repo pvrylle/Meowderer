@@ -6,6 +6,8 @@ import { cardHoloProfile } from "@/lib/card-holo";
 import type { Rarity } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 
+const FLIP_TRANSITION = "transform 550ms cubic-bezier(0.22, 1, 0.36, 1)";
+
 /**
  * Wraps a trading card with 3D tilt, a moving light glare and (optionally) a
  * holographic sheen. Tapping flips to `back` if provided.
@@ -116,7 +118,7 @@ export function InteractiveCard({
     : "rgba(255,255,255,0.55)";
 
   return (
-    <div className={cn("[perspective:1200px]", className)}>
+    <div className={cn("overflow-hidden [perspective:1200px]", className)}>
       <div
         ref={wrapRef}
         onPointerDown={onPointerDown}
@@ -139,10 +141,13 @@ export function InteractiveCard({
           className="relative [transform-style:preserve-3d]"
           style={{
             transform: `rotateY(${flipped ? 180 : 0}deg)`,
-            transition: "transform 550ms cubic-bezier(0.22, 1, 0.36, 1)",
+            transition: FLIP_TRANSITION,
           }}
         >
-          <div className="relative [backface-visibility:hidden]">
+          <div
+            className="card-flip-face relative"
+            style={{ transform: "rotateY(0deg) translateZ(1px)" }}
+          >
             {children}
 
             <span
@@ -173,8 +178,8 @@ export function InteractiveCard({
 
           {canFlip && (
             <div
-              className="absolute inset-0 [backface-visibility:hidden]"
-              style={{ transform: "rotateY(180deg)" }}
+              className="card-flip-face absolute inset-0 overflow-hidden"
+              style={{ transform: "rotateY(180deg) translateZ(1px)" }}
             >
               {back}
             </div>

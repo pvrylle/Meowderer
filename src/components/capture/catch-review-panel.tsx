@@ -23,8 +23,6 @@ import {
   STICKER_SCALE_STEP,
 } from "@/lib/capture/scale-sticker";
 import type { CoatType } from "@/lib/coat-rarity";
-import { RARITY_BADGE, rarityLabel } from "@/lib/rarity";
-import type { Rarity } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 
 type LocationStatus = "idle" | "loading" | "ready" | "denied";
@@ -45,7 +43,6 @@ export function CatchReviewPanel({
   onCoatChange,
   classification,
   coatClassifying = false,
-  previewRarity,
   nickname,
   onNicknameChange,
   locationStatus,
@@ -62,7 +59,6 @@ export function CatchReviewPanel({
   onCoatChange: (coat: CoatType) => void;
   classification: CoatClassification | null;
   coatClassifying?: boolean;
-  previewRarity: Rarity | null;
   nickname: string;
   onNicknameChange: (value: string) => void;
   locationStatus: LocationStatus;
@@ -74,7 +70,6 @@ export function CatchReviewPanel({
 }) {
   const coatOverridden =
     classification != null && selectedCoat !== classification.coat_type;
-  const rarity = previewRarity ?? "common";
 
   return (
     <section className="relative z-10 flex h-full min-h-0 flex-col overflow-hidden rounded-t-[1.25rem] border border-b-0 border-border/80 bg-card shadow-[0_-8px_32px_rgba(58,53,80,0.12)] sm:rounded-t-[1.75rem]">
@@ -130,17 +125,7 @@ export function CatchReviewPanel({
 
         {/* Coat type */}
         <div className="space-y-1.5 sm:space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <FieldLabel>Coat type</FieldLabel>
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide sm:text-[10px]",
-                RARITY_BADGE[rarity],
-              )}
-            >
-              {rarityLabel(previewRarity)}
-            </span>
-          </div>
+          <FieldLabel>Coat type</FieldLabel>
           <CoatTypePicker value={selectedCoat} onChange={onCoatChange} />
           {coatClassifying && !classification && (
             <p className="flex items-center gap-1.5 rounded-lg bg-muted/50 px-2.5 py-1.5 text-[11px] text-muted-foreground sm:px-3 sm:py-2 sm:text-xs">

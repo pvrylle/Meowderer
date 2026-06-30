@@ -363,14 +363,15 @@ export default function CatchPageClient() {
                 className="catch-preview-slot"
               >
                 <div className="catch-preview-scale">
-                  <InteractiveCard holoRarity={previewRarity} radiusClassName="rounded-[1.25rem]">
+                  <InteractiveCard radiusClassName="rounded-[1.25rem]">
                     <CatTradingCard
+                      key={processed.stickerPreviewUrl}
                       name={nickname.trim() || "New friend"}
                       stickerUrl={processed.stickerPreviewUrl}
-                      rarity={previewRarity}
                       coat={selectedCoat}
                       unoptimizedSticker
-                      sparkle
+                      hideRarity
+                      hideStats
                       stickerScale={stickerScale}
                       size="tcg"
                       className="shadow-none shadow-[0_4px_14px_rgba(58,53,80,0.1)]"
@@ -390,7 +391,6 @@ export default function CatchPageClient() {
               onCoatChange={setSelectedCoat}
               classification={classification}
               coatClassifying={coatClassifying}
-              previewRarity={previewRarity}
               nickname={nickname}
               onNicknameChange={setNickname}
               locationStatus={locationStatus}

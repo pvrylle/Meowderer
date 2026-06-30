@@ -37,6 +37,10 @@ type CatTradingCardProps = {
   unoptimizedSticker?: boolean;
   sparkle?: boolean;
   stickerScale?: number;
+  /** Hide rarity badge and use neutral styling (catch review before save). */
+  hideRarity?: boolean;
+  /** Omit the stats block (catch review preview). */
+  hideStats?: boolean;
   className?: string;
 };
 
@@ -238,15 +242,18 @@ export function CatTradingCard({
   unoptimizedSticker,
   sparkle,
   stickerScale = 1,
+  hideRarity = false,
+  hideStats = false,
   className,
 }: CatTradingCardProps) {
   const isTcg = size === "tcg";
   const isLg = size === "lg";
   const isSm = !isLg && !isTcg;
-  const theme = cardTheme(rarity);
-  const holoProfile = cardHoloProfile(rarity);
-  const isEpic = rarity === "epic" || rarity === "legendary";
-  const isLegendary = rarity === "legendary";
+  const displayRarity = hideRarity ? null : rarity;
+  const theme = cardTheme(displayRarity);
+  const holoProfile = hideRarity ? null : cardHoloProfile(rarity);
+  const isEpic = !hideRarity && (rarity === "epic" || rarity === "legendary");
+  const isLegendary = !hideRarity && rarity === "legendary";
   const onDark = theme.textOnDark;
   const hp = charm != null ? Math.round(charm * 20) : null;
 
@@ -368,19 +375,35 @@ export function CatTradingCard({
                   sparkle={sparkle ?? holoProfile !== null}
                   className="absolute inset-0"
                 >
-                  <div
-                    className="absolute inset-0 flex items-center justify-center"
-                    style={{ transform: `scale(${stickerScale})` }}
-                  >
-                    <Image
-                      src={stickerUrl}
-                      alt={name}
-                      fill
-                      unoptimized={unoptimizedSticker}
-                      priority={priority}
-                      sizes={isSm ? "(max-width: 420px) 45vw, 160px" : "260px"}
-                      className="object-contain p-3 drop-shadow-[0_8px_18px_rgba(0,0,0,0.22)]"
-                    />
+                  <div className="absolute inset-0 flex items-center justify-center overflow-hidden p-3">
+                    {unoptimizedSticker ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        key={stickerUrl}
+                        src={stickerUrl}
+                        alt={name}
+                        draggable={false}
+                        className="max-h-full max-w-full object-contain drop-shadow-[0_8px_18px_rgba(0,0,0,0.22)]"
+                        style={{
+                          transform: `scale(${stickerScale})`,
+                          transformOrigin: "center center",
+                        }}
+                      />
+                    ) : (
+                      <div
+                        className="relative h-full w-full"
+                        style={{ transform: `scale(${stickerScale})` }}
+                      >
+                        <Image
+                          src={stickerUrl}
+                          alt={name}
+                          fill
+                          priority={priority}
+                          sizes={isSm ? "(max-width: 420px) 45vw, 160px" : "260px"}
+                          className="object-contain drop-shadow-[0_8px_18px_rgba(0,0,0,0.22)]"
+                        />
+                      </div>
+                    )}
                   </div>
                 </CardScene>
 
@@ -394,15 +417,17 @@ export function CatTradingCard({
                   />
                 )}
 
-                <div
-                  className={cn(
-                    "absolute right-1.5 top-1.5 z-10 flex items-center gap-1 rounded-md px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-white shadow-md",
-                    theme.badge,
-                  )}
-                >
-                  {isLegendary && <Sparkles className="size-2.5" />}
-                  {rarityLabel(rarity)}
-                </div>
+                {!hideRarity && (
+                  <div
+                    className={cn(
+                      "absolute right-1.5 top-1.5 z-10 flex items-center gap-1 rounded-md px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-white shadow-md",
+                      theme.badge,
+                    )}
+                  >
+                    {isLegendary && <Sparkles className="size-2.5" />}
+                    {rarityLabel(rarity)}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -444,15 +469,15 @@ export function CatTradingCard({
           )}
 
           {/* === STATS PANEL === */}
-          <div
-            className={cn(
-              "relative z-10 flex flex-1 flex-col",
-              theme.panelClass ?? (theme.panel ? cn("bg-gradient-to-b", theme.panel) : ""),
-              isSm ? "gap-1 px-1.5 pb-2 pt-1" : "gap-1.5 px-3 pb-3 pt-2",
-            )}
-          >
-            {stats && stats.length > 0 ? (
-              stats.map((s) => (
+          {!hideStats && stats && stats.length > 0 ? (
+            <div
+              className={cn(
+                "relative z-10 flex flex-1 flex-col",
+                theme.panelClass ?? (theme.panel ? cn("bg-gradient-to-b", theme.panel) : ""),
+                isSm ? "gap-1 px-1.5 pb-2 pt-1" : "gap-1.5 px-3 pb-3 pt-2",
+              )}
+            >
+              {stats.map((s) => (
                 <StatAttack
                   key={s.label}
                   stat={s}
@@ -460,24 +485,33 @@ export function CatTradingCard({
                   compact={isSm}
                   onDark={onDark}
                 />
-              ))
-            ) : null}
+              ))}
 
-            {place && !isTcg && (
-              <div
-                className={cn(
-                  "mt-auto flex items-center gap-1 rounded-md px-2 py-1 font-semibold",
-                  onDark
-                    ? "bg-white/8 text-white/60"
-                    : "bg-black/5 text-foreground/60",
-                  isSm ? "text-[8px]" : "text-[10px]",
-                )}
-              >
-                <MapPin className={cn(isSm ? "size-2.5" : "size-3")} />
-                <span className="truncate">{place}</span>
-              </div>
-            )}
-          </div>
+              {place && !isTcg && (
+                <div
+                  className={cn(
+                    "mt-auto flex items-center gap-1 rounded-md px-2 py-1 font-semibold",
+                    onDark
+                      ? "bg-white/8 text-white/60"
+                      : "bg-black/5 text-foreground/60",
+                    isSm ? "text-[8px]" : "text-[10px]",
+                  )}
+                >
+                  <MapPin className={cn(isSm ? "size-2.5" : "size-3")} />
+                  <span className="truncate">{place}</span>
+                </div>
+              )}
+            </div>
+          ) : hideStats ? (
+            <div
+              className={cn(
+                "relative z-10 shrink-0 px-3 py-2.5 text-center text-[10px] font-semibold",
+                onDark ? "text-white/50" : "text-muted-foreground",
+              )}
+            >
+              Rarity revealed after you save
+            </div>
+          ) : null}
       </div>
     </div>
   );

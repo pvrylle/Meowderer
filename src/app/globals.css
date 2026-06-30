@@ -409,6 +409,11 @@
   -webkit-backface-visibility: hidden;
 }
 
+.card-flip-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
 /* Catch review — card preview + bottom sheet, no overlap on short screens */
 .catch-review-layout {
   display: flex;
