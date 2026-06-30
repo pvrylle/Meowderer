@@ -4,7 +4,7 @@ import type { Capture } from "@/lib/supabase/types";
  * Demo mode lets you browse the app with sample cats via a cookie set by
  * "Continue as demo" on the auth screen. Works with or without Supabase.
  */
-export const DEMO_AVAILABLE = true;
+export const DEMO_AVAILABLE = false;
 export const DEMO_COOKIE = "catdex-demo";
 
 export const DEMO_USER = {

@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Nunito } from "next/font/google";
 import "./globals.css";
 
-import { PhoneFrame } from "@/components/phone-frame";
 import { Toaster } from "@/components/ui/sonner";
 
 const nunito = Nunito({
@@ -43,7 +42,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${nunito.variable} antialiased`}>
       <body className="font-sans">
-        <PhoneFrame>{children}</PhoneFrame>
+        {children}
         <Toaster position="top-center" richColors />
       </body>
     </html>
