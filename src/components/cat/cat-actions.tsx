@@ -87,7 +87,7 @@ export function DeleteCatButton({ id }: { id: string }) {
   const [isPending, startTransition] = useTransition();
 
   function handleDelete() {
-    if (!window.confirm("Release this cat from your CatDex?")) return;
+    if (!window.confirm("Release this cat from your collection?")) return;
     startTransition(async () => {
       await deleteCapture(id);
     });

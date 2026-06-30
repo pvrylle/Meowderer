@@ -35,7 +35,7 @@ export function WelcomeForm({ suggestedUsername }: { suggestedUsername: string }
       <div className="flex flex-col items-center gap-4 text-center">
         <BrandMark variant="logo" />
         <div className="space-y-2">
-          <h1 className="text-xl font-extrabold text-foreground">Welcome to CatDex!</h1>
+          <h1 className="text-xl font-extrabold text-foreground">Welcome to Meowderer!</h1>
           <p className="text-sm text-muted-foreground">
             Pick a display name for the community.
           </p>
@@ -71,7 +71,7 @@ export function WelcomeForm({ suggestedUsername }: { suggestedUsername: string }
         </div>
 
         <CatButton type="submit" block loading={isPending}>
-          Continue to CatDex
+          Continue to Meowderer
         </CatButton>
       </form>
 

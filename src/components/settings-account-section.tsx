@@ -162,7 +162,7 @@ export function SettingsAccountSection() {
         </h2>
         <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">
           <p>
-            CatDex stores your photos, optional GPS coordinates, and community posts. Location is
+            Meowderer stores your photos, optional GPS coordinates, and community posts. Location is
             private by default. See the{" "}
             <Link href="/legal/privacy" className="font-semibold text-primary underline">
               Privacy Policy

@@ -118,7 +118,7 @@ export function CommunityFeed({ posts: initialPosts }: CommunityFeedProps) {
     const text = `${post.body}${post.image_url ? `\n${post.image_url}` : ""}`;
     if (navigator.share) {
       try {
-        await navigator.share({ title: "CatDex sighting", text });
+        await navigator.share({ title: "Meowderer sighting", text });
         return;
       } catch {
         // cancelled

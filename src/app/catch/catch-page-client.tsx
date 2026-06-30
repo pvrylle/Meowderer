@@ -257,7 +257,7 @@ export default function CatchPageClient() {
 
       revokePreview();
       revokeSticker();
-      toast.success("Cat added to your CatDex!");
+      toast.success("Cat added to your collection!");
       router.push(`/cat/${result.id}`);
     } catch (err) {
       console.error(err);

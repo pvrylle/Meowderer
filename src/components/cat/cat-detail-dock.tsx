@@ -94,8 +94,8 @@ export function CatDetailDock({ capture }: { capture: Capture }) {
     setSharingCard(true);
     try {
       const blob = await exportCardPng(cardRef.current);
-      const file = new File([blob], "catdex-cat.png", { type: "image/png" });
-      const title = capture.nickname?.trim() || "My CatDex catch";
+      const file = new File([blob], "meowderer-cat.png", { type: "image/png" });
+      const title = capture.nickname?.trim() || "My Meowderer catch";
 
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({ title, files: [file] });
@@ -105,7 +105,7 @@ export function CatDetailDock({ capture }: { capture: Capture }) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "catdex-cat.png";
+      a.download = "meowderer-cat.png";
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Card saved to your device.");
@@ -135,7 +135,7 @@ export function CatDetailDock({ capture }: { capture: Capture }) {
   }
 
   function releaseCat() {
-    if (!window.confirm("Release this cat from your CatDex?")) return;
+    if (!window.confirm("Release this cat from your collection?")) return;
     startDelete(async () => {
       await deleteCapture(capture.id);
     });

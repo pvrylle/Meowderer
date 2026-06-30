@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Nunito } from "next/font/google";
 import "./globals.css";
 
+import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 import { Toaster } from "@/components/ui/sonner";
 
 const nunito = Nunito({
@@ -11,9 +12,9 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "CatDex",
-  description: "Catch, collect, and map the stray cats around you.",
-  applicationName: "CatDex",
+  title: APP_NAME,
+  description: APP_TAGLINE,
+  applicationName: APP_NAME,
   manifest: "/manifest.json",
   icons: {
     icon: "/assets/iconnotext.svg",
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "CatDex",
+    title: APP_NAME,
   },
 };
 

@@ -77,7 +77,7 @@ export async function reverseGeocode(
 
   const res = await fetch(url.toString(), {
     headers: {
-      "User-Agent": "CatDex/1.0 (https://github.com/catdex)",
+      "User-Agent": "Meowderer/1.0",
       Accept: "application/json",
     },
     next: { revalidate: 86400 },

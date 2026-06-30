@@ -34,8 +34,8 @@ export function ShareCaptureCard({
     setSharing(true);
     try {
       const blob = await exportCardPng(cardRef.current);
-      const file = new File([blob], "catdex-cat.png", { type: "image/png" });
-      const title = capture.nickname?.trim() || "My CatDex catch";
+      const file = new File([blob], "meowderer-cat.png", { type: "image/png" });
+      const title = capture.nickname?.trim() || "My Meowderer catch";
 
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({ title, files: [file] });
@@ -45,7 +45,7 @@ export function ShareCaptureCard({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "catdex-cat.png";
+      a.download = "meowderer-cat.png";
       a.click();
       URL.revokeObjectURL(url);
       toast.success("Card saved to your device.");

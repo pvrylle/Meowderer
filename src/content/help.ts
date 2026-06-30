@@ -1,3 +1,5 @@
+import { APP_NAME } from "@/lib/brand";
+
 export type HelpItem = {
   question: string;
   answer: string;
@@ -15,19 +17,17 @@ export const HELP_SECTIONS: HelpSection[] = [
     title: "Getting started",
     items: [
       {
-        question: "How do I install CatDex on my phone?",
-        answer:
-          "Open CatDex in your browser, then use your browser's Add to Home Screen option (Share menu on iOS, menu on Android). CatDex works as a PWA with offline support for pending catches.",
+        question: `How do I install ${APP_NAME} on my phone?`,
+        answer: `Open ${APP_NAME} in your browser, then use your browser's Add to Home Screen option (Share menu on iOS, menu on Android). ${APP_NAME} works as a PWA with offline support for pending catches.`,
       },
       {
         question: "How do I catch a cat?",
-        answer:
-          "Tap the camera button in the bottom nav, take or upload a photo of a stray, and CatDex will create a sticker for your collection. Add an optional nickname and location before saving.",
+        answer: `Tap the camera button in the bottom nav, take or upload a photo of a stray, and ${APP_NAME} will create a sticker for your collection. Add an optional nickname and location before saving.`,
       },
       {
-        question: "What are the CatDex filters?",
+        question: "What are the collection filters?",
         answer:
-          "Filter your collection by rarity, coat type, or whether you've seen a cat before. Use the tabs on the CatDex screen to browse All, Helped, or Rescued cats.",
+          "Filter your collection by rarity, coat type, or whether you've seen a cat before. Use the tabs on the Home screen to browse All, Helped, or Rescued cats.",
       },
     ],
   },
@@ -46,7 +46,7 @@ export const HELP_SECTIONS: HelpSection[] = [
           "Catch locations are private to your account unless you share a catch card or community post with location enabled. Shared locations may be rounded for privacy.",
       },
       {
-        question: "What data does CatDex store?",
+        question: `What data does ${APP_NAME} store?`,
         answer:
           "Photos, stickers, optional GPS, place names, community posts, and account info. See the Privacy Policy for full details.",
       },
@@ -75,7 +75,7 @@ export const HELP_SECTIONS: HelpSection[] = [
       {
         question: "How do I sign up or sign in?",
         answer:
-          "Use email and password or Continue with Google on the auth screen. After onboarding, you'll land on Sign up by default.",
+          "Use email and password on the auth screen. After onboarding, you'll land on Sign up by default.",
       },
       {
         question: "I forgot my password.",
@@ -95,8 +95,7 @@ export const HELP_SECTIONS: HelpSection[] = [
     items: [
       {
         question: "The camera won't open.",
-        answer:
-          "Allow camera permission in your browser or device settings, then reload CatDex. On iOS, use Safari for best PWA support.",
+        answer: `Allow camera permission in your browser or device settings, then reload ${APP_NAME}. On iOS, use Safari for best PWA support.`,
       },
       {
         question: "My offline catches didn't sync.",
@@ -112,4 +111,4 @@ export const HELP_SECTIONS: HelpSection[] = [
   },
 ];
 
-export const SUPPORT_EMAIL = "support@catdex.app";
+export const SUPPORT_EMAIL = "support@meowderer.app";

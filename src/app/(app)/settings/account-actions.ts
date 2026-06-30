@@ -74,7 +74,7 @@ export async function deleteAccountAction(): Promise<{ error?: string }> {
   if (!admin) {
     return {
       error:
-        "Account deletion is not configured on this server. Contact support@catdex.app.",
+        "Account deletion is not configured on this server. Contact support@meowderer.app.",
     };
   }
 

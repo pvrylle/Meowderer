@@ -1,4 +1,4 @@
-import { BRAND_ICON, BRAND_LOGO } from "@/lib/brand";
+import { APP_NAME, BRAND_ICON, BRAND_LOGO } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 type BrandMarkProps = {
@@ -24,7 +24,7 @@ export function BrandMark({
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={BRAND_LOGO}
-        alt="CatDex"
+        alt={alt ?? APP_NAME}
         decoding="async"
         fetchPriority={priority ? "high" : undefined}
         className={cn("h-auto w-[min(13rem,72vw)] object-contain", className)}

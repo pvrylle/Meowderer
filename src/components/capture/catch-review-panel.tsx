@@ -263,7 +263,7 @@ export function CatchReviewPanel({
           disabled={!canSave || saving}
           className="rounded-xl sm:!h-12 sm:rounded-2xl sm:text-sm"
         >
-          {saving ? "Saving…" : canSave ? "Save to CatDex" : "Need location"}
+          {saving ? "Saving…" : canSave ? "Save catch" : "Need location"}
         </CatButton>
       </div>
     </section>

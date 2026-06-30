@@ -1,3 +1,7 @@
+import { APP_NAME } from "@/lib/brand";
+
+import { SUPPORT_EMAIL } from "@/content/help";
+
 export type LegalSection = {
   title: string;
   paragraphs: string[];
@@ -7,8 +11,8 @@ export const TERMS_SECTIONS: LegalSection[] = [
   {
     title: "Acceptance",
     paragraphs: [
-      "By creating a CatDex account or using the app, you agree to these Terms of Service. If you do not agree, do not use CatDex.",
-      "CatDex is intended for users aged 13 and older. If you are under 13, you may not create an account without verifiable parental consent.",
+      `By creating a ${APP_NAME} account or using the app, you agree to these Terms of Service. If you do not agree, do not use ${APP_NAME}.`,
+      `${APP_NAME} is intended for users aged 13 and older. If you are under 13, you may not create an account without verifiable parental consent.`,
     ],
   },
   {
@@ -21,7 +25,7 @@ export const TERMS_SECTIONS: LegalSection[] = [
   {
     title: "User content",
     paragraphs: [
-      "You retain ownership of photos, stickers, posts, chat messages, and other content you upload. By posting content, you grant CatDex a non-exclusive license to store, display, and process that content solely to operate the service.",
+      `You retain ownership of photos, stickers, posts, chat messages, and other content you upload. By posting content, you grant ${APP_NAME} a non-exclusive license to store, display, and process that content solely to operate the service.`,
       "Do not upload content you do not have the right to share. Do not harass others, post false rescue alerts, or share illegal material.",
       "We may remove content or suspend accounts that violate these rules or harm the community.",
     ],
@@ -30,7 +34,7 @@ export const TERMS_SECTIONS: LegalSection[] = [
     title: "Photographing cats",
     paragraphs: [
       "When photographing strays, respect private property, local laws, and the welfare of animals. Do not trespass, disturb nesting areas, or put yourself or cats at risk.",
-      "CatDex is a community tool, not professional veterinary or rescue advice. For injured or distressed animals, contact local shelters or authorities.",
+      `${APP_NAME} is a community tool, not professional veterinary or rescue advice. For injured or distressed animals, contact local shelters or authorities.`,
     ],
   },
   {
@@ -43,13 +47,13 @@ export const TERMS_SECTIONS: LegalSection[] = [
   {
     title: "Third-party services",
     paragraphs: [
-      "CatDex uses Supabase (auth and database), Cloudinary (image hosting), OpenStreetMap/Nominatim (map and place names), and Google (optional sign-in). Your use of those services is also subject to their terms.",
+      `${APP_NAME} uses Supabase (auth and database), Cloudinary (image hosting), and OpenStreetMap/Nominatim (map and place names). Your use of those services is also subject to their terms.`,
     ],
   },
   {
     title: "Disclaimer",
     paragraphs: [
-      'CatDex is provided "as is" without warranties. We are not liable for indirect or consequential damages arising from your use of the app.',
+      `${APP_NAME} is provided "as is" without warranties. We are not liable for indirect or consequential damages arising from your use of the app.`,
       "We may update these Terms. Continued use after changes means you accept the updated Terms.",
     ],
   },
@@ -59,16 +63,16 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
   {
     title: "Overview",
     paragraphs: [
-      "CatDex collects only what we need to run your account, store your cat collection, and power community features. This policy explains what we store and why.",
+      `${APP_NAME} collects only what we need to run your account, store your cat collection, and power community features. This policy explains what we store and why.`,
     ],
   },
   {
     title: "Information we collect",
     paragraphs: [
-      "Account: email address, password hash (via Supabase Auth), optional Google profile info when you use Google sign-in, username, and avatar.",
+      "Account: email address, password hash (via Supabase Auth), username, and avatar.",
       "Cat catches: photos, generated stickers, optional GPS coordinates, place names, nicknames, and capture timestamps.",
       "Community: posts, comments, chat messages, likes, rescue alerts, and optional post images.",
-      "Device: local storage for onboarding state, demo mode, offline upload queue, chat unread counts, and PWA install preferences.",
+      "Device: local storage for onboarding state, offline upload queue, chat unread counts, and PWA install preferences.",
     ],
   },
   {
@@ -89,7 +93,7 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
   {
     title: "Third parties",
     paragraphs: [
-      "Supabase processes auth and database requests. Cloudinary stores your images. OpenStreetMap/Nominatim provides map tiles and reverse geocoding. Google OAuth is optional for sign-in.",
+      "Supabase processes auth and database requests. Cloudinary stores your images. OpenStreetMap/Nominatim provides map tiles and reverse geocoding.",
       "Each provider processes data according to their own privacy policies and our agreements with them.",
     ],
   },
@@ -103,13 +107,13 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
   {
     title: "Cookies and local storage",
     paragraphs: [
-      "CatDex uses strictly necessary cookies and local storage for authentication sessions, onboarding completion, demo mode, and offline sync. We do not use advertising or analytics cookies in the current version.",
+      `${APP_NAME} uses strictly necessary cookies and local storage for authentication sessions, onboarding completion, and offline sync. We do not use advertising or analytics cookies in the current version.`,
     ],
   },
   {
     title: "Contact",
     paragraphs: [
-      "Questions about privacy or to request data export: email support@catdex.app (replace with your support address before launch).",
+      `Questions about privacy or to request data export: email ${SUPPORT_EMAIL}.`,
     ],
   },
 ];

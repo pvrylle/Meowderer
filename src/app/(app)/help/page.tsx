@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 
+import { APP_NAME } from "@/lib/brand";
 import { HelpAccordionItem } from "@/components/help-accordion-item";
 import { HELP_SECTIONS, SUPPORT_EMAIL } from "@/content/help";
 
@@ -38,7 +39,7 @@ export default function HelpPage() {
       <section className="rounded-2xl border border-border bg-card p-4 text-center">
         <p className="text-sm text-muted-foreground">Still need help?</p>
         <a
-          href={`mailto:${SUPPORT_EMAIL}?subject=CatDex%20Support`}
+          href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(`${APP_NAME} Support`)}`}
           className="mt-2 inline-block text-sm font-semibold text-primary underline"
         >
           Contact support

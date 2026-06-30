@@ -1,3 +1,4 @@
+import { APP_NAME } from "@/lib/brand";
 import { SUPPORT_EMAIL } from "@/content/help";
 
 export function ReportContentLink({
@@ -9,7 +10,7 @@ export function ReportContentLink({
   contentId: string;
   className?: string;
 }) {
-  const subject = encodeURIComponent(`CatDex report: ${contentType} ${contentId}`);
+  const subject = encodeURIComponent(`${APP_NAME} report: ${contentType} ${contentId}`);
   const body = encodeURIComponent(
     `I would like to report this ${contentType} (ID: ${contentId}).\n\nReason:\n`,
   );

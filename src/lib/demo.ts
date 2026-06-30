@@ -9,7 +9,7 @@ export const DEMO_COOKIE = "catdex-demo";
 
 export const DEMO_USER = {
   id: "demo-user",
-  email: "demo@catdex.app",
+  email: "demo@meowderer.app",
 } as const;
 
 function daysAgo(days: number): string {

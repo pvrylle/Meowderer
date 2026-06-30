@@ -36,7 +36,7 @@ const SLIDES: Slide[] = [
   },
   {
     icon: LayoutGrid,
-    title: "Build your CatDex",
+    title: "Build your collection",
     body: "Collect across coats, cities, and countries. Gotta photograph 'em all.",
     accent: "text-orange",
     tint: "bg-orange/15",

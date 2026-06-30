@@ -1,8 +1,8 @@
-# CatDex
+# Meowderer
 
 A wholesome, mobile-first PWA for catching, collecting, and mapping the stray
 cats around you. Photograph a cat, the app turns it into a transparent
-collectible sticker on-device, and files it in your personal CatDex.
+collectible sticker on-device, and files it in your personal collection.
 
 See [`PRD.md`](PRD.md) and [`TASKS.md`](TASKS.md) for the full product spec.
 
@@ -63,7 +63,7 @@ subfolder. Open http://localhost:3000.
    are used by `/api/captures/upload` — never expose the secret in client code.
 
    Original photos upload as **authenticated** assets (private). Stickers are
-   public delivery URLs used in the CatDex and map.
+   public delivery URLs used in Meowderer and the map.
 
 ## Deploy to Vercel
 

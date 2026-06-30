@@ -37,7 +37,7 @@ export function CatDetailView({
       <header className="relative z-10 flex shrink-0 items-center justify-between px-4 py-2">
         <Link
           href="/home"
-          aria-label="Back to CatDex"
+          aria-label="Back to collection"
           className="flex size-9 items-center justify-center rounded-full bg-card/90 text-muted-foreground shadow-sm backdrop-blur-sm"
         >
           <ArrowLeft className="size-5" />

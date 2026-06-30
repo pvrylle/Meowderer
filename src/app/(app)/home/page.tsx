@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Camera, Flame, Globe, Palette, Target } from "lucide-react";
 
+import { APP_NAME } from "@/lib/brand";
 import { BrandMark } from "@/components/brand-mark";
 import { PreloadCaptureAssets } from "@/components/capture/preload-capture-assets";
 import { CatCard } from "@/components/cat-card";
@@ -41,7 +42,7 @@ export default async function HomePage() {
       <PreloadCaptureAssets />
       {/* Header */}
       <header className="flex items-center justify-between">
-        <BrandMark variant="icon" size={36} alt="CatDex" priority />
+        <BrandMark variant="icon" size={36} alt={APP_NAME} priority />
         <Link
           href="/profile"
           className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-sm font-semibold text-primary"
