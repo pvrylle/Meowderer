@@ -13,6 +13,7 @@ import {
 import { updateAvatarAction } from "@/app/(app)/community/actions";
 import { UserAvatar } from "@/components/user-avatar";
 import { CatButton } from "@/components/ui/cat-button";
+import { Switch } from "@/components/ui/switch";
 import { uploadAvatar } from "@/lib/community-upload";
 import { SettingsAccountSection } from "@/components/settings-account-section";
 import { useOfflineSync } from "@/hooks/use-offline-sync";
@@ -147,9 +148,9 @@ export function SettingsForm({
         <button
           type="button"
           onClick={() => setGpsDefaultOn(!gpsDefaultOn)}
-          className="flex w-full items-center justify-between rounded-2xl border border-border bg-card p-4"
+          className="flex w-full items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4"
         >
-          <span className="flex items-center gap-3">
+          <span className="flex min-w-0 items-center gap-3">
             <MapPin className="size-5 text-primary" />
             <span className="text-left">
               <span className="block font-semibold text-foreground">
@@ -160,17 +161,7 @@ export function SettingsForm({
               </span>
             </span>
           </span>
-          <span
-            className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-              gpsDefaultOn ? "bg-primary" : "bg-muted-foreground/30"
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 size-5 rounded-full bg-white transition-transform ${
-                gpsDefaultOn ? "translate-x-5" : "translate-x-0.5"
-              }`}
-            />
-          </span>
+          <Switch checked={gpsDefaultOn} />
         </button>
       </section>
 

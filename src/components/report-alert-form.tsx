@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { createAlertAction } from "@/app/(app)/community/actions";
 import { CatButton } from "@/components/ui/cat-button";
+import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { getCurrentPosition } from "@/lib/geo";
 
@@ -77,41 +78,21 @@ export function ReportAlertForm() {
       <button
         type="button"
         onClick={() => setUrgent((v) => !v)}
-        className="flex w-full items-center justify-between rounded-2xl border border-border px-4 py-3"
+        className="flex w-full items-center justify-between gap-3 rounded-2xl border border-border px-4 py-3"
       >
-        <span className="font-semibold text-foreground">Mark as urgent</span>
-        <span
-          className={`relative h-6 w-11 rounded-full transition-colors ${
-            urgent ? "bg-destructive" : "bg-muted-foreground/30"
-          }`}
-        >
-          <span
-            className={`absolute top-0.5 size-5 rounded-full bg-white transition-transform ${
-              urgent ? "translate-x-5" : "translate-x-0.5"
-            }`}
-          />
-        </span>
+        <span className="min-w-0 font-semibold text-foreground">Mark as urgent</span>
+        <Switch checked={urgent} tone="destructive" />
       </button>
       <button
         type="button"
         onClick={() => setGpsOn((v) => !v)}
-        className="flex w-full items-center justify-between rounded-2xl border border-border px-4 py-3"
+        className="flex w-full items-center justify-between gap-3 rounded-2xl border border-border px-4 py-3"
       >
-        <span className="flex items-center gap-2 font-semibold text-foreground">
+        <span className="flex min-w-0 items-center gap-2 font-semibold text-foreground">
           <MapPin className="size-5 text-primary" />
           Include location
         </span>
-        <span
-          className={`relative h-6 w-11 rounded-full transition-colors ${
-            gpsOn ? "bg-primary" : "bg-muted-foreground/30"
-          }`}
-        >
-          <span
-            className={`absolute top-0.5 size-5 rounded-full bg-white transition-transform ${
-              gpsOn ? "translate-x-5" : "translate-x-0.5"
-            }`}
-          />
-        </span>
+        <Switch checked={gpsOn} />
       </button>
       <CatButton type="submit" block loading={loading}>
         Submit alert

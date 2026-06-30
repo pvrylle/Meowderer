@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { PawPrint } from "lucide-react";
 
@@ -38,12 +38,33 @@ const PAWS: PawSpot[] = [
 
 const TRAIL_TONES: PawTone[] = ["primary", "green", "orange", "muted"];
 
-type PopPaw = {
-  id: number;
-  x: number;
-  y: number;
-  rotate: number;
-};
+/** Percent coords — cats wander these paths on auto mode. */
+const AUTO_PATHS: { x: number; y: number }[][] = [
+  [
+    { x: 10, y: 86 },
+    { x: 24, y: 72 },
+    { x: 42, y: 58 },
+    { x: 58, y: 44 },
+    { x: 78, y: 30 },
+    { x: 90, y: 18 },
+  ],
+  [
+    { x: 90, y: 84 },
+    { x: 74, y: 68 },
+    { x: 56, y: 54 },
+    { x: 38, y: 40 },
+    { x: 22, y: 26 },
+    { x: 10, y: 14 },
+  ],
+  [
+    { x: 48, y: 92 },
+    { x: 34, y: 74 },
+    { x: 52, y: 56 },
+    { x: 38, y: 38 },
+    { x: 54, y: 22 },
+    { x: 46, y: 10 },
+  ],
+];
 
 type TrailPaw = {
   id: number;
@@ -56,20 +77,24 @@ type TrailPaw = {
 
 const MIN_TRAIL_PX = 26;
 const MIN_TRAIL_MS = 55;
-const MAX_TRAIL = 32;
+const MAX_TRAIL = 36;
+const AUTO_TRAIL_MS = 340;
+
+export type PawTrailMode = "none" | "pointer" | "auto";
 
 export function InteractivePawField({
   children,
   className,
   contentClassName,
   density = "normal",
-  trail = true,
+  trailMode = "pointer",
 }: {
   children: React.ReactNode;
   className?: string;
   contentClassName?: string;
   density?: "normal" | "sparse";
-  trail?: boolean;
+  /** `auto` = ambient wandering paws; `pointer` = follow cursor; `none` = off */
+  trailMode?: PawTrailMode;
 }) {
   const reduceMotion = useReducedMotion();
   const fieldId = useId();
@@ -77,27 +102,43 @@ export function InteractivePawField({
   const lastTrailRef = useRef({ x: 0, y: 0, t: 0 });
   const lastAngleRef = useRef(0);
   const trailToneRef = useRef(0);
-  const [pops, setPops] = useState<PopPaw[]>([]);
+  const autoWalkerRef = useRef({ path: 0, step: 0, sub: 0 });
   const [trails, setTrails] = useState<TrailPaw[]>([]);
   const paws = density === "sparse" ? PAWS.slice(0, 4) : PAWS;
 
-  const popAt = useCallback(
-    (x: number, y: number) => {
+  const addTrailAtPercent = useCallback(
+    (x: number, y: number, rotate: number) => {
       if (reduceMotion) return;
       const id = Date.now() + Math.random();
-      const rotate = Math.round(Math.random() * 60 - 30);
-      setPops((prev) => [...prev, { id, x, y, rotate }]);
+      const tone = TRAIL_TONES[trailToneRef.current % TRAIL_TONES.length];
+      trailToneRef.current += 1;
+
+      setTrails((prev) => {
+        const next = [
+          ...prev,
+          {
+            id,
+            x,
+            y,
+            rotate,
+            tone,
+            size: 13 + Math.round(Math.random() * 7),
+          },
+        ];
+        return next.length > MAX_TRAIL ? next.slice(-MAX_TRAIL) : next;
+      });
+
       window.setTimeout(
-        () => setPops((prev) => prev.filter((p) => p.id !== id)),
-        700,
+        () => setTrails((prev) => prev.filter((p) => p.id !== id)),
+        2600,
       );
     },
     [reduceMotion],
   );
 
-  const dropTrailPaw = useCallback(
+  const dropPointerTrail = useCallback(
     (clientX: number, clientY: number) => {
-      if (reduceMotion || !trail) return;
+      if (reduceMotion || trailMode !== "pointer") return;
       const root = rootRef.current;
       if (!root) return;
 
@@ -129,45 +170,54 @@ export function InteractivePawField({
       lastAngleRef.current = angle;
       lastTrailRef.current = { x: clientX, y: clientY, t: now };
 
-      const id = now + Math.random();
-      const tone = TRAIL_TONES[trailToneRef.current % TRAIL_TONES.length];
-      trailToneRef.current += 1;
-
-      setTrails((prev) => {
-        const next = [
-          ...prev,
-          {
-            id,
-            x,
-            y,
-            rotate,
-            tone,
-            size: 14 + Math.round(Math.random() * 6),
-          },
-        ];
-        return next.length > MAX_TRAIL ? next.slice(-MAX_TRAIL) : next;
-      });
-
-      window.setTimeout(
-        () => setTrails((prev) => prev.filter((p) => p.id !== id)),
-        2400,
-      );
+      addTrailAtPercent(x, y, rotate);
     },
-    [reduceMotion, trail],
+    [addTrailAtPercent, reduceMotion, trailMode],
   );
 
-  const handlePointerMove = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
-      dropTrailPaw(e.clientX, e.clientY);
-    },
-    [dropTrailPaw],
-  );
+  useEffect(() => {
+    if (trailMode !== "auto" || reduceMotion) return;
+
+    const tick = () => {
+      const walker = autoWalkerRef.current;
+      const path = AUTO_PATHS[walker.path % AUTO_PATHS.length];
+      const nextStep = (walker.step + 1) % path.length;
+      const a = path[walker.step];
+      const b = path[nextStep];
+      const t = walker.sub / 4;
+      const x = a.x + (b.x - a.x) * t;
+      const y = a.y + (b.y - a.y) * t;
+      const rotate =
+        (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI +
+        90 +
+        (Math.random() * 12 - 6);
+
+      addTrailAtPercent(x, y, rotate);
+
+      walker.sub += 1;
+      if (walker.sub >= 4) {
+        walker.sub = 0;
+        walker.step = nextStep;
+        if (walker.step === 0) walker.path += 1;
+      }
+    };
+
+    tick();
+    const id = window.setInterval(tick, AUTO_TRAIL_MS);
+    return () => window.clearInterval(id);
+  }, [addTrailAtPercent, reduceMotion, trailMode]);
+
+  const staticInteractive = trailMode === "pointer";
 
   return (
     <div
       ref={rootRef}
       className={cn("relative", className)}
-      onPointerMove={trail && !reduceMotion ? handlePointerMove : undefined}
+      onPointerMove={
+        trailMode === "pointer" && !reduceMotion
+          ? (e) => dropPointerTrail(e.clientX, e.clientY)
+          : undefined
+      }
     >
       <div
         className="pointer-events-none absolute inset-0 overflow-hidden"
@@ -184,9 +234,12 @@ export function InteractivePawField({
                 rotate: `${t.rotate}deg`,
               }}
               initial={{ opacity: 0, scale: 0.45, x: "-50%", y: "-50%" }}
-              animate={{ opacity: [0, 0.38, 0.22, 0], scale: [0.45, 1, 0.95, 0.85] }}
+              animate={{
+                opacity: [0, 0.36, 0.2, 0],
+                scale: [0.45, 1, 0.95, 0.85],
+              }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 2.2, ease: "easeOut" }}
+              transition={{ duration: 2.4, ease: "easeOut" }}
             >
               <PawPrint
                 style={{ width: t.size, height: t.size }}
@@ -196,97 +249,93 @@ export function InteractivePawField({
           ))}
         </AnimatePresence>
 
-        {paws.map((paw) => (
-          <motion.button
-            key={`${fieldId}-${paw.id}`}
-            type="button"
-            tabIndex={-1}
-            aria-hidden
-            className={cn(
-              "pointer-events-auto absolute opacity-[0.18] transition-opacity hover:opacity-40 active:opacity-55",
-              TONE_CLASS[paw.tone],
-            )}
-            style={{
-              top: paw.top,
-              left: paw.left,
-              right: paw.right,
-              bottom: paw.bottom,
-              rotate: `${paw.rotate}deg`,
-            }}
-            initial={reduceMotion ? false : { opacity: 0, scale: 0.6 }}
-            animate={
-              reduceMotion
-                ? { opacity: 0.18, scale: 1 }
-                : {
-                    opacity: 0.18,
-                    scale: 1,
-                    y: [0, -5, 0],
-                    rotate: [paw.rotate, paw.rotate + 6, paw.rotate],
-                  }
-            }
-            transition={
-              reduceMotion
-                ? { duration: 0.2 }
-                : {
-                    opacity: { duration: 0.4, delay: paw.delay },
-                    scale: {
-                      type: "spring",
-                      stiffness: 260,
-                      damping: 18,
-                      delay: paw.delay,
-                    },
-                    y: {
-                      duration: 4.5,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                      delay: paw.delay,
-                    },
-                    rotate: {
-                      duration: 5.5,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                      delay: paw.delay,
+        {paws.map((paw) => {
+          const PawShell = staticInteractive ? motion.button : motion.div;
+          return (
+            <PawShell
+              key={`${fieldId}-${paw.id}`}
+              {...(staticInteractive
+                ? {
+                    type: "button" as const,
+                    tabIndex: -1,
+                    onClick: (e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      const rect = rootRef.current?.getBoundingClientRect();
+                      if (!rect) return;
+                      addTrailAtPercent(
+                        ((e.clientX - rect.left) / rect.width) * 100,
+                        ((e.clientY - rect.top) / rect.height) * 100,
+                        paw.rotate + (Math.random() * 20 - 10),
+                      );
                     },
                   }
-            }
-            whileHover={reduceMotion ? undefined : { scale: 1.15, opacity: 0.42 }}
-            whileTap={reduceMotion ? undefined : { scale: 0.88 }}
-            onClick={(e) => {
-              e.stopPropagation();
-              const rect = rootRef.current?.getBoundingClientRect();
-              if (!rect) return;
-              popAt(
-                ((e.clientX - rect.left) / rect.width) * 100,
-                ((e.clientY - rect.top) / rect.height) * 100,
-              );
-            }}
-          >
-            <PawPrint
-              style={{ width: paw.size, height: paw.size }}
-              strokeWidth={2.25}
-            />
-          </motion.button>
-        ))}
-
-        <AnimatePresence>
-          {pops.map((pop) => (
-            <motion.span
-              key={pop.id}
-              className="pointer-events-none absolute text-primary"
+                : {})}
+              aria-hidden
+              className={cn(
+                "absolute opacity-[0.16]",
+                staticInteractive &&
+                  "pointer-events-auto transition-opacity hover:opacity-35 active:opacity-50",
+                TONE_CLASS[paw.tone],
+              )}
               style={{
-                left: `${pop.x}%`,
-                top: `${pop.y}%`,
-                rotate: `${pop.rotate}deg`,
+                top: paw.top,
+                left: paw.left,
+                right: paw.right,
+                bottom: paw.bottom,
+                rotate: `${paw.rotate}deg`,
               }}
-              initial={{ opacity: 0.55, scale: 0.4, x: "-50%", y: "-50%" }}
-              animate={{ opacity: 0, scale: 1.6, y: "-120%" }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.65, ease: "easeOut" }}
+              initial={reduceMotion ? false : { opacity: 0, scale: 0.6 }}
+              animate={
+                reduceMotion
+                  ? { opacity: 0.16, scale: 1 }
+                  : {
+                      opacity: 0.16,
+                      scale: 1,
+                      y: [0, -4, 0],
+                      rotate: [paw.rotate, paw.rotate + 5, paw.rotate],
+                    }
+              }
+              transition={
+                reduceMotion
+                  ? { duration: 0.2 }
+                  : {
+                      opacity: { duration: 0.4, delay: paw.delay },
+                      scale: {
+                        type: "spring",
+                        stiffness: 260,
+                        damping: 18,
+                        delay: paw.delay,
+                      },
+                      y: {
+                        duration: 4.5,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                        delay: paw.delay,
+                      },
+                      rotate: {
+                        duration: 5.5,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                        delay: paw.delay,
+                      },
+                    }
+              }
+              whileHover={
+                staticInteractive && !reduceMotion
+                  ? { scale: 1.12, opacity: 0.32 }
+                  : undefined
+              }
+              whileTap={
+                staticInteractive && !reduceMotion ? { scale: 0.9 } : undefined
+              }
             >
-              <PawPrint className="size-5" strokeWidth={2.5} />
-            </motion.span>
-          ))}
-        </AnimatePresence>
+              <PawPrint
+                style={{ width: paw.size, height: paw.size }}
+                strokeWidth={2.25}
+              />
+            </PawShell>
+          );
+        })}
       </div>
 
       <div className={cn("relative z-10", contentClassName)}>{children}</div>

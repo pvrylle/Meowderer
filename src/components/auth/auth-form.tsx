@@ -74,23 +74,35 @@ export function AuthForm({ initialMode = "signin" }: { initialMode?: Mode }) {
       <motion.div
         variants={fieldMotion}
         transition={{ duration: 0.35, delay: 0.05 }}
-        className="flex rounded-full bg-muted/80 p-1"
+        className="relative z-20"
       >
-        {(["signin", "signup"] as const).map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => setMode(m)}
-            className={cn(
-              "flex-1 rounded-full py-2.5 text-sm font-bold transition-colors",
-              mode === m
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground",
-            )}
-          >
-            {m === "signin" ? "Sign in" : "Sign up"}
-          </button>
-        ))}
+        <div className="relative isolate flex overflow-hidden rounded-full bg-muted/80 p-1">
+          {(["signin", "signup"] as const).map((m) => {
+            const active = mode === m;
+            return (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMode(m)}
+                className={cn(
+                  "relative flex-1 rounded-full py-2.5 text-sm font-bold transition-colors",
+                  active ? "text-primary-foreground" : "text-muted-foreground",
+                )}
+              >
+                {active && (
+                  <motion.span
+                    layoutId="auth-mode-indicator"
+                    className="absolute inset-0 rounded-full bg-primary shadow-sm"
+                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                  />
+                )}
+                <span className="relative z-10">
+                  {m === "signin" ? "Sign in" : "Sign up"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </motion.div>
 
       <motion.form
