@@ -57,7 +57,7 @@ export default function OnboardingPage() {
   }, []);
 
   useEffect(() => {
-    if (mounted && seen) router.replace("/auth");
+    if (mounted && seen) router.replace("/auth?mode=signup");
   }, [mounted, seen, router]);
 
   if (!mounted || seen) return null;
@@ -68,7 +68,7 @@ export default function OnboardingPage() {
 
   function finish() {
     setSeen(true);
-    router.replace("/auth");
+    router.replace("/auth?mode=signup");
   }
 
   function next() {

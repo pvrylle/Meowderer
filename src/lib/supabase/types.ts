@@ -9,6 +9,8 @@ export type Profile = {
   streak_count: number;
   last_capture_date: string | null;
   daily_goal: number;
+  accepted_terms_at: string | null;
+  onboarding_complete: boolean;
   created_at: string;
 };
 

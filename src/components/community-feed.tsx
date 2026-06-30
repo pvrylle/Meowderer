@@ -11,6 +11,7 @@ import {
   toggleLikeAction,
 } from "@/app/(app)/community/actions";
 import { PostCommentsSheet } from "@/components/post-comments-sheet";
+import { ReportContentLink } from "@/components/report-content-link";
 import { UserAvatar } from "@/components/user-avatar";
 import { CatButton } from "@/components/ui/cat-button";
 import { uploadPostImage } from "@/lib/community-upload";
@@ -276,6 +277,11 @@ export function CommunityFeed({ posts: initialPosts }: CommunityFeedProps) {
                 >
                   <Share2 className="size-4" />
                 </button>
+                <ReportContentLink
+                  contentType="post"
+                  contentId={post.id}
+                  className="ml-auto text-[10px] font-semibold text-muted-foreground hover:text-destructive"
+                />
               </div>
             </article>
           ))}

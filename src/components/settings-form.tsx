@@ -14,6 +14,7 @@ import { updateAvatarAction } from "@/app/(app)/community/actions";
 import { UserAvatar } from "@/components/user-avatar";
 import { CatButton } from "@/components/ui/cat-button";
 import { uploadAvatar } from "@/lib/community-upload";
+import { SettingsAccountSection } from "@/components/settings-account-section";
 import { useOfflineSync } from "@/hooks/use-offline-sync";
 import { useSettingsStore } from "@/stores/settings";
 
@@ -230,6 +231,8 @@ export function SettingsForm({
           Backfill place names
         </CatButton>
       </section>
+
+      <SettingsAccountSection />
     </div>
   );
 }
