@@ -1,44 +1,43 @@
 import imageCompression from "browser-image-compression";
 
-import { createClient } from "@/lib/supabase/client";
-
-const MAX_BYTES = 800_000;
-
 export type UploadedPostImage = {
   path: string;
   publicUrl: string;
 };
 
-/** Compress and upload a post image to Supabase Storage (post-images bucket). */
+/** Compress and upload a post image via the validated server route. */
 export async function uploadPostImage(file: File): Promise<UploadedPostImage> {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("You must be signed in.");
-
   const compressed = await imageCompression(file, {
-    maxSizeMB: MAX_BYTES / 1_000_000,
+    maxSizeMB: 0.8,
     maxWidthOrHeight: 1200,
     useWebWorker: true,
     fileType: "image/webp",
   });
 
-  const id = crypto.randomUUID();
-  const path = `${user.id}/${id}.webp`;
+  const formData = new FormData();
+  formData.append("image", compressed, "post.webp");
 
-  const { error } = await supabase.storage
-    .from("post-images")
-    .upload(path, compressed, { contentType: "image/webp", upsert: false });
+  const response = await fetch("/api/community/upload", {
+    method: "POST",
+    body: formData,
+  });
 
-  if (error) throw new Error("Could not upload image.");
+  const payload = (await response.json()) as {
+    path?: string;
+    publicUrl?: string;
+    error?: string;
+  };
 
-  const { data } = supabase.storage.from("post-images").getPublicUrl(path);
-  return { path, publicUrl: data.publicUrl };
+  if (!response.ok || !payload.path || !payload.publicUrl) {
+    throw new Error(payload.error ?? "Could not upload image.");
+  }
+
+  return { path: payload.path, publicUrl: payload.publicUrl };
 }
 
 /** Upload profile avatar (avatars bucket). */
 export async function uploadAvatar(file: File): Promise<string> {
+  const { createClient } = await import("@/lib/supabase/client");
   const supabase = createClient();
   const {
     data: { user },

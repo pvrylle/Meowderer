@@ -64,7 +64,12 @@ export const HELP_SECTIONS: HelpSection[] = [
       {
         question: "How do I report a post?",
         answer:
-          "Tap Report on any post to email our team with the post ID. We review reports manually in this version.",
+          "Tap Report on any post, comment, chat message, or rescue alert. Choose a reason and optionally block the user. Reports are reviewed manually.",
+      },
+      {
+        question: "Why can't I use chat yet?",
+        answer:
+          "Chat unlocks after your first catch or 24 hours on CatDex. This helps keep the community safe from spam accounts.",
       },
     ],
   },

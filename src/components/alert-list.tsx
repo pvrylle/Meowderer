@@ -6,6 +6,7 @@ import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { resolveAlertAction } from "@/app/(app)/community/actions";
+import { ReportContentButton } from "@/components/report-content-button";
 import { CatButton } from "@/components/ui/cat-button";
 import type { RescueAlert } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
@@ -71,18 +72,30 @@ export function AlertList({ alerts, currentUserId }: AlertListProps) {
             <p className="mt-2 text-xs text-muted-foreground">
               {new Date(alert.created_at).toLocaleString()}
             </p>
-            {canVerify && (
-              <CatButton
-                variant="outline"
-                size="sm"
-                className="mt-3"
-                loading={resolvingId === alert.id}
-                onClick={() => handleResolve(alert.id)}
-              >
-                <CheckCircle2 className="size-4" />
-                Mark resolved
-              </CatButton>
-            )}
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              {canVerify && (
+                <CatButton
+                  variant="outline"
+                  size="sm"
+                  loading={resolvingId === alert.id}
+                  onClick={() => handleResolve(alert.id)}
+                >
+                  <CheckCircle2 className="size-4" />
+                  Mark resolved
+                </CatButton>
+              )}
+              {alert.user_id !== currentUserId && (
+                <ReportContentButton
+                  target={{
+                    contentType: "rescue_alert",
+                    contentId: alert.id,
+                    reportedUserId: alert.user_id,
+                    label: alert.title,
+                  }}
+                  className="text-xs font-semibold text-muted-foreground hover:text-destructive"
+                />
+              )}
+            </div>
             {isAuthor && (
               <p className="mt-3 text-xs text-muted-foreground">
                 Waiting for a community member to verify this alert.

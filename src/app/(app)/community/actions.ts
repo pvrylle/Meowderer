@@ -4,6 +4,15 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { syncMissionProgress } from "@/lib/missions";
+import {
+  assertCommunityWriteAccess,
+  assertRateLimit,
+  assertUrgentAlertAllowed,
+  isAllowedPostImageUrl,
+  validateCommunityText,
+} from "@/lib/community-safety";
+import { isDemoSession } from "@/lib/auth";
+import { SUPABASE_URL } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
 const postSchema = z.object({
@@ -18,7 +27,9 @@ const postSchema = z.object({
 
 const chatSchema = z.object({
   body: z.string().trim().min(1).max(500),
-  channel: z.string().trim().min(1).max(40).default("general"),
+  channel: z
+    .enum(["general", "cat_care", "rescue", "shelters"])
+    .default("general"),
 });
 
 const commentSchema = z.object({
@@ -26,15 +37,36 @@ const commentSchema = z.object({
   body: z.string().trim().min(1).max(500),
 });
 
+async function rejectDemo() {
+  if (await isDemoSession()) {
+    return { success: false as const, error: "Not available in demo mode." };
+  }
+  return null;
+}
+
 export async function createPostAction(input: unknown) {
+  const demo = await rejectDemo();
+  if (demo) return demo;
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { success: false as const, error: "Not signed in." };
 
+  const access = await assertCommunityWriteAccess(supabase, user.id, {
+    requireGuidelines: true,
+  });
+  if (!access.ok) return { success: false as const, error: access.error };
+
+  const rate = await assertRateLimit(supabase, user.id, "post");
+  if (!rate.ok) return { success: false as const, error: rate.error };
+
   const parsed = postSchema.safeParse(input);
   if (!parsed.success) return { success: false as const, error: "Invalid post." };
+
+  const textCheck = validateCommunityText(parsed.data.body, { allowLinks: false });
+  if (!textCheck.ok) return { success: false as const, error: textCheck.error };
 
   let imageUrl = parsed.data.imageUrl ?? null;
 
@@ -46,6 +78,13 @@ export async function createPostAction(input: unknown) {
       .from("post-images")
       .getPublicUrl(parsed.data.imagePath);
     imageUrl = data.publicUrl;
+  }
+
+  if (
+    imageUrl &&
+    !isAllowedPostImageUrl(imageUrl, user.id, SUPABASE_URL)
+  ) {
+    return { success: false as const, error: "Image source not allowed." };
   }
 
   const { error } = await supabase.from("posts").insert({
@@ -64,6 +103,9 @@ export async function createPostAction(input: unknown) {
 }
 
 export async function toggleLikeAction(postId: string) {
+  const demo = await rejectDemo();
+  if (demo) return demo;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -117,14 +159,28 @@ export async function toggleLikeAction(postId: string) {
 }
 
 export async function addCommentAction(input: unknown) {
+  const demo = await rejectDemo();
+  if (demo) return demo;
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { success: false as const, error: "Not signed in." };
 
+  const access = await assertCommunityWriteAccess(supabase, user.id, {
+    requireGuidelines: true,
+  });
+  if (!access.ok) return { success: false as const, error: access.error };
+
+  const rate = await assertRateLimit(supabase, user.id, "comment");
+  if (!rate.ok) return { success: false as const, error: rate.error };
+
   const parsed = commentSchema.safeParse(input);
   if (!parsed.success) return { success: false as const, error: "Invalid comment." };
+
+  const textCheck = validateCommunityText(parsed.data.body, { allowLinks: false });
+  if (!textCheck.ok) return { success: false as const, error: textCheck.error };
 
   const { error } = await supabase.from("post_comments").insert({
     post_id: parsed.data.postId,
@@ -152,14 +208,29 @@ export async function addCommentAction(input: unknown) {
 }
 
 export async function sendChatAction(input: unknown) {
+  const demo = await rejectDemo();
+  if (demo) return demo;
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { success: false as const, error: "Not signed in." };
 
+  const access = await assertCommunityWriteAccess(supabase, user.id, {
+    requireGuidelines: true,
+    requireChat: true,
+  });
+  if (!access.ok) return { success: false as const, error: access.error };
+
+  const rate = await assertRateLimit(supabase, user.id, "chat");
+  if (!rate.ok) return { success: false as const, error: rate.error };
+
   const parsed = chatSchema.safeParse(input);
   if (!parsed.success) return { success: false as const, error: "Invalid message." };
+
+  const textCheck = validateCommunityText(parsed.data.body, { allowLinks: false });
+  if (!textCheck.ok) return { success: false as const, error: textCheck.error };
 
   const { data, error } = await supabase
     .from("chat_messages")
@@ -168,7 +239,7 @@ export async function sendChatAction(input: unknown) {
       body: parsed.data.body,
       channel: parsed.data.channel,
     })
-    .select("id, channel, user_id, body, created_at")
+    .select("id, channel, user_id, body, created_at, hidden_at")
     .single();
 
   if (error || !data) return { success: false as const, error: "Could not send message." };
@@ -197,16 +268,27 @@ export async function getCommentsAction(postId: string) {
   if (!user) return { success: false as const, error: "Not signed in." };
 
   const { getPostComments } = await import("@/lib/community");
-  const comments = await getPostComments(supabase, postId);
+  const comments = await getPostComments(supabase, postId, user.id);
   return { success: true as const, comments };
 }
 
 export async function createAlertAction(input: unknown) {
+  const demo = await rejectDemo();
+  if (demo) return demo;
+
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { success: false as const, error: "Not signed in." };
+
+  const access = await assertCommunityWriteAccess(supabase, user.id, {
+    requireGuidelines: true,
+  });
+  if (!access.ok) return { success: false as const, error: access.error };
+
+  const rate = await assertRateLimit(supabase, user.id, "alert");
+  if (!rate.ok) return { success: false as const, error: rate.error };
 
   const schema = z.object({
     title: z.string().trim().min(1).max(120),
@@ -218,6 +300,19 @@ export async function createAlertAction(input: unknown) {
 
   const parsed = schema.safeParse(input);
   if (!parsed.success) return { success: false as const, error: "Invalid alert." };
+
+  const titleCheck = validateCommunityText(parsed.data.title, { allowLinks: false });
+  if (!titleCheck.ok) return { success: false as const, error: titleCheck.error };
+
+  if (parsed.data.body) {
+    const bodyCheck = validateCommunityText(parsed.data.body, { allowLinks: false });
+    if (!bodyCheck.ok) return { success: false as const, error: bodyCheck.error };
+  }
+
+  if (parsed.data.urgent) {
+    const urgent = await assertUrgentAlertAllowed(supabase, user.id);
+    if (!urgent.ok) return { success: false as const, error: urgent.error };
+  }
 
   const { error } = await supabase.from("rescue_alerts").insert({
     user_id: user.id,
@@ -298,6 +393,9 @@ export async function recordShelterVisitAction(input: unknown) {
 }
 
 export async function resolveAlertAction(alertId: string) {
+  const demo = await rejectDemo();
+  if (demo) return demo;
+
   const supabase = await createClient();
   const {
     data: { user },

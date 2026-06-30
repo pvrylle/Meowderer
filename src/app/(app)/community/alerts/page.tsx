@@ -14,7 +14,7 @@ export default async function CommunityAlertsPage() {
 
   if (!demo && user) {
     const supabase = await createClient();
-    alerts = await getRescueAlerts(supabase);
+    alerts = await getRescueAlerts(supabase, user.id);
   }
 
   return (

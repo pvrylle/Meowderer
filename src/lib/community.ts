@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { getBlockedUserIds } from "@/lib/community-safety";
 import type { ChatMessage, Post, RescueAlert } from "@/lib/supabase/types";
 import type { Database } from "@/lib/supabase/types";
 
@@ -50,15 +51,19 @@ export async function getPosts(
   supabase: Supabase,
   userId: string,
 ): Promise<PostWithAuthor[]> {
+  const blocked = await getBlockedUserIds(supabase, userId);
+
   const { data: posts } = await supabase
     .from("posts")
     .select("*")
+    .is("hidden_at", null)
     .order("created_at", { ascending: false })
     .limit(50);
 
   if (!posts?.length) return [];
 
-  const userIds = [...new Set(posts.map((p) => p.user_id))];
+  const visible = posts.filter((p) => !blocked.has(p.user_id));
+  const userIds = [...new Set(visible.map((p) => p.user_id))];
   const names = await profileMap(supabase, userIds);
 
   const { data: likes } = await supabase
@@ -68,7 +73,7 @@ export async function getPosts(
 
   const likedIds = new Set((likes ?? []).map((l) => l.post_id));
 
-  return posts.map((p) => {
+  return visible.map((p) => {
     const author = names.get(p.user_id);
     return {
       ...p,
@@ -82,20 +87,25 @@ export async function getPosts(
 export async function getPostComments(
   supabase: Supabase,
   postId: string,
+  viewerId: string,
 ): Promise<CommentWithAuthor[]> {
+  const blocked = await getBlockedUserIds(supabase, viewerId);
+
   const { data: comments } = await supabase
     .from("post_comments")
     .select("*")
     .eq("post_id", postId)
+    .is("hidden_at", null)
     .order("created_at", { ascending: true })
     .limit(100);
 
   if (!comments?.length) return [];
 
-  const userIds = [...new Set(comments.map((c) => c.user_id))];
+  const visible = comments.filter((c) => !blocked.has(c.user_id));
+  const userIds = [...new Set(visible.map((c) => c.user_id))];
   const names = await profileMap(supabase, userIds);
 
-  return comments.map((c) => {
+  return visible.map((c) => {
     const author = names.get(c.user_id);
     return {
       ...c,
@@ -107,7 +117,12 @@ export async function getPostComments(
 
 export async function getRescueAlerts(
   supabase: Supabase,
+  viewerId?: string,
 ): Promise<RescueAlert[]> {
+  const blocked = viewerId
+    ? await getBlockedUserIds(supabase, viewerId)
+    : new Set<string>();
+
   const { data } = await supabase
     .from("rescue_alerts")
     .select("*")
@@ -115,26 +130,32 @@ export async function getRescueAlerts(
     .order("urgent", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(20);
-  return data ?? [];
+
+  return (data ?? []).filter((a) => !blocked.has(a.user_id));
 }
 
 export async function getChatMessages(
   supabase: Supabase,
   channel: string,
+  viewerId: string,
 ): Promise<ChatMessageWithAuthor[]> {
+  const blocked = await getBlockedUserIds(supabase, viewerId);
+
   const { data: messages } = await supabase
     .from("chat_messages")
     .select("*")
     .eq("channel", channel)
+    .is("hidden_at", null)
     .order("created_at", { ascending: true })
     .limit(100);
 
   if (!messages?.length) return [];
 
-  const userIds = [...new Set(messages.map((m) => m.user_id))];
+  const visible = messages.filter((m) => !blocked.has(m.user_id));
+  const userIds = [...new Set(visible.map((m) => m.user_id))];
   const names = await profileMap(supabase, userIds);
 
-  return messages.map((m) => {
+  return visible.map((m) => {
     const author = names.get(m.user_id);
     return {
       ...m,
@@ -151,4 +172,17 @@ export async function countUrgentAlerts(supabase: Supabase): Promise<number> {
     .eq("resolved", false)
     .eq("urgent", true);
   return count ?? 0;
+}
+
+export async function needsCommunityGuidelines(
+  supabase: Supabase,
+  userId: string,
+): Promise<boolean> {
+  const { data } = await supabase
+    .from("profiles")
+    .select("community_guidelines_at")
+    .eq("id", userId)
+    .maybeSingle();
+
+  return !data?.community_guidelines_at;
 }

@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Send } from "lucide-react";
 import { toast } from "sonner";
 
 import { sendChatAction } from "@/app/(app)/community/actions";
+import { ReportContentButton } from "@/components/report-content-button";
 import { UserAvatar } from "@/components/user-avatar";
 import type { ChatMessageWithAuthor } from "@/lib/community";
 import { formatChatTime } from "@/lib/format-time";
@@ -62,6 +64,7 @@ export function CommunityChat({
   initialMessages,
   currentUserId,
 }: CommunityChatProps) {
+  const router = useRouter();
   const [messages, setMessages] = useState(initialMessages);
   const [channel, setChannel] = useState("general");
   const [draft, setDraft] = useState("");
@@ -93,7 +96,7 @@ export function CommunityChat({
           const row = payload.new as ChatMessageRow;
           setMessages((prev) => {
             if (prev.some((m) => m.id === row.id)) return prev;
-            return [...prev, { ...row, author_name: "Cat lover", author_avatar: null }];
+            return [...prev, { ...row, hidden_at: row.hidden_at ?? null, author_name: "Cat lover", author_avatar: null }];
           });
           const { data: profile } = await supabase
             .from("profiles")
@@ -213,6 +216,23 @@ export function CommunityChat({
                   <span className="text-[10px] text-muted-foreground">
                     {formatChatTime(msg.created_at)}
                   </span>
+                  {!mine && (
+                    <ReportContentButton
+                      target={{
+                        contentType: "chat_message",
+                        contentId: msg.id,
+                        reportedUserId: msg.user_id,
+                        label: msg.body.slice(0, 80),
+                      }}
+                      className="text-[10px] font-semibold text-muted-foreground hover:text-destructive"
+                      onBlocked={() => {
+                        setMessages((prev) =>
+                          prev.filter((m) => m.user_id !== msg.user_id),
+                        );
+                        router.refresh();
+                      }}
+                    />
+                  )}
                 </div>
               </div>
             );

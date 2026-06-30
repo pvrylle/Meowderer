@@ -86,7 +86,7 @@ export function CommunityTabs({
 
       {/* Content */}
       {tab === "feed" ? (
-        <CommunityFeed posts={posts} />
+        <CommunityFeed posts={posts} currentUserId={currentUserId} />
       ) : (
         <CommunityChat
           initialMessages={messages}

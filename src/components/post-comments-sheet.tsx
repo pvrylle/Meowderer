@@ -8,6 +8,8 @@ import {
   addCommentAction,
   getCommentsAction,
 } from "@/app/(app)/community/actions";
+import { deleteCommentAction } from "@/app/(app)/community/safety-actions";
+import { ReportContentButton } from "@/components/report-content-button";
 import { UserAvatar } from "@/components/user-avatar";
 import { CatButton } from "@/components/ui/cat-button";
 import type { CommentWithAuthor } from "@/lib/community";
@@ -15,12 +17,14 @@ import { formatRelativeTime } from "@/lib/format-time";
 
 type PostCommentsSheetProps = {
   postId: string | null;
+  currentUserId: string;
   onClose: () => void;
   onCommentAdded: () => void;
 };
 
 export function PostCommentsSheet({
   postId,
+  currentUserId,
   onClose,
   onCommentAdded,
 }: PostCommentsSheetProps) {
@@ -71,6 +75,16 @@ export function PostCommentsSheet({
     void load();
   }
 
+  async function handleDelete(commentId: string) {
+    const result = await deleteCommentAction(commentId);
+    if (!result.success) {
+      toast.error(result.error ?? "Could not delete comment.");
+      return;
+    }
+    setComments((prev) => prev.filter((c) => c.id !== commentId));
+    onCommentAdded();
+  }
+
   if (!postId) return null;
 
   return (
@@ -115,10 +129,33 @@ export function PostCommentsSheet({
                     avatarUrl={c.author_avatar}
                     size="sm"
                   />
-                  <div>
-                    <p className="text-sm font-bold text-foreground">
-                      {c.author_name}
-                    </p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm font-bold text-foreground">
+                        {c.author_name}
+                      </p>
+                      <div className="flex shrink-0 items-center gap-2">
+                        {c.user_id !== currentUserId && (
+                          <ReportContentButton
+                            target={{
+                              contentType: "comment",
+                              contentId: c.id,
+                              reportedUserId: c.user_id,
+                            }}
+                            className="text-[10px] font-semibold text-muted-foreground hover:text-destructive"
+                          />
+                        )}
+                        {c.user_id === currentUserId && (
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(c.id)}
+                            className="text-[10px] font-semibold text-muted-foreground hover:text-destructive"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    </div>
                     <p className="text-sm text-foreground">{c.body}</p>
                     <p className="text-[10px] text-muted-foreground">
                       {formatRelativeTime(c.created_at)}

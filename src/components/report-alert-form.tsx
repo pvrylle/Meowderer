@@ -59,6 +59,10 @@ export function ReportAlertForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-border bg-card p-4">
       <h2 className="font-extrabold text-foreground">Report alert</h2>
+      <p className="text-xs text-muted-foreground">
+        Only mark urgent when immediate help is needed. False urgent alerts may lead to a
+        community ban.
+      </p>
       <Input
         value={title}
         onChange={(e) => setTitle(e.target.value)}

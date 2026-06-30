@@ -11,6 +11,8 @@ export type Profile = {
   daily_goal: number;
   accepted_terms_at: string | null;
   onboarding_complete: boolean;
+  community_guidelines_at: string | null;
+  community_banned_until: string | null;
   created_at: string;
 };
 
@@ -92,6 +94,8 @@ export type Post = {
   lng: number | null;
   likes_count: number;
   comments_count: number;
+  hidden_at: string | null;
+  hidden_reason: string | null;
   created_at: string;
 };
 
@@ -100,6 +104,7 @@ export type ChatMessage = {
   channel: string;
   user_id: string;
   body: string;
+  hidden_at: string | null;
   created_at: string;
 };
 
@@ -280,11 +285,55 @@ export type Database = {
       };
       chat_messages: {
         Row: ChatMessage;
-        Insert: Omit<ChatMessage, "id" | "created_at"> & {
+        Insert: Omit<ChatMessage, "id" | "created_at" | "hidden_at"> & {
+          id?: string;
+          created_at?: string;
+          hidden_at?: string | null;
+        };
+        Update: Partial<{ body: string; hidden_at: string | null }>;
+        Relationships: [];
+      };
+      content_reports: {
+        Row: {
+          id: string;
+          reporter_id: string;
+          content_type: string;
+          content_id: string;
+          reported_user_id: string | null;
+          reason: string;
+          details: string | null;
+          status: string;
+          created_at: string;
+        };
+        Insert: {
+          reporter_id: string;
+          content_type: string;
+          content_id: string;
+          reported_user_id?: string | null;
+          reason: string;
+          details?: string | null;
+          status?: string;
           id?: string;
           created_at?: string;
         };
-        Update: Partial<{ body: string }>;
+        Update: Partial<{ status: string }>;
+        Relationships: [];
+      };
+      user_blocks: {
+        Row: { blocker_id: string; blocked_id: string; created_at: string };
+        Insert: { blocker_id: string; blocked_id: string; created_at?: string };
+        Update: Partial<{ created_at: string }>;
+        Relationships: [];
+      };
+      rate_limit_events: {
+        Row: { id: string; user_id: string; action: string; created_at: string };
+        Insert: {
+          user_id: string;
+          action: string;
+          id?: string;
+          created_at?: string;
+        };
+        Update: Partial<{ created_at: string }>;
         Relationships: [];
       };
     };

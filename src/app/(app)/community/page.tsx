@@ -1,3 +1,4 @@
+import { CommunityGuidelinesGate } from "@/components/community-guidelines-gate";
 import { CommunityTabs } from "@/components/community-tabs";
 import { getCurrentUser, isDemoSession } from "@/lib/auth";
 import {
@@ -5,6 +6,7 @@ import {
   getChatMessages,
   getPosts,
   getRescueAlerts,
+  needsCommunityGuidelines,
 } from "@/lib/community";
 import { createClient } from "@/lib/supabase/server";
 
@@ -15,32 +17,35 @@ export default async function CommunityPage() {
   let messages: Awaited<ReturnType<typeof getChatMessages>> = [];
   let alerts: Awaited<ReturnType<typeof getRescueAlerts>> = [];
   let urgentCount = 0;
+  let showGuidelines = false;
 
   if (!demo && user) {
     const supabase = await createClient();
-    [posts, messages, alerts, urgentCount] = await Promise.all([
+    [posts, messages, alerts, urgentCount, showGuidelines] = await Promise.all([
       getPosts(supabase, user.id),
-      getChatMessages(supabase, "general").then(async (general) => {
+      getChatMessages(supabase, "general", user.id).then(async (general) => {
         const others = await Promise.all(
           ["cat_care", "rescue", "shelters"].map((ch) =>
-            getChatMessages(supabase, ch),
+            getChatMessages(supabase, ch, user.id),
           ),
         );
         return [...general, ...others.flat()];
       }),
-      getRescueAlerts(supabase),
+      getRescueAlerts(supabase, user.id),
       countUrgentAlerts(supabase),
+      needsCommunityGuidelines(supabase, user.id),
     ]);
   }
 
   return (
     <div className="flex flex-col pb-nav">
-      {/* Header */}
+      <CommunityGuidelinesGate show={showGuidelines} />
+
       <div className="relative overflow-hidden bg-gradient-to-b from-green/15 to-background px-5 pb-4 pt-4">
         <div className="absolute -right-10 -top-10 size-32 rounded-full bg-green/10 blur-3xl" />
         <h1 className="relative text-2xl font-bold text-foreground">Community</h1>
         <p className="relative mt-0.5 text-sm text-muted-foreground">
-          Connect with other cat lovers
+          Connect with other cat lovers — be kind and report anything unsafe.
         </p>
       </div>
 

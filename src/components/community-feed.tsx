@@ -10,8 +10,9 @@ import {
   createPostAction,
   toggleLikeAction,
 } from "@/app/(app)/community/actions";
+import { deletePostAction } from "@/app/(app)/community/safety-actions";
 import { PostCommentsSheet } from "@/components/post-comments-sheet";
-import { ReportContentLink } from "@/components/report-content-link";
+import { ReportContentButton } from "@/components/report-content-button";
 import { UserAvatar } from "@/components/user-avatar";
 import { CatButton } from "@/components/ui/cat-button";
 import { uploadPostImage } from "@/lib/community-upload";
@@ -34,9 +35,13 @@ const COMPOSE_CATEGORIES = [
 
 type CommunityFeedProps = {
   posts: PostWithAuthor[];
+  currentUserId: string;
 };
 
-export function CommunityFeed({ posts: initialPosts }: CommunityFeedProps) {
+export function CommunityFeed({
+  posts: initialPosts,
+  currentUserId,
+}: CommunityFeedProps) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [posts, setPosts] = useState(initialPosts);
@@ -82,6 +87,17 @@ export function CommunityFeed({ posts: initialPosts }: CommunityFeedProps) {
         };
       }),
     );
+  }
+
+  async function handleDeletePost(postId: string) {
+    const result = await deletePostAction(postId);
+    if (!result.success) {
+      toast.error(result.error ?? "Could not delete post.");
+      return;
+    }
+    setPosts((prev) => prev.filter((p) => p.id !== postId));
+    toast.success("Post deleted.");
+    router.refresh();
   }
 
   async function handlePost(e: React.FormEvent) {
@@ -277,11 +293,25 @@ export function CommunityFeed({ posts: initialPosts }: CommunityFeedProps) {
                 >
                   <Share2 className="size-4" />
                 </button>
-                <ReportContentLink
-                  contentType="post"
-                  contentId={post.id}
-                  className="ml-auto text-[10px] font-semibold text-muted-foreground hover:text-destructive"
+                <ReportContentButton
+                  target={{
+                    contentType: "post",
+                    contentId: post.id,
+                    reportedUserId: post.user_id,
+                    label: post.body.slice(0, 120),
+                  }}
+                  className="ml-auto flex items-center gap-1 text-[10px] font-semibold text-muted-foreground hover:text-destructive"
+                  onBlocked={() => router.refresh()}
                 />
+                {post.user_id === currentUserId && (
+                  <button
+                    type="button"
+                    onClick={() => handleDeletePost(post.id)}
+                    className="text-[10px] font-semibold text-muted-foreground hover:text-destructive"
+                  >
+                    Delete
+                  </button>
+                )}
               </div>
             </article>
           ))}
@@ -290,6 +320,7 @@ export function CommunityFeed({ posts: initialPosts }: CommunityFeedProps) {
 
       <PostCommentsSheet
         postId={commentsPostId}
+        currentUserId={currentUserId}
         onClose={() => setCommentsPostId(null)}
         onCommentAdded={() => {
           if (commentsPostId) {
