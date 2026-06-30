@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
+import { motion } from "framer-motion";
 import { Eye, EyeOff, Mail } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,6 +19,11 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 type Mode = "signin" | "signup";
+
+const fieldMotion = {
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0 },
+};
 
 export function AuthForm({ initialMode = "signin" }: { initialMode?: Mode }) {
   const searchParams = useSearchParams();
@@ -47,17 +53,29 @@ export function AuthForm({ initialMode = "signin" }: { initialMode?: Mode }) {
   }
 
   return (
-    <div className="flex flex-col gap-5 px-5 py-8 sm:gap-6 sm:px-7 sm:py-10">
-      <div className="flex flex-col items-center gap-3 text-center sm:gap-4">
+    <motion.div
+      initial="initial"
+      animate="animate"
+      className="flex flex-col gap-5 px-5 py-8 sm:gap-6 sm:px-7 sm:py-10"
+    >
+      <motion.div
+        variants={fieldMotion}
+        transition={{ duration: 0.35 }}
+        className="flex flex-col items-center gap-3 text-center sm:gap-4"
+      >
         <BrandMark variant="logo" priority className="w-[min(11rem,70vw)]" />
         <p className="text-sm text-muted-foreground">
           {mode === "signin"
             ? "Welcome back, cat catcher."
             : "Create your account and start collecting strays."}
         </p>
-      </div>
+      </motion.div>
 
-      <div className="flex rounded-full bg-muted/80 p-1">
+      <motion.div
+        variants={fieldMotion}
+        transition={{ duration: 0.35, delay: 0.05 }}
+        className="flex rounded-full bg-muted/80 p-1"
+      >
         {(["signin", "signup"] as const).map((m) => (
           <button
             key={m}
@@ -73,9 +91,14 @@ export function AuthForm({ initialMode = "signin" }: { initialMode?: Mode }) {
             {m === "signin" ? "Sign in" : "Sign up"}
           </button>
         ))}
-      </div>
+      </motion.div>
 
-      <form action={handleSubmit} className="flex flex-col gap-4">
+      <motion.form
+        variants={fieldMotion}
+        transition={{ duration: 0.35, delay: 0.1 }}
+        action={handleSubmit}
+        className="flex flex-col gap-4"
+      >
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="email" className="text-sm font-semibold">
             Email
@@ -168,8 +191,8 @@ export function AuthForm({ initialMode = "signin" }: { initialMode?: Mode }) {
         >
           {mode === "signin" ? "Sign in" : "Create account"}
         </CatButton>
-      </form>
-    </div>
+      </motion.form>
+    </motion.div>
   );
 }
 

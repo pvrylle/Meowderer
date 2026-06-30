@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Camera, LayoutGrid, Search, type LucideIcon } from "lucide-react";
+import { Camera, LayoutGrid, PawPrint, Search, type LucideIcon } from "lucide-react";
 
 import { BrandMark } from "@/components/brand-mark";
 import { CatButton } from "@/components/ui/cat-button";
@@ -77,16 +77,18 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col px-7 py-10">
+    <div className="flex min-h-0 flex-1 flex-col px-5 py-8 sm:px-7 sm:py-10">
       <div className="flex items-center justify-between">
         <BrandMark variant="logo" className="w-[6.5rem]" priority />
-        <button
+        <motion.button
           type="button"
           onClick={finish}
-          className="text-sm font-semibold text-muted-foreground"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="rounded-full px-2 py-1 text-sm font-semibold text-muted-foreground hover:text-foreground"
         >
           Skip
-        </button>
+        </motion.button>
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-center gap-8 text-center">
@@ -99,13 +101,36 @@ export default function OnboardingPage() {
             transition={{ duration: 0.25 }}
             className="flex flex-col items-center gap-8"
           >
-            <div
-              className={cn(
-                "flex size-32 items-center justify-center rounded-[40px]",
-                slide.tint,
-              )}
-            >
-              <Icon className={cn("size-14", slide.accent)} strokeWidth={2.25} />
+            <div className="relative">
+              <motion.div
+                className="pointer-events-none absolute -inset-6"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
+              >
+                {[0, 72, 144, 216, 288].map((deg) => (
+                  <div
+                    key={deg}
+                    className="absolute left-1/2 top-1/2 h-0 w-0"
+                    style={{ transform: `rotate(${deg}deg)` }}
+                  >
+                    <PawPrint
+                      className="absolute -top-14 left-1/2 size-4 -translate-x-1/2 text-primary/25"
+                      strokeWidth={2.25}
+                    />
+                  </div>
+                ))}
+              </motion.div>
+              <motion.div
+                className={cn(
+                  "relative flex size-32 items-center justify-center rounded-[40px]",
+                  slide.tint,
+                )}
+                whileHover={{ scale: 1.05, rotate: 2 }}
+                whileTap={{ scale: 0.96 }}
+                transition={{ type: "spring", stiffness: 320, damping: 20 }}
+              >
+                <Icon className={cn("size-14", slide.accent)} strokeWidth={2.25} />
+              </motion.div>
             </div>
             <div className="space-y-3">
               <h2 className="text-2xl font-extrabold text-foreground">
@@ -119,12 +144,17 @@ export default function OnboardingPage() {
         </AnimatePresence>
       </div>
 
-      <div className="flex flex-col gap-6">
+      <motion.div
+        className="flex flex-col gap-6"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15, duration: 0.35 }}
+      >
         <PagerDots count={SLIDES.length} active={index} />
         <CatButton block onClick={next}>
           {isLast ? "Get started" : "Next"}
         </CatButton>
-      </div>
+      </motion.div>
     </div>
   );
 }
