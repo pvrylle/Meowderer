@@ -1,12 +1,15 @@
 import { BG_REMOVAL_CONFIG } from "./preload-capture";
-import { runWithSingleThreadWasm } from "./configure-wasm";
+import { compositeWithHighResMask } from "./composite-high-res";
+import { runWithSingleThreadWasm, ensureWasmSingleThread } from "./configure-wasm";
 import { canvasToBlob } from "./image-utils";
 import { addStickerOutline } from "./outline";
+import { refineStickerAlpha } from "./refine-alpha";
 import { yieldToMain } from "./yield-to-main";
 
 export type CaptureStage =
   | "compressing"
   | "removing"
+  | "refining"
   | "outlining"
   | "finishing"
   | "done";
@@ -56,22 +59,36 @@ export async function processCatPhoto(
   await yieldToMain();
 
   const inferenceInput = await resizeForMatting(original);
+  await ensureWasmSingleThread();
   const { removeBackground } = await import("@imgly/background-removal");
 
   const cutout = await runWithSingleThreadWasm(() =>
     removeBackground(inferenceInput, {
       ...BG_REMOVAL_CONFIG,
       progress: (_key, current, total) => {
-        const pct = 15 + Math.round((current / Math.max(total, 1)) * 55);
+        const pct = 15 + Math.round((current / Math.max(total, 1)) * 50);
         onProgress?.({ stage: "removing", label: "Removing background…", pct });
       },
     }),
   );
 
-  onProgress?.({ stage: "outlining", label: "Adding sticker outline…", pct: 72 });
+  onProgress?.({ stage: "refining", label: "Sharpening edges…", pct: 68 });
   await yieldToMain();
 
-  const outlined = await addStickerOutline(cutout);
+  const composited = await compositeWithHighResMask(original, cutout, {
+    edgeBlurPx: 1,
+  });
+  let refined = composited;
+  try {
+    refined = await refineStickerAlpha(composited);
+  } catch {
+    // Fall back to composited cutout if alpha cleanup fails on this device.
+  }
+
+  onProgress?.({ stage: "outlining", label: "Adding sticker outline…", pct: 78 });
+  await yieldToMain();
+
+  const outlined = await addStickerOutline(refined, { shadow: true });
 
   onProgress?.({ stage: "finishing", label: "Finishing up…", pct: 88 });
   await yieldToMain();
@@ -79,8 +96,8 @@ export async function processCatPhoto(
   const sticker = await imageCompression(
     new File([outlined], "sticker.png", { type: "image/png" }),
     {
-      maxWidthOrHeight: 768,
-      maxSizeMB: 0.4,
+      maxWidthOrHeight: 1024,
+      maxSizeMB: 0.5,
       fileType: "image/webp",
       initialQuality: 0.92,
       useWebWorker: true,

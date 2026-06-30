@@ -7,6 +7,7 @@ import { RotateCcw, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { persistNewAchievements } from "@/components/achievement-session-toasts";
+import { CatchProcessingOverlay } from "@/components/capture/catch-processing-overlay";
 import { CatchReviewPanel } from "@/components/capture/catch-review-panel";
 import { CatTradingCard } from "@/components/cat-trading-card";
 import { InteractiveCard } from "@/components/interactive-card";
@@ -166,13 +167,6 @@ export default function CatchPageClient() {
     setPhase("processing");
     setProgress({ stage: "compressing", label: "Preparing…", pct: 2 });
     await yieldToMain();
-
-    const location = coords ?? (await requestLocation());
-    if (!location) {
-      setPhase("preview");
-      toast.error("Turn on location access to catch cats.");
-      return;
-    }
 
     setProgress({ stage: "compressing", label: "Checking photo…", pct: 8 });
     await yieldToMain();
@@ -337,7 +331,7 @@ export default function CatchPageClient() {
             />
           </div>
           <p className="text-center text-xs text-muted-foreground">
-            Location access is required before you can save a catch.
+            Location is only needed when you save — you can make the sticker first.
           </p>
           <div className="flex gap-3">
             <CatButton variant="outline" block onClick={retake}>
@@ -352,27 +346,8 @@ export default function CatchPageClient() {
       )}
 
       {phase === "processing" && (
-        <div className="flex flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
-          <div className="relative">
-            <div className="absolute -inset-3 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
-            <div className="flex size-16 items-center justify-center rounded-xl bg-primary/10">
-              <span className="text-3xl">🐱</span>
-            </div>
-          </div>
-          <div className="w-full max-w-xs space-y-2">
-            <p className="text-sm font-medium text-foreground">
-              {progress?.label ?? "Processing..."}
-            </p>
-            <div className="h-2 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-primary transition-all duration-300"
-                style={{ width: `${progress?.pct ?? 0}%` }}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              First run downloads models — later runs are faster
-            </p>
-          </div>
+        <div className="relative min-h-0 flex-1">
+          <CatchProcessingOverlay progress={progress} />
         </div>
       )}
 

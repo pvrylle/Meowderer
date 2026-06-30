@@ -1,29 +1,30 @@
 /**
  * @imgly/background-removal sets `ort.env.wasm.numThreads` from
- * `navigator.hardwareConcurrency`. Without COOP/COEP that triggers a console
- * warning and a single-thread fallback — patch thread count for the ML call only.
+ * `navigator.hardwareConcurrency`. Without COOP/COEP that triggers console
+ * noise and can break WASM init — force single-thread before any imgly load.
  */
-export async function runWithSingleThreadWasm<T>(
-  fn: () => Promise<T>,
-): Promise<T> {
-  const desc = Object.getOwnPropertyDescriptor(
-    Navigator.prototype,
-    "hardwareConcurrency",
-  );
+let concurrencyPatched = false;
+
+function patchHardwareConcurrency(): void {
+  if (concurrencyPatched || typeof navigator === "undefined") return;
   Object.defineProperty(Navigator.prototype, "hardwareConcurrency", {
     get: () => 1,
     configurable: true,
   });
-
-  try {
-    return await fn();
-  } finally {
-    if (desc) {
-      Object.defineProperty(Navigator.prototype, "hardwareConcurrency", desc);
-    }
-  }
+  concurrencyPatched = true;
 }
 
-export async function ensureSingleThreadWasm(): Promise<void> {
-  // Reserved for future ort/transformers env tweaks; imgly reads hardwareConcurrency.
+/** Call before importing @imgly/background-removal (preload or removeBackground). */
+export async function ensureWasmSingleThread(): Promise<void> {
+  patchHardwareConcurrency();
 }
+
+export async function runWithSingleThreadWasm<T>(
+  fn: () => Promise<T>,
+): Promise<T> {
+  await ensureWasmSingleThread();
+  return fn();
+}
+
+/** @deprecated Use ensureWasmSingleThread */
+export const ensureSingleThreadWasm = ensureWasmSingleThread;

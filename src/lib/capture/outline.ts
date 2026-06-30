@@ -1,16 +1,28 @@
 import { canvasToBlob } from "./image-utils";
 
 const MAX_OUTLINE_SIDE = 1280;
-const OUTLINE_STEPS = 16;
+const OUTLINE_STEPS = 20;
+
+export type StickerOutlineOptions = {
+  strokeWidth?: number;
+  strokeColor?: string;
+  shadow?: boolean;
+};
 
 /**
  * Turns a transparent cutout into a sticker by drawing a soft white border
- * around its silhouette (alpha dilation), then the original on top.
+ * around its silhouette (alpha dilation), optional drop shadow, then the cat.
  */
 export async function addStickerOutline(
   cutout: Blob,
-  strokeWidth = 12,
+  options: StickerOutlineOptions = {},
 ): Promise<Blob> {
+  const {
+    strokeWidth = 12,
+    strokeColor = "#ffffff",
+    shadow = true,
+  } = options;
+
   const bitmap = await createImageBitmap(cutout);
   const scale = Math.min(
     1,
@@ -19,7 +31,7 @@ export async function addStickerOutline(
   const drawW = Math.max(1, Math.round(bitmap.width * scale));
   const drawH = Math.max(1, Math.round(bitmap.height * scale));
   const stroke = Math.max(4, Math.round(strokeWidth * scale));
-  const pad = stroke + 4;
+  const pad = stroke + (shadow ? Math.round(stroke * 0.9) : 0) + 4;
 
   const width = drawW + pad * 2;
   const height = drawH + pad * 2;
@@ -44,7 +56,7 @@ export async function addStickerOutline(
 
   sctx.drawImage(bitmap, pad, pad, drawW, drawH);
   sctx.globalCompositeOperation = "source-in";
-  sctx.fillStyle = "#ffffff";
+  sctx.fillStyle = strokeColor;
   sctx.fillRect(0, 0, width, height);
 
   for (let i = 0; i < OUTLINE_STEPS; i++) {
@@ -54,6 +66,16 @@ export async function addStickerOutline(
       Math.cos(angle) * stroke,
       Math.sin(angle) * stroke,
     );
+  }
+
+  if (shadow) {
+    ctx.save();
+    ctx.shadowColor = "rgba(45, 42, 62, 0.28)";
+    ctx.shadowBlur = Math.max(6, stroke * 0.75);
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = Math.max(3, Math.round(stroke * 0.35));
+    ctx.drawImage(bitmap, pad, pad, drawW, drawH);
+    ctx.restore();
   }
 
   ctx.drawImage(bitmap, pad, pad, drawW, drawH);

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Camera, Flame, Globe, Palette, Target } from "lucide-react";
 
 import { BrandMark } from "@/components/brand-mark";
+import { PreloadCaptureAssets } from "@/components/capture/preload-capture-assets";
 import { CatCard } from "@/components/cat-card";
 import { DexPlaceholderCard } from "@/components/dex-placeholder-card";
 import { MascotEmpty } from "@/components/mascot-empty";
@@ -37,6 +38,7 @@ export default async function HomePage() {
 
   return (
     <div className="flex flex-col gap-5 px-5 pb-nav pt-4">
+      <PreloadCaptureAssets />
       {/* Header */}
       <header className="flex items-center justify-between">
         <BrandMark variant="icon" size={36} alt="CatDex" priority />
