@@ -8,6 +8,7 @@ import { createReportAction } from "@/app/(app)/community/safety-actions";
 import { blockUserAction } from "@/app/(app)/community/safety-actions";
 import { REPORT_REASONS } from "@/content/community-guidelines";
 import { CatButton } from "@/components/ui/cat-button";
+import { PhoneOverlayPortal } from "@/components/phone-overlay-portal";
 
 type ReportTarget = {
   contentType: "post" | "comment" | "chat_message" | "rescue_alert" | "user";
@@ -77,11 +78,12 @@ export function ReportContentButton({
       </button>
 
       {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-end bg-black/30"
-          role="presentation"
-          onClick={() => setOpen(false)}
-        >
+        <PhoneOverlayPortal>
+          <div
+            className="absolute inset-0 z-50 flex items-end bg-black/30"
+            role="presentation"
+            onClick={() => setOpen(false)}
+          >
           <div
             role="dialog"
             aria-modal="true"
@@ -146,6 +148,7 @@ export function ReportContentButton({
             )}
           </div>
         </div>
+        </PhoneOverlayPortal>
       )}
     </>
   );

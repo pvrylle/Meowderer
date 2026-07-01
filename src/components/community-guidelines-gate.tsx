@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { acceptCommunityGuidelinesAction } from "@/app/(app)/community/safety-actions";
 import { COMMUNITY_GUIDELINES } from "@/content/community-guidelines";
 import { CatButton } from "@/components/ui/cat-button";
+import { PhoneOverlayPortal } from "@/components/phone-overlay-portal";
 
 export function CommunityGuidelinesGate({ show }: { show: boolean }) {
   const router = useRouter();
@@ -29,12 +30,13 @@ export function CommunityGuidelinesGate({ show }: { show: boolean }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
-      <div
-        role="dialog"
-        aria-labelledby="community-guidelines-title"
-        className="max-h-[85vh] w-full max-w-sm overflow-y-auto rounded-2xl bg-card p-6 shadow-xl ring-1 ring-border"
-      >
+    <PhoneOverlayPortal>
+      <div className="absolute inset-0 z-50 flex items-end justify-center bg-black/40 p-4">
+        <div
+          role="dialog"
+          aria-labelledby="community-guidelines-title"
+          className="max-h-[85vh] w-full overflow-y-auto rounded-2xl bg-card p-6 shadow-xl ring-1 ring-border"
+        >
         <div className="mb-4 flex items-center gap-3">
           <div className="flex size-12 items-center justify-center rounded-full bg-primary/15">
             <Shield className="size-6 text-primary" />
@@ -57,7 +59,8 @@ export function CommunityGuidelinesGate({ show }: { show: boolean }) {
         <CatButton block className="mt-6" loading={accepting} onClick={handleAccept}>
           I understand — let me in
         </CatButton>
+        </div>
       </div>
-    </div>
+    </PhoneOverlayPortal>
   );
 }

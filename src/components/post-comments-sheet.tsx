@@ -12,6 +12,7 @@ import { deleteCommentAction } from "@/app/(app)/community/safety-actions";
 import { ReportContentButton } from "@/components/report-content-button";
 import { UserAvatar } from "@/components/user-avatar";
 import { CatButton } from "@/components/ui/cat-button";
+import { PhoneOverlayPortal } from "@/components/phone-overlay-portal";
 import type { CommentWithAuthor } from "@/lib/community";
 import { formatRelativeTime } from "@/lib/format-time";
 
@@ -88,18 +89,19 @@ export function PostCommentsSheet({
   if (!postId) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end bg-black/30"
-      role="presentation"
-      onClick={onClose}
-    >
+    <PhoneOverlayPortal>
       <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="comments-sheet-title"
-        className="flex max-h-[75vh] w-full flex-col rounded-t-3xl border border-border bg-card shadow-xl"
-        onClick={(e) => e.stopPropagation()}
+        className="absolute inset-0 flex items-end bg-black/30"
+        role="presentation"
+        onClick={onClose}
       >
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="comments-sheet-title"
+          className="flex max-h-[75vh] w-full flex-col rounded-t-3xl border border-border bg-card shadow-xl"
+          onClick={(e) => e.stopPropagation()}
+        >
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <h2 id="comments-sheet-title" className="font-extrabold text-foreground">
             Comments
@@ -183,7 +185,8 @@ export function PostCommentsSheet({
             Post
           </CatButton>
         </form>
+        </div>
       </div>
-    </div>
+    </PhoneOverlayPortal>
   );
 }

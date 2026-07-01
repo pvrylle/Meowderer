@@ -75,7 +75,10 @@
   --orange: #e9995c;
 
   /* Bottom nav */
-  --nav-clearance: calc(3.75rem + env(safe-area-inset-bottom, 0px));
+  --nav-bar-height: 3.75rem;
+  --nav-fab-size: 3rem;
+  --nav-fab-lift: -1rem;
+  --nav-clearance: calc(var(--nav-bar-height) + env(safe-area-inset-bottom, 0px));
 
   /* Rarity tiers */
   --common: #b8c4d4;
@@ -400,6 +403,21 @@
 
 .scroll-pb-nav {
   scroll-padding-bottom: var(--nav-clearance);
+}
+
+/* Compact bottom nav inside phone mockup — styled via aria-label so TSX class strings stay stable */
+.phone-shell nav[aria-label="Main"] {
+  flex-shrink: 0;
+}
+
+.phone-shell nav[aria-label="Main"] > div.grid {
+  height: var(--nav-bar-height);
+}
+
+.phone-shell nav[aria-label="Main"] a[aria-label="Catch a cat"] {
+  margin-top: var(--nav-fab-lift);
+  width: var(--nav-fab-size);
+  height: var(--nav-fab-size);
 }
 
 /* Hide scrollbars for seamless mobile scroll */

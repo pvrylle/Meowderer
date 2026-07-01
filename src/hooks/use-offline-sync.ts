@@ -36,7 +36,7 @@ export function useOfflineSync() {
       setLastError(result.errors[0] ?? null);
     }
     if (result.synced > 0) {
-      router.refresh();
+      window.setTimeout(() => router.refresh(), 0);
     }
 
     return result;
@@ -50,11 +50,16 @@ export function useOfflineSync() {
     };
 
     window.addEventListener("online", onOnline);
-    if (navigator.onLine) {
-      void syncNow();
-    }
+    const syncTimer = window.setTimeout(() => {
+      if (navigator.onLine) {
+        void syncNow();
+      }
+    }, 0);
 
-    return () => window.removeEventListener("online", onOnline);
+    return () => {
+      window.clearTimeout(syncTimer);
+      window.removeEventListener("online", onOnline);
+    };
   }, [refreshPending, syncNow]);
 
   return { pending, syncing, lastError, syncNow, refreshPending };
