@@ -2,8 +2,12 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { AuthForm } from "@/components/auth/auth-form";
-import { AuthErrorToast } from "@/components/auth/auth-error-toast";
 import { getCurrentUser } from "@/lib/auth";
+
+const AUTH_ERRORS: Record<string, string> = {
+  confirm_failed:
+    "Email confirmation failed. Try signing in or request a new link.",
+};
 
 export default async function AuthPage({
   searchParams,
@@ -15,11 +19,11 @@ export default async function AuthPage({
 
   const params = await searchParams;
   const initialMode = params.mode === "signup" ? "signup" : "signin";
+  const authError = params.error ? AUTH_ERRORS[params.error] : undefined;
 
   return (
     <Suspense>
-      <AuthErrorToast error={params.error} />
-      <AuthForm initialMode={initialMode} />
+      <AuthForm initialMode={initialMode} authError={authError} />
     </Suspense>
   );
 }

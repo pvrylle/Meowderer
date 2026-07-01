@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Mail } from "lucide-react";
 import { toast } from "sonner";
@@ -20,21 +20,32 @@ import { cn } from "@/lib/utils";
 
 type Mode = "signin" | "signup";
 
-const fieldMotion = {
-  initial: { opacity: 0, y: 10 },
-  animate: { opacity: 1, y: 0 },
-};
-
-export function AuthForm({ initialMode = "signin" }: { initialMode?: Mode }) {
+export function AuthForm({
+  initialMode = "signin",
+  authError,
+}: {
+  initialMode?: Mode;
+  authError?: string;
+}) {
   const searchParams = useSearchParams();
-  const modeFromQuery = searchParams.get("mode");
-  const defaultMode: Mode =
-    modeFromQuery === "signup" ? "signup" : initialMode;
-
-  const [mode, setMode] = useState<Mode>(defaultMode);
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (authError) toast.error(authError);
+  }, [authError]);
+
+  useEffect(() => {
+    const modeFromQuery = searchParams.get("mode");
+    if (modeFromQuery === "signup") setMode("signup");
+    else if (modeFromQuery === "signin") setMode("signin");
+  }, [searchParams]);
+
+  useEffect(() => {
+    window.dispatchEvent(new Event("resize"));
+  }, [mode]);
 
   function handleSubmit(formData: FormData) {
     if (mode === "signup" && !termsAccepted) {
@@ -53,34 +64,22 @@ export function AuthForm({ initialMode = "signin" }: { initialMode?: Mode }) {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <motion.div
-        initial="initial"
-        animate="animate"
-        className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-5 scrollbar-none max-h-[calc(100dvh-12rem)] sm:gap-5 sm:px-7 sm:py-6 [@media(max-height:700px)]:gap-3 [@media(max-height:700px)]:py-4"
-      >
-        <motion.div
-          variants={fieldMotion}
-          transition={{ duration: 0.35 }}
-          className="flex flex-col items-center gap-2 text-center sm:gap-3 [@media(max-height:700px)]:gap-1.5"
-        >
-          <BrandMark
-            variant="logo"
-            priority
-            className="w-[min(11rem,70vw)] [@media(max-height:700px)]:w-28"
-          />
-          <p className="text-sm text-muted-foreground [@media(max-height:700px)]:hidden">
-            {mode === "signin"
-              ? "Welcome back, cat catcher."
-              : "Create your account and start collecting strays."}
-          </p>
-        </motion.div>
+    <div className="flex flex-col gap-3 px-4 py-4 sm:gap-3.5 sm:px-6 sm:py-5">
+      <div className="flex flex-col items-center gap-1 text-center">
+        <BrandMark
+          variant="logo"
+          priority
+          className={cn(
+            "w-[min(7rem,52vw)] sm:w-[min(8rem,58vw)]",
+            mode === "signup" && "w-[min(6rem,48vw)] sm:w-[min(7rem,52vw)]",
+          )}
+        />
+        {mode === "signin" && (
+          <p className="text-sm text-muted-foreground">Welcome back, cat catcher.</p>
+        )}
+      </div>
 
-      <motion.div
-        variants={fieldMotion}
-        transition={{ duration: 0.35, delay: 0.05 }}
-        className="relative z-20"
-      >
+      <div className="relative z-20">
         <div className="relative isolate flex overflow-hidden rounded-full bg-muted/80 p-1">
           {(["signin", "signup"] as const).map((m) => {
             const active = mode === m;
@@ -90,7 +89,7 @@ export function AuthForm({ initialMode = "signin" }: { initialMode?: Mode }) {
                 type="button"
                 onClick={() => setMode(m)}
                 className={cn(
-                  "relative flex-1 rounded-full py-2.5 text-sm font-bold transition-colors",
+                  "relative flex-1 rounded-full py-2 text-sm font-bold transition-colors",
                   active ? "text-primary-foreground" : "text-muted-foreground",
                 )}
               >
@@ -108,16 +107,14 @@ export function AuthForm({ initialMode = "signin" }: { initialMode?: Mode }) {
             );
           })}
         </div>
-      </motion.div>
+      </div>
 
-      <motion.form
+      <form
         id="auth-main-form"
-        variants={fieldMotion}
-        transition={{ duration: 0.35, delay: 0.1 }}
         action={handleSubmit}
-        className="flex flex-col gap-3 sm:gap-4"
+        className="flex flex-col gap-2.5"
       >
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1">
           <Label htmlFor="email" className="text-sm font-semibold">
             Email
           </Label>
@@ -128,10 +125,10 @@ export function AuthForm({ initialMode = "signin" }: { initialMode?: Mode }) {
             autoComplete="email"
             placeholder="you@example.com"
             required
-            className="h-11 rounded-2xl bg-muted/30 sm:h-12"
+            className="h-10 rounded-2xl bg-muted/30"
           />
         </div>
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1">
           <div className="flex items-center justify-between gap-2">
             <Label htmlFor="password" className="text-sm font-semibold">
               Password
@@ -156,7 +153,7 @@ export function AuthForm({ initialMode = "signin" }: { initialMode?: Mode }) {
               placeholder="••••••••"
               required
               minLength={mode === "signup" ? 8 : 6}
-              className="h-11 rounded-2xl bg-muted/30 pr-12 sm:h-12"
+              className="h-10 rounded-2xl bg-muted/30 pr-12"
             />
             <button
               type="button"
@@ -171,20 +168,15 @@ export function AuthForm({ initialMode = "signin" }: { initialMode?: Mode }) {
               )}
             </button>
           </div>
-          {mode === "signup" && (
-            <p className="text-xs text-muted-foreground">
-              At least 8 characters with a letter and a number.
-            </p>
-          )}
         </div>
 
         {mode === "signup" && (
-          <label className="flex items-start gap-3 rounded-2xl bg-muted/50 p-3 text-left text-sm">
+          <label className="flex items-start gap-2 rounded-xl bg-muted/50 p-2 text-left text-xs leading-snug">
             <input
               type="checkbox"
               checked={termsAccepted}
               onChange={(e) => setTermsAccepted(e.target.checked)}
-              className="mt-0.5 size-4 shrink-0 rounded border-border accent-primary"
+              className="mt-0.5 size-3.5 shrink-0 rounded border-border accent-primary"
             />
             <span className="text-muted-foreground">
               I agree to the{" "}
@@ -199,20 +191,16 @@ export function AuthForm({ initialMode = "signin" }: { initialMode?: Mode }) {
             </span>
           </label>
         )}
-      </motion.form>
-      </motion.div>
 
-      <div className="sticky bottom-0 z-10 shrink-0 border-t border-border/50 bg-background/95 px-5 py-3 backdrop-blur-sm sm:px-7">
         <CatButton
           type="submit"
-          form="auth-main-form"
           block
           loading={isPending}
           disabled={mode === "signup" && !termsAccepted}
         >
           {mode === "signin" ? "Sign in" : "Create account"}
         </CatButton>
-      </div>
+      </form>
     </div>
   );
 }
