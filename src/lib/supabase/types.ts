@@ -1,5 +1,12 @@
 export type Rarity = "common" | "uncommon" | "rare" | "epic" | "legendary";
 
+export type CatTraits = {
+  chonk: number;
+  shy: number;
+  grumpy: number;
+  floof: number;
+};
+
 export type Profile = {
   id: string;
   username: string | null;
@@ -13,6 +20,20 @@ export type Profile = {
   onboarding_complete: boolean;
   community_guidelines_at: string | null;
   community_banned_until: string | null;
+  is_super_admin: boolean;
+  created_at: string;
+};
+
+export type StrayCat = {
+  id: string;
+  canonical_name: string | null;
+  name_locked_at: string | null;
+  primary_lat: number | null;
+  primary_lng: number | null;
+  place_label: string | null;
+  sighting_count: number;
+  cover_sticker_url: string | null;
+  image_embedding: number[] | null;
   created_at: string;
 };
 
@@ -30,6 +51,13 @@ export type Capture = {
   rarity: Rarity | null;
   nickname: string | null;
   caught_at: string;
+  stray_cat_id: string | null;
+  share_photo: boolean;
+  share_location: boolean;
+  short_description: string | null;
+  traits: CatTraits | null;
+  image_embedding: number[] | null;
+  name_locked_at: string | null;
 };
 
 export type CaptureInsert = {
@@ -46,6 +74,13 @@ export type CaptureInsert = {
   rarity?: Rarity | null;
   nickname?: string | null;
   caught_at?: string;
+  stray_cat_id?: string | null;
+  share_photo?: boolean;
+  share_location?: boolean;
+  short_description?: string | null;
+  traits?: CatTraits | null;
+  image_embedding?: number[] | null;
+  name_locked_at?: string | null;
 };
 
 export type Mission = {
@@ -137,6 +172,7 @@ export type NamePoll = {
   user_id: string;
   option_a: string;
   option_b: string;
+  closed_at: string | null;
   created_at: string;
 };
 
@@ -160,6 +196,23 @@ export type Database = {
         Row: Capture;
         Insert: CaptureInsert;
         Update: Partial<Capture>;
+        Relationships: [];
+      };
+      stray_cats: {
+        Row: StrayCat;
+        Insert: {
+          id?: string;
+          canonical_name?: string | null;
+          name_locked_at?: string | null;
+          primary_lat?: number | null;
+          primary_lng?: number | null;
+          place_label?: string | null;
+          sighting_count?: number;
+          cover_sticker_url?: string | null;
+          image_embedding?: number[] | null;
+          created_at?: string;
+        };
+        Update: Partial<StrayCat>;
         Relationships: [];
       };
       achievements: {
@@ -269,7 +322,7 @@ export type Database = {
           id?: string;
           created_at?: string;
         };
-        Update: Partial<Pick<NamePoll, "option_a" | "option_b">>;
+        Update: Partial<Pick<NamePoll, "option_a" | "option_b" | "closed_at">>;
         Relationships: [];
       };
       name_poll_votes: {

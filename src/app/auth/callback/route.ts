@@ -10,11 +10,15 @@ export async function GET(request: Request) {
 
   if (code && isSupabaseConfigured) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error && data.user) {
+      await supabase
+        .from("profiles")
+        .update({ accepted_terms_at: new Date().toISOString() })
+        .eq("id", data.user.id);
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
 
-  return NextResponse.redirect(`${origin}/auth`);
+  return NextResponse.redirect(`${origin}/auth?error=confirm_failed`);
 }

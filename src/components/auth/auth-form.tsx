@@ -53,23 +53,28 @@ export function AuthForm({ initialMode = "signin" }: { initialMode?: Mode }) {
   }
 
   return (
-    <motion.div
-      initial="initial"
-      animate="animate"
-      className="flex flex-col gap-5 px-5 py-8 sm:gap-6 sm:px-7 sm:py-10"
-    >
+    <div className="flex min-h-0 flex-1 flex-col">
       <motion.div
-        variants={fieldMotion}
-        transition={{ duration: 0.35 }}
-        className="flex flex-col items-center gap-3 text-center sm:gap-4"
+        initial="initial"
+        animate="animate"
+        className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-5 scrollbar-none max-h-[calc(100dvh-12rem)] sm:gap-5 sm:px-7 sm:py-6 [@media(max-height:700px)]:gap-3 [@media(max-height:700px)]:py-4"
       >
-        <BrandMark variant="logo" priority className="w-[min(11rem,70vw)]" />
-        <p className="text-sm text-muted-foreground">
-          {mode === "signin"
-            ? "Welcome back, cat catcher."
-            : "Create your account and start collecting strays."}
-        </p>
-      </motion.div>
+        <motion.div
+          variants={fieldMotion}
+          transition={{ duration: 0.35 }}
+          className="flex flex-col items-center gap-2 text-center sm:gap-3 [@media(max-height:700px)]:gap-1.5"
+        >
+          <BrandMark
+            variant="logo"
+            priority
+            className="w-[min(11rem,70vw)] [@media(max-height:700px)]:w-28"
+          />
+          <p className="text-sm text-muted-foreground [@media(max-height:700px)]:hidden">
+            {mode === "signin"
+              ? "Welcome back, cat catcher."
+              : "Create your account and start collecting strays."}
+          </p>
+        </motion.div>
 
       <motion.div
         variants={fieldMotion}
@@ -106,10 +111,11 @@ export function AuthForm({ initialMode = "signin" }: { initialMode?: Mode }) {
       </motion.div>
 
       <motion.form
+        id="auth-main-form"
         variants={fieldMotion}
         transition={{ duration: 0.35, delay: 0.1 }}
         action={handleSubmit}
-        className="flex flex-col gap-4"
+        className="flex flex-col gap-3 sm:gap-4"
       >
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="email" className="text-sm font-semibold">
@@ -193,18 +199,21 @@ export function AuthForm({ initialMode = "signin" }: { initialMode?: Mode }) {
             </span>
           </label>
         )}
+      </motion.form>
+      </motion.div>
 
+      <div className="sticky bottom-0 z-10 shrink-0 border-t border-border/50 bg-background/95 px-5 py-3 backdrop-blur-sm sm:px-7">
         <CatButton
           type="submit"
+          form="auth-main-form"
           block
           loading={isPending}
           disabled={mode === "signup" && !termsAccepted}
-          className="mt-1"
         >
           {mode === "signin" ? "Sign in" : "Create account"}
         </CatButton>
-      </motion.form>
-    </motion.div>
+      </div>
+    </div>
   );
 }
 

@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { persistNewAchievements } from "@/components/achievement-session-toasts";
 import { CatchProcessingOverlay } from "@/components/capture/catch-processing-overlay";
 import { CatchReviewPanel } from "@/components/capture/catch-review-panel";
+import { StrayMatchDialog } from "@/components/capture/stray-match-dialog";
 import { CatTradingCard } from "@/components/cat-trading-card";
 import { InteractiveCard } from "@/components/interactive-card";
 import { Camera } from "@/components/capture/camera";
@@ -31,8 +32,16 @@ import { coatToRarity, type CoatType } from "@/lib/coat-rarity";
 import { DEMO_COOKIE } from "@/lib/demo";
 import { getCurrentPosition, type Coords } from "@/lib/geo";
 import { enqueueCapture } from "@/lib/offline-capture-queue";
-import type { Rarity } from "@/lib/supabase/types";
+import type { CatTraits, Rarity } from "@/lib/supabase/types";
+import {
+  fetchNearbyStrayCats,
+  findBestStrayMatch,
+  type StrayCatCandidate,
+} from "@/lib/capture/match-stray-cat";
+import { computeImageEmbedding } from "@/lib/capture/image-embedding";
 import { saveCapture } from "./actions";
+
+const DEFAULT_TRAITS: CatTraits = { chonk: 3, shy: 3, grumpy: 3, floof: 3 };
 
 function isDemoSession(): boolean {
   if (typeof document === "undefined") return false;
@@ -59,13 +68,22 @@ export default function CatchPageClient() {
   const [stickerScale, setStickerScale] = useState(STICKER_SCALE_DEFAULT);
 
   const [nickname, setNickname] = useState("");
+  const [traits, setTraits] = useState<CatTraits>(DEFAULT_TRAITS);
+  const [shortDescription, setShortDescription] = useState("");
+  const [sharePhoto, setSharePhoto] = useState(false);
+  const [shareLocation, setShareLocation] = useState(false);
   const [coords, setCoords] = useState<Coords | null>(null);
   const [locationStatus, setLocationStatus] = useState<LocationStatus>("idle");
   const [saving, setSaving] = useState(false);
   const [coatClassifying, setCoatClassifying] = useState(false);
+  const [embedding, setEmbedding] = useState<number[] | null>(null);
+  const [strayMatch, setStrayMatch] = useState<StrayCatCandidate | null>(null);
+  const [confirmedStrayId, setConfirmedStrayId] = useState<string | null>(null);
+  const [skipMatch, setSkipMatch] = useState(false);
+
+  const stickerUrlRef = useRef<string | null>(null);
 
   const previewUrlRef = useRef<string | null>(null);
-  const stickerUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     sessionStorage.removeItem("catch-chunk-retry");
@@ -156,7 +174,15 @@ export default function CatchPageClient() {
     setSelectedCoat("gray tabby");
     setStickerScale(STICKER_SCALE_DEFAULT);
     setNickname("");
+    setTraits(DEFAULT_TRAITS);
+    setShortDescription("");
+    setSharePhoto(false);
+    setShareLocation(false);
     setCoords(null);
+    setEmbedding(null);
+    setStrayMatch(null);
+    setConfirmedStrayId(null);
+    setSkipMatch(false);
     setLocationStatus("idle");
     setPhase("capture");
   }
@@ -196,6 +222,9 @@ export default function CatchPageClient() {
       setPhase("review");
 
       setCoatClassifying(true);
+      void computeImageEmbedding(result.sticker)
+        .then(setEmbedding)
+        .catch(() => setEmbedding(null));
       void import("@/lib/capture/classify-coat")
         .then(({ classifyCoat }) => classifyCoat(result.sticker))
         .then((coatResult) => {
@@ -213,25 +242,24 @@ export default function CatchPageClient() {
     }
   }
 
-  async function save() {
+  async function performSave(strayCatId: string | null) {
     if (!processed) return;
-    if (isDemoSession()) {
-      toast.info("Demo mode — sign in to save your cats.");
-      return;
-    }
 
     const location = coords ?? (await requestLocation());
     if (!location) {
       toast.error("Location is required to save this catch.");
+      setSaving(false);
       return;
     }
 
-    setSaving(true);
     try {
       const stickerToUpload =
         Math.abs(stickerScale - 1) < 0.02
           ? processed.sticker
           : await scaleStickerBlob(processed.sticker, stickerScale);
+
+      const vec = embedding ?? (await computeImageEmbedding(processed.sticker));
+      setEmbedding(vec);
 
       const uploaded = await uploadCapture(processed.original, stickerToUpload);
       const result = await saveCapture({
@@ -243,6 +271,12 @@ export default function CatchPageClient() {
         lng: location.lng,
         coat_type: selectedCoat,
         rarity: previewRarity,
+        stray_cat_id: strayCatId,
+        image_embedding: vec,
+        traits,
+        short_description: shortDescription || null,
+        share_photo: sharePhoto,
+        share_location: shareLocation,
       });
 
       if (!result.success) {
@@ -261,35 +295,58 @@ export default function CatchPageClient() {
       router.push(`/cat/${result.id}`);
     } catch (err) {
       console.error(err);
-      const offline =
-        typeof navigator !== "undefined" && !navigator.onLine;
-
-      if (offline && processed && location) {
-        try {
-          const stickerToQueue =
-            Math.abs(stickerScale - 1) < 0.02
-              ? processed.sticker
-              : await scaleStickerBlob(processed.sticker, stickerScale);
-          await enqueueCapture({
-            photoBlob: processed.original,
-            stickerBlob: stickerToQueue,
-            nickname: nickname || null,
-            lat: location.lat,
-            lng: location.lng,
-            coat_type: selectedCoat,
-            rarity: previewRarity,
-          });
-          toast.success("Saved offline — will sync when you're back online.");
-          router.push("/catdex");
-          return;
-        } catch {
-          // fall through
-        }
-      }
-
       toast.error(err instanceof Error ? err.message : "Failed to save.");
       setSaving(false);
     }
+  }
+
+  async function save() {
+    if (!processed) return;
+    if (isDemoSession()) {
+      toast.info("Demo mode — sign in to save your cats.");
+      return;
+    }
+
+    const location = coords ?? (await requestLocation());
+    if (!location) {
+      toast.error("Location is required to save this catch.");
+      return;
+    }
+
+    setSaving(true);
+
+    if (!skipMatch && !confirmedStrayId) {
+      try {
+        const vec = embedding ?? (await computeImageEmbedding(processed.sticker));
+        setEmbedding(vec);
+        const candidates = await fetchNearbyStrayCats(location.lat, location.lng);
+        const match = findBestStrayMatch(vec, location.lat, location.lng, candidates);
+        if (match) {
+          setStrayMatch(match);
+          setSaving(false);
+          return;
+        }
+      } catch {
+        // Continue without match prompt
+      }
+    }
+
+    await performSave(confirmedStrayId);
+  }
+
+  function handleMatchConfirm() {
+    if (!strayMatch) return;
+    setConfirmedStrayId(strayMatch.id);
+    setStrayMatch(null);
+    setSaving(true);
+    void performSave(strayMatch.id);
+  }
+
+  function handleMatchNewCat() {
+    setSkipMatch(true);
+    setStrayMatch(null);
+    setSaving(true);
+    void performSave(null);
   }
 
   const canSave = locationStatus === "ready" && coords != null;
@@ -303,6 +360,17 @@ export default function CatchPageClient() {
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
+      {strayMatch && (
+        <StrayMatchDialog
+          match={strayMatch}
+          onConfirm={handleMatchConfirm}
+          onNewCat={handleMatchNewCat}
+          onCancel={() => {
+            setStrayMatch(null);
+            setSaving(false);
+          }}
+        />
+      )}
       <header className="flex shrink-0 items-center justify-between p-3 sm:p-4">
         <button
           type="button"
@@ -393,6 +461,14 @@ export default function CatchPageClient() {
               coatClassifying={coatClassifying}
               nickname={nickname}
               onNicknameChange={setNickname}
+              traits={traits}
+              onTraitsChange={setTraits}
+              shortDescription={shortDescription}
+              onShortDescriptionChange={setShortDescription}
+              sharePhoto={sharePhoto}
+              onSharePhotoChange={setSharePhoto}
+              shareLocation={shareLocation}
+              onShareLocationChange={setShareLocation}
               locationStatus={locationStatus}
               onRetryLocation={() => void requestLocation()}
               canSave={canSave}

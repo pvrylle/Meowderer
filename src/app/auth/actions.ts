@@ -85,8 +85,22 @@ export async function signUp(formData: FormData): Promise<AuthResult> {
 
   const { acceptTerms: _, ...credentials } = parsed.data;
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp(credentials);
+  const origin =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
+  const { data, error } = await supabase.auth.signUp({
+    ...credentials,
+    options: { emailRedirectTo: `${origin}/auth/callback` },
+  });
   if (error) return { error: error.message };
+
+  if (data.user && data.user.identities?.length === 0) {
+    return {
+      error:
+        "An account with this email already exists. Sign in or reset your password.",
+    };
+  }
 
   if (!data.session) {
     const email = encodeURIComponent(parsed.data.email);

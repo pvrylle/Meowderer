@@ -16,8 +16,19 @@ function daysAgo(days: number): string {
   return new Date(Date.now() - days * 86_400_000).toISOString();
 }
 
+const DEMO_DEFAULTS = {
+  stray_cat_id: null,
+  share_photo: false,
+  share_location: false,
+  short_description: null,
+  traits: null,
+  image_embedding: null,
+  name_locked_at: null,
+} as const;
+
 export const DEMO_CAPTURES: Capture[] = [
   {
+    ...DEMO_DEFAULTS,
     id: "demo-1",
     user_id: DEMO_USER.id,
     photo_url: "demo/cat-1.svg",
@@ -33,6 +44,7 @@ export const DEMO_CAPTURES: Capture[] = [
     caught_at: daysAgo(1),
   },
   {
+    ...DEMO_DEFAULTS,
     id: "demo-2",
     user_id: DEMO_USER.id,
     photo_url: "demo/cat-2.svg",
@@ -48,6 +60,7 @@ export const DEMO_CAPTURES: Capture[] = [
     caught_at: daysAgo(3),
   },
   {
+    ...DEMO_DEFAULTS,
     id: "demo-3",
     user_id: DEMO_USER.id,
     photo_url: "demo/cat-3.svg",
@@ -63,6 +76,7 @@ export const DEMO_CAPTURES: Capture[] = [
     caught_at: daysAgo(6),
   },
   {
+    ...DEMO_DEFAULTS,
     id: "demo-4",
     user_id: DEMO_USER.id,
     photo_url: "demo/cat-4.svg",
@@ -78,6 +92,7 @@ export const DEMO_CAPTURES: Capture[] = [
     caught_at: daysAgo(9),
   },
   {
+    ...DEMO_DEFAULTS,
     id: "demo-5",
     user_id: DEMO_USER.id,
     photo_url: "demo/cat-5.svg",
@@ -93,6 +108,7 @@ export const DEMO_CAPTURES: Capture[] = [
     caught_at: daysAgo(14),
   },
   {
+    ...DEMO_DEFAULTS,
     id: "demo-6",
     user_id: DEMO_USER.id,
     photo_url: "demo/cat-6.svg",

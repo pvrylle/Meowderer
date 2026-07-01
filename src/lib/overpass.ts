@@ -240,3 +240,12 @@ export async function fetchPois(
 export function osmLink(poi: Poi): string {
   return `https://www.openstreetmap.org/?mlat=${poi.lat}&mlon=${poi.lng}#map=17/${poi.lat}/${poi.lng}`;
 }
+
+export function googleMapsSearchLink(lat: number, lng: number, name?: string): string {
+  const query = name ? encodeURIComponent(`${name}@${lat},${lng}`) : `${lat},${lng}`;
+  return `https://www.google.com/maps/search/?api=1&query=${query}`;
+}
+
+export function googleMapsDirectionsLink(lat: number, lng: number): string {
+  return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+}

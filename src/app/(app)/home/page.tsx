@@ -5,6 +5,7 @@ import { APP_NAME } from "@/lib/brand";
 import { BrandMark } from "@/components/brand-mark";
 import { PreloadCaptureAssets } from "@/components/capture/preload-capture-assets";
 import { CatCard } from "@/components/cat-card";
+import { PawsInAreaSection } from "@/components/home/paws-in-area-section";
 import { DexPlaceholderCard } from "@/components/dex-placeholder-card";
 import { MascotEmpty } from "@/components/mascot-empty";
 import { CatButton } from "@/components/ui/cat-button";
@@ -107,6 +108,8 @@ export default async function HomePage() {
           <div className="pointer-events-none absolute -right-6 -top-6 size-24 rounded-full bg-white/10" />
         </div>
       </Link>
+
+      {user && <PawsInAreaSection userId={user.id} />}
 
       {/* Collection section */}
       <section className="space-y-3">

@@ -24,13 +24,14 @@ import {
   type CaptureGeoJSON,
   type CapturePointProps,
 } from "@/lib/map";
-import { fetchPois, osmLink, POI_MIN_ZOOM, type Poi, type PoiType } from "@/lib/overpass";
+import { fetchPois, googleMapsDirectionsLink, googleMapsSearchLink, POI_MIN_ZOOM, type Poi, type PoiType } from "@/lib/overpass";
 import { useShelterCheckIn } from "@/hooks/use-shelter-check-in";
 import type { Rarity } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 
 type CatchMapProps = {
   geojson: CaptureGeoJSON;
+  focusCatId?: string;
 };
 
 type LayerTab = "all" | "cats" | "shelters" | "vets";
@@ -196,7 +197,7 @@ function buildPoiPinButton(poi: Poi, onClick: () => void): HTMLButtonElement {
   return btn;
 }
 
-export function CatchMap({ geojson }: CatchMapProps) {
+export function CatchMap({ geojson, focusCatId }: CatchMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const catMarkersRef = useRef<maplibregl.Marker[]>([]);
@@ -209,6 +210,7 @@ export function CatchMap({ geojson }: CatchMapProps) {
   const [selectedPoi, setSelectedPoi] = useState<Poi | null>(null);
   const [pois, setPois] = useState<Poi[]>([]);
   const [poiLoading, setPoiLoading] = useState(false);
+  const [poiError, setPoiError] = useState(false);
 
   const showCats = layerTab === "all" || layerTab === "cats";
   const showShelters = layerTab === "all" || layerTab === "shelters";
@@ -319,10 +321,16 @@ export function CatchMap({ geojson }: CatchMapProps) {
 
   const loadPois = useCallback(async (map: maplibregl.Map) => {
     if (!showShelters && !showVets) return;
+
     if (map.getZoom() < POI_MIN_ZOOM) {
-      setPois([]);
-      return;
+      if (layerTab === "shelters" || layerTab === "vets") {
+        map.easeTo({ zoom: POI_MIN_ZOOM + 1, duration: 600 });
+      } else {
+        setPois([]);
+        return;
+      }
     }
+
     const b = map.getBounds();
     const types: PoiType[] = [];
     if (showShelters) types.push("shelter");
@@ -330,6 +338,7 @@ export function CatchMap({ geojson }: CatchMapProps) {
     if (types.length === 0) return;
 
     setPoiLoading(true);
+    setPoiError(false);
     try {
       const results = await fetchPois(
         {
@@ -341,12 +350,16 @@ export function CatchMap({ geojson }: CatchMapProps) {
         types,
       );
       setPois(results);
+      if (results.length === 0 && (layerTab === "shelters" || layerTab === "vets")) {
+        setPoiError(true);
+      }
     } catch {
       setPois([]);
+      setPoiError(true);
     } finally {
       setPoiLoading(false);
     }
-  }, [showShelters, showVets]);
+  }, [showShelters, showVets, layerTab]);
 
   // Init map once
   useEffect(() => {
@@ -464,6 +477,20 @@ export function CatchMap({ geojson }: CatchMapProps) {
     });
   }, [rarityFilter, filteredCats]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !focusCatId) return;
+
+    const feature = geojson.features.find((f) => f.properties.id === focusCatId);
+    if (!feature || feature.geometry.type !== "Point") return;
+
+    const coords = feature.geometry.coordinates as [number, number];
+    whenStyleReady(map, () => {
+      map.easeTo({ center: coords, zoom: 15, duration: 800 });
+      setSelectedCat(feature.properties);
+    });
+  }, [focusCatId, geojson]);
+
   return (
     <div className="catch-map-root relative h-full min-h-0 w-full">
       <div ref={containerRef} className="absolute inset-0 z-0" />
@@ -516,6 +543,22 @@ export function CatchMap({ geojson }: CatchMapProps) {
           <p className="pointer-events-auto rounded-2xl bg-card/95 px-4 py-2 text-center text-xs text-muted-foreground shadow-sm backdrop-blur-sm">
             Loading nearby places…
           </p>
+        )}
+
+        {poiError && !poiLoading && (showShelters || showVets) && (
+          <div className="pointer-events-auto rounded-2xl bg-card/95 px-4 py-2 text-center shadow-sm backdrop-blur-sm">
+            <p className="text-xs text-muted-foreground">Could not load places.</p>
+            <button
+              type="button"
+              onClick={() => {
+                const map = mapRef.current;
+                if (map) void loadPois(map);
+              }}
+              className="mt-1 text-xs font-bold text-primary"
+            >
+              Retry
+            </button>
+          </div>
         )}
 
         {showCats && hasCatPoints && !hasFilteredCats && (
@@ -631,12 +674,20 @@ export function CatchMap({ geojson }: CatchMapProps) {
               <p className="mt-1 text-sm text-muted-foreground">{selectedPoi.address}</p>
             )}
             <a
-              href={osmLink(selectedPoi)}
+              href={googleMapsSearchLink(selectedPoi.lat, selectedPoi.lng, selectedPoi.name)}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-3 inline-block text-sm font-bold text-primary"
             >
-              Open in Maps →
+              Open in Google Maps →
+            </a>
+            <a
+              href={googleMapsDirectionsLink(selectedPoi.lat, selectedPoi.lng)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 block text-xs font-semibold text-muted-foreground underline"
+            >
+              Get directions
             </a>
           </div>
         </div>

@@ -1,9 +1,8 @@
-import type { Capture, Rarity } from "@/lib/supabase/types";
+import type { Capture, CatTraits, Rarity } from "@/lib/supabase/types";
 
 /**
- * Playful, deterministic "trading-card" flavour derived from a capture id.
- * These are not real metrics -- just cute personality stats so every cat card
- * feels collectible. Same id always yields the same numbers.
+ * Playful trading-card stats. Uses user-submitted traits when present,
+ * otherwise deterministic values from capture id.
  */
 
 const STAT_LABELS = ["Floof", "Sass", "Stealth", "Chonk"] as const;
@@ -27,17 +26,47 @@ function hashString(input: string): number {
   return h >>> 0;
 }
 
-/** Three personality stats, each 1-5 paws. Higher rarity skews higher. */
-export function catStats(capture: Pick<Capture, "id" | "rarity">): CatStat[] {
+function traitsToStats(traits: CatTraits): CatStat[] {
+  return [
+    { label: "Floof", value: traits.floof },
+    { label: "Sass", value: traits.grumpy },
+    { label: "Stealth", value: traits.shy },
+    { label: "Chonk", value: traits.chonk },
+  ];
+}
+
+/** Personality stats, each 1-5 paws. */
+export function catStats(
+  capture: Pick<Capture, "id" | "rarity"> & { traits?: Capture["traits"] },
+): CatStat[] {
+  if (capture.traits) {
+    return traitsToStats(capture.traits).slice(0, 3);
+  }
+
   const seed = hashString(capture.id);
   const floor = capture.rarity ? RARITY_FLOOR[capture.rarity] : 1;
 
   return STAT_LABELS.slice(0, 3).map((label, i) => {
-    const raw = (seed >> (i * 6)) & 63; // 0..63
+    const raw = (seed >> (i * 6)) & 63;
     const span = 5 - floor + 1;
     const value = floor + (raw % span);
     return { label, value: Math.min(5, Math.max(1, value)) };
   });
+}
+
+export function allCatStats(
+  capture: Pick<Capture, "id" | "rarity"> & { traits?: Capture["traits"] },
+): CatStat[] {
+  if (capture.traits) return traitsToStats(capture.traits);
+  return catStats(capture).concat([
+    {
+      label: "Chonk",
+      value: Math.min(
+        5,
+        Math.max(1, (hashString(`chonk:${capture.id}`) % 5) + 1),
+      ),
+    },
+  ]);
 }
 
 /** Stable Pokedex-style number, e.g. "#042". */
@@ -95,10 +124,17 @@ export function charmRating(capture: Pick<Capture, "id" | "rarity">): number {
   return Math.min(5, Math.round((top.value + frac) * 10) / 10);
 }
 
-/** A short, deterministic flavour bio for the card back. */
+/** A short flavour bio for the card back. */
 export function catBio(
-  capture: Pick<Capture, "id" | "rarity" | "coat_type" | "city" | "country">,
+  capture: Pick<
+    Capture,
+    "id" | "rarity" | "coat_type" | "city" | "country" | "short_description" | "traits"
+  >,
 ): string {
+  if (capture.short_description?.trim()) {
+    return capture.short_description.trim();
+  }
+
   const stats = catStats(capture);
   const top = [...stats].sort((a, b) => b.value - a.value)[0];
   const place = capture.city || capture.country || "parts unknown";
