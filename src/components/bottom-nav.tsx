@@ -41,7 +41,7 @@ export function BottomNav() {
       aria-label="Main"
       className="relative z-30 bg-card pb-[env(safe-area-inset-bottom)]"
     >
-      <div className="flex h-16 items-center border-t border-border/30">
+      <div className="flex h-[3.75rem] items-center border-t border-border/30">
         {/* Left items */}
         <div className="flex flex-1 items-center justify-evenly">
           {LEFT_ITEMS.map((item) => (
@@ -59,7 +59,7 @@ export function BottomNav() {
         <Link
           href="/catch"
           aria-label="Catch a cat"
-          className="relative -mt-5 flex size-14 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/25 active:scale-95"
+          className="relative -mt-4 flex size-12 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/25 active:scale-95"
         >
           <Camera className="size-6" strokeWidth={2} />
         </Link>

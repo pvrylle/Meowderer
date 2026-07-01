@@ -43,10 +43,6 @@ export function AuthForm({
     else if (modeFromQuery === "signin") setMode("signin");
   }, [searchParams]);
 
-  useEffect(() => {
-    window.dispatchEvent(new Event("resize"));
-  }, [mode]);
-
   function handleSubmit(formData: FormData) {
     if (mode === "signup" && !termsAccepted) {
       toast.error("Please accept the Terms of Service and Privacy Policy.");
@@ -64,22 +60,25 @@ export function AuthForm({
   }
 
   return (
-    <div className="flex flex-col gap-3 px-4 py-4 sm:gap-3.5 sm:px-6 sm:py-5">
-      <div className="flex flex-col items-center gap-1 text-center">
-        <BrandMark
-          variant="logo"
-          priority
-          className={cn(
-            "w-[min(7rem,52vw)] sm:w-[min(8rem,58vw)]",
-            mode === "signup" && "w-[min(6rem,48vw)] sm:w-[min(7rem,52vw)]",
+    <div className="auth-screen flex h-full min-h-0 flex-1 flex-col justify-between overflow-hidden px-4 py-3 sm:px-6 sm:py-4">
+      <div className="flex min-h-0 flex-col gap-2.5 max-[700px]:gap-2 max-[600px]:gap-1.5">
+        <div className="flex flex-col items-center gap-1 text-center max-[600px]:gap-0.5">
+          <BrandMark
+            variant="logo"
+            priority
+            className={cn(
+              "auth-logo w-[min(7rem,52vw)] sm:w-[min(8rem,58vw)]",
+              mode === "signup" && "w-[min(5.75rem,44vw)] sm:w-[min(6.5rem,48vw)]",
+            )}
+          />
+          {mode === "signin" && (
+            <p className="text-sm text-muted-foreground max-[600px]:text-xs">
+              Welcome back, cat catcher.
+            </p>
           )}
-        />
-        {mode === "signin" && (
-          <p className="text-sm text-muted-foreground">Welcome back, cat catcher.</p>
-        )}
-      </div>
+        </div>
 
-      <div className="relative z-20">
+        <div className="relative z-20 shrink-0">
         <div className="relative isolate flex overflow-hidden rounded-full bg-muted/80 p-1">
           {(["signin", "signup"] as const).map((m) => {
             const active = mode === m;
@@ -107,71 +106,74 @@ export function AuthForm({
             );
           })}
         </div>
+        </div>
+
+        <form
+          id="auth-main-form"
+          action={handleSubmit}
+          className="flex flex-col gap-2 max-[700px]:gap-1.5"
+        >
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="email" className="text-sm font-semibold max-[600px]:text-xs">
+              Email
+            </Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              required
+              className="auth-input h-10 rounded-2xl bg-muted/30 max-[600px]:h-9"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="password" className="text-sm font-semibold max-[600px]:text-xs">
+                Password
+              </Label>
+              {mode === "signin" && (
+                <Link
+                  href="/auth/forgot-password"
+                  className="shrink-0 text-xs font-semibold text-primary hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              )}
+            </div>
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete={
+                  mode === "signin" ? "current-password" : "new-password"
+                }
+                placeholder="••••••••"
+                required
+                minLength={mode === "signup" ? 8 : 6}
+                className="auth-input h-10 rounded-2xl bg-muted/30 pr-12 max-[600px]:h-9"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <EyeOff className="size-5 max-[600px]:size-4" />
+                ) : (
+                  <Eye className="size-5 max-[600px]:size-4" />
+                )}
+              </button>
+            </div>
+          </div>
+        </form>
       </div>
 
-      <form
-        id="auth-main-form"
-        action={handleSubmit}
-        className="flex flex-col gap-2.5"
-      >
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="email" className="text-sm font-semibold">
-            Email
-          </Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            placeholder="you@example.com"
-            required
-            className="h-10 rounded-2xl bg-muted/30"
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center justify-between gap-2">
-            <Label htmlFor="password" className="text-sm font-semibold">
-              Password
-            </Label>
-            {mode === "signin" && (
-              <Link
-                href="/auth/forgot-password"
-                className="shrink-0 text-xs font-semibold text-primary hover:underline"
-              >
-                Forgot password?
-              </Link>
-            )}
-          </div>
-          <div className="relative">
-            <Input
-              id="password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              autoComplete={
-                mode === "signin" ? "current-password" : "new-password"
-              }
-              placeholder="••••••••"
-              required
-              minLength={mode === "signup" ? 8 : 6}
-              className="h-10 rounded-2xl bg-muted/30 pr-12"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? (
-                <EyeOff className="size-5" />
-              ) : (
-                <Eye className="size-5" />
-              )}
-            </button>
-          </div>
-        </div>
-
+      <div className="shrink-0 flex flex-col gap-2 pt-1 max-[600px]:gap-1.5">
         {mode === "signup" && (
-          <label className="flex items-start gap-2 rounded-xl bg-muted/50 p-2 text-left text-xs leading-snug">
+          <label className="flex items-start gap-2 rounded-xl bg-muted/50 p-2 text-left text-[11px] leading-snug max-[600px]:p-1.5 max-[600px]:text-[10px]">
             <input
               type="checkbox"
               checked={termsAccepted}
@@ -194,13 +196,15 @@ export function AuthForm({
 
         <CatButton
           type="submit"
+          form="auth-main-form"
           block
           loading={isPending}
           disabled={mode === "signup" && !termsAccepted}
+          className="max-[600px]:h-10 max-[600px]:text-sm"
         >
           {mode === "signin" ? "Sign in" : "Create account"}
         </CatButton>
-      </form>
+      </div>
     </div>
   );
 }
