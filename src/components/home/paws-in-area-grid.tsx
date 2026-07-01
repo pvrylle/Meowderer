@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { CheckCircle2, Lock, MapPin } from "lucide-react";
-import { toast } from "sonner";
 
 import type { NearbyStrayCat } from "@/lib/nearby-stray-cats";
 import { cn } from "@/lib/utils";
@@ -16,15 +15,9 @@ function StrayCard({
   locked: boolean;
 }) {
   const name = stray.canonical_name?.trim() || "Mystery stray";
-  const href = locked
-    ? undefined
-    : stray.user_capture_id
-      ? `/cat/${stray.user_capture_id}`
-      : `/stray/${stray.id}`;
-
-  function handleLockedClick() {
-    toast.info("Catch this cat nearby to unlock!");
-  }
+  const profileHref = stray.user_capture_id
+    ? `/cat/${stray.user_capture_id}`
+    : `/stray/${stray.id}`;
 
   const inner = (
     <div
@@ -65,18 +58,24 @@ function StrayCard({
     </div>
   );
 
-  if (locked || !href) {
+  if (locked) {
     return (
-      <button type="button" onClick={handleLockedClick} className="text-left">
+      <Link href={`/map?layer=cats&stray=${stray.id}`} className="text-left">
         {inner}
-      </button>
+      </Link>
     );
   }
 
-  return <Link href={href}>{inner}</Link>;
+  return <Link href={profileHref}>{inner}</Link>;
 }
 
-export function PawsInAreaGrid({ strays }: { strays: NearbyStrayCat[] }) {
+export function PawsInAreaGrid({
+  strays,
+  totalInArea,
+}: {
+  strays: NearbyStrayCat[];
+  totalInArea?: number;
+}) {
   if (strays.length === 0) {
     return (
       <p className="rounded-2xl border border-dashed border-border bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
@@ -86,10 +85,18 @@ export function PawsInAreaGrid({ strays }: { strays: NearbyStrayCat[] }) {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-2.5">
-      {strays.map((stray) => (
-        <StrayCard key={stray.id} stray={stray} locked={!stray.discovered} />
-      ))}
+    <div className="space-y-2">
+      {totalInArea != null && totalInArea > strays.length && (
+        <p className="text-center text-xs text-muted-foreground">
+          Showing {strays.length} of {totalInArea} nearby — your catches appear first; tap
+          header for map
+        </p>
+      )}
+      <div className="grid grid-cols-2 gap-2.5">
+        {strays.map((stray) => (
+          <StrayCard key={stray.id} stray={stray} locked={!stray.discovered} />
+        ))}
+      </div>
     </div>
   );
 }

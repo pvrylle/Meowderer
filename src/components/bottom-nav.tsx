@@ -41,8 +41,8 @@ export function BottomNav() {
       aria-label="Main"
       className="relative z-30 bg-card pb-[env(safe-area-inset-bottom)]"
     >
-      <div className="grid h-16 grid-cols-[1fr_auto_1fr] items-center border-t border-border/30">
-        <div className="flex min-w-0 items-center justify-evenly">
+      <div className="flex h-16 items-center border-t border-border/30">
+        <div className="flex flex-1 items-center justify-evenly">
           {LEFT_ITEMS.map((item) => (
             <NavItem
               key={item.href}
@@ -57,12 +57,12 @@ export function BottomNav() {
         <Link
           href="/catch"
           aria-label="Catch a cat"
-          className="relative -mt-5 flex size-14 shrink-0 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/25 active:scale-95"
+          className="relative -mt-5 flex size-14 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/25 active:scale-95"
         >
           <Camera className="size-6" strokeWidth={2} />
         </Link>
 
-        <div className="flex min-w-0 items-center justify-evenly">
+        <div className="flex flex-1 items-center justify-evenly">
           {RIGHT_ITEMS.map((item) => (
             <NavItem
               key={item.href}
@@ -93,14 +93,12 @@ function NavItem({
     <Link
       href={href}
       className={cn(
-        "flex min-w-0 flex-col items-center justify-center gap-0.5 px-2 py-2",
+        "flex flex-col items-center justify-center gap-0.5 px-4 py-2",
         active ? "text-primary" : "text-muted-foreground",
       )}
     >
-      <Icon className="size-5 shrink-0" strokeWidth={active ? 2 : 1.5} />
-      <span className="w-full truncate text-center text-[10px] font-medium">
-        {label}
-      </span>
+      <Icon className="size-5" strokeWidth={active ? 2 : 1.5} />
+      <span className="text-[10px] font-medium">{label}</span>
     </Link>
   );
 }

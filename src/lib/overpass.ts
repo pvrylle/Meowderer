@@ -22,7 +22,7 @@ export const POI_MAX_BBOX_DEGREES = 2;
 /** Below this zoom, POI fetch is skipped (viewport too wide to be useful). */
 export const POI_MIN_ZOOM = 7;
 
-const CACHE_PREFIX = "catdex-overpass:";
+const CACHE_PREFIX = "catdex-overpass:v2:";
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 const OVERPASS_ENDPOINTS = [
@@ -66,8 +66,75 @@ function writeCache(key: string, pois: Poi[]): void {
   }
 }
 
-function amenityForType(type: PoiType): string {
-  return type === "shelter" ? "animal_shelter" : "veterinary";
+/** Collapse POIs within ~80m of each other (keep first). */
+export function dedupePoisByProximity<T extends { lat: number; lng: number }>(
+  pois: T[],
+): T[] {
+  const kept: T[] = [];
+  for (const poi of pois) {
+    const dup = kept.some(
+      (k) =>
+        Math.abs(k.lat - poi.lat) < 0.0005 &&
+        Math.abs(k.lng - poi.lng) < 0.0005,
+    );
+    if (dup) continue;
+    kept.push(poi);
+  }
+  return kept;
+}
+
+const SHELTER_NAME_RE = /animal shelter|pet rescue|dog shelter|cat shelter|animal rescue|animal welfare|paws|rescue center/i;
+const SHELTER_NAME_TAG_RE = "animal shelter|pet rescue|dog shelter|cat shelter|animal rescue";
+const NGO_NAME_RE = "animal|rescue|shelter|paws|welfare";
+
+function shelterQueryPart(bbox: string): string {
+  return `
+  node["amenity"="animal_shelter"](${bbox});
+  way["amenity"="animal_shelter"](${bbox});
+  node["amenity"="animal_boarding"](${bbox});
+  way["amenity"="animal_boarding"](${bbox});
+  node["amenity"="veterinary"]["name"~"rescue|shelter|welfare|paws",i](${bbox});
+  way["amenity"="veterinary"]["name"~"rescue|shelter|welfare|paws",i](${bbox});
+  node["office"="ngo"]["name"~"${NGO_NAME_RE}",i](${bbox});
+  way["office"="ngo"]["name"~"${NGO_NAME_RE}",i](${bbox});
+  node["name"~"${SHELTER_NAME_TAG_RE}",i](${bbox});
+  way["name"~"${SHELTER_NAME_TAG_RE}",i](${bbox});`;
+}
+
+function vetQueryPart(bbox: string): string {
+  return `
+  node["amenity"="veterinary"](${bbox});
+  way["amenity"="veterinary"](${bbox});`;
+}
+
+function classifyPoiType(
+  tags: Record<string, string> | undefined,
+  types: PoiType[],
+): PoiType | null {
+  if (!tags) return null;
+
+  const amenity = tags.amenity;
+  const name = (tags.name ?? tags.operator ?? "").toLowerCase();
+  const office = tags.office;
+
+  const isShelter =
+    amenity === "animal_shelter" ||
+    amenity === "animal_boarding" ||
+    (amenity === "veterinary" && /rescue|shelter|welfare|paws/i.test(name)) ||
+    (office === "ngo" && /animal|rescue|shelter|paws|welfare/i.test(name)) ||
+    SHELTER_NAME_RE.test(name);
+
+  if (isShelter && types.includes("shelter")) return "shelter";
+
+  if (
+    amenity === "veterinary" &&
+    !/rescue|shelter|welfare|paws/i.test(name) &&
+    types.includes("vet")
+  ) {
+    return "vet";
+  }
+
+  return null;
 }
 
 /** Shrink oversized map bounds to a query-safe bbox centered on the viewport. */
@@ -110,15 +177,11 @@ export function buildOverpassQuery(bounds: MapBounds, types: PoiType[]): string 
   const { south, west, north, east } = bounds;
   const bbox = `${south},${west},${north},${east}`;
 
-  const filters = types
-    .map(
-      (t) => `
-  node["amenity"="${amenityForType(t)}"](${bbox});
-  way["amenity"="${amenityForType(t)}"](${bbox});`,
-    )
-    .join("");
+  const parts: string[] = [];
+  if (types.includes("shelter")) parts.push(shelterQueryPart(bbox));
+  if (types.includes("vet")) parts.push(vetQueryPart(bbox));
 
-  return `[out:json][timeout:25];(${filters});out center tags;`;
+  return `[out:json][timeout:25];(${parts.join("")});out center tags;`;
 }
 
 type OverpassElement = {
@@ -141,14 +204,8 @@ export function parseOverpassElements(
     const lng = el.lon ?? el.center?.lon;
     if (lat == null || lng == null) continue;
 
-    const amenity = el.tags?.amenity;
-    const type: PoiType | null =
-      amenity === "animal_shelter"
-        ? "shelter"
-        : amenity === "veterinary"
-          ? "vet"
-          : null;
-    if (!type || !types.includes(type)) continue;
+    const type = classifyPoiType(el.tags, types);
+    if (!type) continue;
 
     const name =
       el.tags?.name ??
@@ -226,14 +283,16 @@ export async function fetchPois(
       body: JSON.stringify({ bounds: safeBounds, types }),
     });
 
-    if (!res.ok) return [];
+    if (!res.ok) {
+      throw new Error(`POI fetch failed (${res.status})`);
+    }
 
     const data = (await res.json()) as { pois?: Poi[] };
     const pois = data.pois ?? [];
     writeCache(key, pois);
     return pois;
   } catch {
-    return [];
+    throw new Error("POI fetch failed");
   }
 }
 

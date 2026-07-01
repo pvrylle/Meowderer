@@ -16,7 +16,7 @@ function mergeCaptures(own: Capture[], publicOnes: Capture[]): Capture[] {
 export default async function MapPage({
   searchParams,
 }: {
-  searchParams: Promise<{ cat?: string; stray?: string }>;
+  searchParams: Promise<{ cat?: string; stray?: string; layer?: string }>;
 }) {
   const params = await searchParams;
   const [ownCaptures, publicCaptures] = await Promise.all([
@@ -35,7 +35,12 @@ export default async function MapPage({
 
   return (
     <div className="relative h-full min-h-0 w-full overflow-hidden">
-      <MapView geojson={geojson} focusCatId={focusCatId} />
+      <MapView
+        geojson={geojson}
+        focusCatId={focusCatId}
+        focusStrayId={params.stray}
+        initialLayer={params.layer}
+      />
     </div>
   );
 }

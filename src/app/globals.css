@@ -383,6 +383,16 @@
   height: 2.25rem !important;
 }
 
+/* MapLibre markers — keep pins above map tiles */
+.catch-map-root .maplibregl-marker.catch-map-marker {
+  z-index: 5;
+}
+
+.catch-map-root .catch-map-pin-btn {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* MapLibre canvas must fill its container */
 .maplibregl-map {
   position: absolute;
@@ -410,8 +420,16 @@
   flex-shrink: 0;
 }
 
-.phone-shell nav[aria-label="Main"] > div.grid {
+/* Bottom nav row — grid centering via CSS so TSX class strings never change (hydration-safe) */
+.phone-shell nav[aria-label="Main"] > div.flex {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
   height: var(--nav-bar-height);
+}
+
+.phone-shell nav[aria-label="Main"] > div.flex > div.flex {
+  min-width: 0;
 }
 
 .phone-shell nav[aria-label="Main"] a[aria-label="Catch a cat"] {
