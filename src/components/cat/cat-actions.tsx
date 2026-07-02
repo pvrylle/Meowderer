@@ -11,15 +11,20 @@ import { Input } from "@/components/ui/input";
 export function CatName({
   id,
   initialName,
+  nameLocked = false,
+  isSuperAdmin = false,
 }: {
   id: string;
   initialName: string | null;
+  nameLocked?: boolean;
+  isSuperAdmin?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(initialName ?? "");
   const [isPending, startTransition] = useTransition();
 
   const display = initialName?.trim() || "Unnamed cat";
+  const canEdit = !nameLocked || isSuperAdmin;
 
   function save() {
     startTransition(async () => {
@@ -35,19 +40,31 @@ export function CatName({
 
   if (!editing) {
     return (
-      <div className="flex items-center justify-center gap-2">
-        <h1 className="text-2xl font-extrabold text-foreground">{display}</h1>
-        <button
-          type="button"
-          aria-label="Rename"
-          onClick={() => {
-            setName(initialName ?? "");
-            setEditing(true);
-          }}
-          className="text-muted-foreground"
-        >
-          <Pencil className="size-4" />
-        </button>
+      <div className="flex flex-col items-center gap-1">
+        <div className="flex items-center justify-center gap-2">
+          <h1 className="text-2xl font-extrabold text-foreground">{display}</h1>
+          {canEdit && (
+            <button
+              type="button"
+              aria-label="Rename"
+              onClick={() => {
+                setName(initialName ?? "");
+                setEditing(true);
+              }}
+              className="text-muted-foreground"
+            >
+              <Pencil className="size-4" />
+            </button>
+          )}
+        </div>
+        {nameLocked && !isSuperAdmin && (
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Name locked by community poll
+          </p>
+        )}
+        {nameLocked && isSuperAdmin && (
+          <p className="text-[10px] font-semibold text-primary">Super admin override</p>
+        )}
       </div>
     );
   }

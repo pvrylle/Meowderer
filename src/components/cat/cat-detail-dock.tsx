@@ -75,7 +75,15 @@ function DockAction({
   );
 }
 
-export function CatDetailDock({ capture }: { capture: Capture }) {
+export function CatDetailDock({
+  capture,
+  isSuperAdmin = false,
+  nameLocked = false,
+}: {
+  capture: Capture;
+  isSuperAdmin?: boolean;
+  nameLocked?: boolean;
+}) {
   const router = useRouter();
   const cardRef = useRef<HTMLDivElement>(null);
   const [sharingCard, setSharingCard] = useState(false);
@@ -123,6 +131,9 @@ export function CatDetailDock({ capture }: { capture: Capture }) {
       body: defaultBody,
       category: "sighting",
       imageUrl: capture.sticker_url,
+      captureId: capture.id,
+      lat: capture.share_location ? capture.lat : null,
+      lng: capture.share_location ? capture.lng : null,
     });
     setSharingCommunity(false);
 
@@ -152,12 +163,24 @@ export function CatDetailDock({ capture }: { capture: Capture }) {
       </div>
 
       <div className="mb-2 text-center">
-        <CatName id={capture.id} initialName={capture.nickname} />
+        <CatName
+          id={capture.id}
+          initialName={capture.nickname}
+          nameLocked={nameLocked}
+          isSuperAdmin={isSuperAdmin}
+        />
       </div>
 
       <div className="flex gap-1.5">
         {hasMap && (
-          <DockAction label="Map" href="/map">
+          <DockAction
+            label="Map"
+            href={
+              capture.stray_cat_id
+                ? `/map?stray=${capture.stray_cat_id}`
+                : `/map?cat=${capture.id}`
+            }
+          >
             <MapPin className="size-5" />
           </DockAction>
         )}

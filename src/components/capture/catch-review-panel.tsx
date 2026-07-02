@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { CoatTypePicker } from "@/components/capture/coat-type-picker";
+import { PawRating } from "@/components/capture/paw-rating";
 import { CatButton } from "@/components/ui/cat-button";
 import { Input } from "@/components/ui/input";
 import type { CoatClassification } from "@/lib/capture/classify-coat";
@@ -23,6 +24,7 @@ import {
   STICKER_SCALE_STEP,
 } from "@/lib/capture/scale-sticker";
 import type { CoatType } from "@/lib/coat-rarity";
+import type { CatTraits } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 
 type LocationStatus = "idle" | "loading" | "ready" | "denied";
@@ -45,6 +47,14 @@ export function CatchReviewPanel({
   coatClassifying = false,
   nickname,
   onNicknameChange,
+  traits,
+  onTraitsChange,
+  shortDescription,
+  onShortDescriptionChange,
+  sharePhoto,
+  onSharePhotoChange,
+  shareLocation,
+  onShareLocationChange,
   locationStatus,
   onRetryLocation,
   canSave,
@@ -61,6 +71,14 @@ export function CatchReviewPanel({
   coatClassifying?: boolean;
   nickname: string;
   onNicknameChange: (value: string) => void;
+  traits: CatTraits;
+  onTraitsChange: (traits: CatTraits) => void;
+  shortDescription: string;
+  onShortDescriptionChange: (value: string) => void;
+  sharePhoto: boolean;
+  onSharePhotoChange: (value: boolean) => void;
+  shareLocation: boolean;
+  onShareLocationChange: (value: boolean) => void;
   locationStatus: LocationStatus;
   onRetryLocation: () => void;
   canSave: boolean;
@@ -169,6 +187,71 @@ export function CatchReviewPanel({
               className="h-10 rounded-xl border-border bg-background/80 pl-9 text-sm sm:h-12 sm:rounded-2xl sm:pl-10"
             />
           </div>
+        </div>
+
+        {/* Personality traits */}
+        <div className="space-y-2 rounded-xl bg-muted/40 p-2.5 sm:rounded-2xl sm:p-3">
+          <FieldLabel>Personality</FieldLabel>
+          <PawRating
+            label="Chonkiness"
+            value={traits.chonk}
+            onChange={(chonk) => onTraitsChange({ ...traits, chonk })}
+          />
+          <PawRating
+            label="Shyness"
+            value={traits.shy}
+            onChange={(shy) => onTraitsChange({ ...traits, shy })}
+          />
+          <PawRating
+            label="Grumpiness"
+            value={traits.grumpy}
+            onChange={(grumpy) => onTraitsChange({ ...traits, grumpy })}
+          />
+          <PawRating
+            label="Floof"
+            value={traits.floof}
+            onChange={(floof) => onTraitsChange({ ...traits, floof })}
+          />
+        </div>
+
+        {/* Short description */}
+        <div className="space-y-1.5 sm:space-y-2">
+          <div className="flex items-center justify-between">
+            <FieldLabel>Short note</FieldLabel>
+            <span className="text-[10px] text-muted-foreground">
+              {shortDescription.length}/100
+            </span>
+          </div>
+          <Input
+            value={shortDescription}
+            onChange={(e) => onShortDescriptionChange(e.target.value.slice(0, 100))}
+            placeholder="e.g. sobrang sungit na nakita sa daan"
+            maxLength={100}
+            className="h-10 rounded-xl border-border bg-background/80 text-sm sm:h-11 sm:rounded-2xl"
+          />
+        </div>
+
+        {/* Privacy */}
+        <div className="space-y-2 rounded-xl border border-border/60 p-2.5 sm:rounded-2xl sm:p-3">
+          <FieldLabel>Privacy</FieldLabel>
+          <label className="flex cursor-pointer items-center justify-between gap-2 text-sm">
+            <span className="text-muted-foreground">Share photo publicly</span>
+            <input
+              type="checkbox"
+              checked={sharePhoto}
+              onChange={(e) => onSharePhotoChange(e.target.checked)}
+              className="size-4 accent-primary"
+            />
+          </label>
+          <label className="flex cursor-pointer items-center justify-between gap-2 text-sm">
+            <span className="text-muted-foreground">Share location on map</span>
+            <input
+              type="checkbox"
+              checked={shareLocation}
+              onChange={(e) => onShareLocationChange(e.target.checked)}
+              className="size-4 accent-primary"
+            />
+          </label>
         </div>
 
         {/* Location */}

@@ -42,7 +42,6 @@ export function BottomNav() {
       className="relative z-30 bg-card pb-[env(safe-area-inset-bottom)]"
     >
       <div className="flex h-16 items-center border-t border-border/30">
-        {/* Left items */}
         <div className="flex flex-1 items-center justify-evenly">
           {LEFT_ITEMS.map((item) => (
             <NavItem
@@ -55,7 +54,6 @@ export function BottomNav() {
           ))}
         </div>
 
-        {/* Center FAB */}
         <Link
           href="/catch"
           aria-label="Catch a cat"
@@ -64,7 +62,6 @@ export function BottomNav() {
           <Camera className="size-6" strokeWidth={2} />
         </Link>
 
-        {/* Right items */}
         <div className="flex flex-1 items-center justify-evenly">
           {RIGHT_ITEMS.map((item) => (
             <NavItem

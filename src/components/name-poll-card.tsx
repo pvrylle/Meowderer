@@ -6,6 +6,7 @@ import { Vote } from "lucide-react";
 import { toast } from "sonner";
 
 import {
+  applyPollWinnerAction,
   createNamePollAction,
   voteNamePollAction,
   type NamePollWithCounts,
@@ -136,9 +137,30 @@ export function NamePollCard({ capture, poll, isOwner }: NamePollCardProps) {
         </p>
       )}
       {isOwner && (
-        <p className="mt-2 text-center text-xs text-muted-foreground">
-          {total} vote{total === 1 ? "" : "s"} so far
-        </p>
+        <div className="mt-3 space-y-2">
+          <p className="text-center text-xs text-muted-foreground">
+            {total} vote{total === 1 ? "" : "s"} so far
+          </p>
+          <CatButton
+            type="button"
+            size="sm"
+            variant="outline"
+            block
+            loading={loading}
+            onClick={async () => {
+              setLoading(true);
+              const result = await applyPollWinnerAction(poll.id);
+              setLoading(false);
+              if (!result.success) toast.error(result.error ?? "Could not apply.");
+              else {
+                toast.success("Winning name applied!");
+                router.refresh();
+              }
+            }}
+          >
+            Apply winning name
+          </CatButton>
+        </div>
       )}
     </section>
   );

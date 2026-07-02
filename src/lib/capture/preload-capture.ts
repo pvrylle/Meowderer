@@ -24,6 +24,9 @@ export function preloadCaptureAssets(): Promise<void> {
         import("@/lib/capture/mobilenet-classifier").then(({ preloadMobileNet }) =>
           preloadMobileNet(),
         ),
+        import("@/lib/capture/image-embedding").then(({ preloadImageEmbeddingModel }) =>
+          preloadImageEmbeddingModel(),
+        ),
         runWithSingleThreadWasm(async () => {
           const { preload } = await import("@imgly/background-removal");
           await preload(BG_REMOVAL_CONFIG);

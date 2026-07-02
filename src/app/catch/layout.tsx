@@ -13,7 +13,9 @@ export default async function CatchLayout({
 
   return (
     <PhoneFrame>
-      <div className="flex h-full min-h-0 flex-1 flex-col">{children}</div>
+      <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden">
+        {children}
+      </div>
     </PhoneFrame>
   );
 }

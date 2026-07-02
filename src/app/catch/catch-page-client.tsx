@@ -3,12 +3,13 @@
 import { useCallback, useEffect, useRef, useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { RotateCcw, X } from "lucide-react";
+import { RotateCcw, X, Check, Loader2, Cat } from "lucide-react";
 import { toast } from "sonner";
 
 import { persistNewAchievements } from "@/components/achievement-session-toasts";
 import { CatchProcessingOverlay } from "@/components/capture/catch-processing-overlay";
 import { CatchReviewPanel } from "@/components/capture/catch-review-panel";
+import { StrayMatchDialog } from "@/components/capture/stray-match-dialog";
 import { CatTradingCard } from "@/components/cat-trading-card";
 import { InteractiveCard } from "@/components/interactive-card";
 import { Camera } from "@/components/capture/camera";
@@ -31,8 +32,16 @@ import { coatToRarity, type CoatType } from "@/lib/coat-rarity";
 import { DEMO_COOKIE } from "@/lib/demo";
 import { getCurrentPosition, type Coords } from "@/lib/geo";
 import { enqueueCapture } from "@/lib/offline-capture-queue";
-import type { Rarity } from "@/lib/supabase/types";
+import type { CatTraits, Rarity } from "@/lib/supabase/types";
+import {
+  fetchNearbyStrayCats,
+  findBestStrayMatch,
+  type StrayCatCandidate,
+} from "@/lib/capture/match-stray-cat";
+import { computeImageEmbedding } from "@/lib/capture/image-embedding";
 import { saveCapture } from "./actions";
+
+const DEFAULT_TRAITS: CatTraits = { chonk: 3, shy: 3, grumpy: 3, floof: 3 };
 
 function isDemoSession(): boolean {
   if (typeof document === "undefined") return false;
@@ -42,6 +51,8 @@ function isDemoSession(): boolean {
 type Phase = "capture" | "preview" | "processing" | "review";
 
 type LocationStatus = "idle" | "loading" | "ready" | "denied";
+
+type CatCheckStatus = "idle" | "checking" | "passed" | "failed";
 
 export default function CatchPageClient() {
   const router = useRouter();
@@ -59,13 +70,25 @@ export default function CatchPageClient() {
   const [stickerScale, setStickerScale] = useState(STICKER_SCALE_DEFAULT);
 
   const [nickname, setNickname] = useState("");
+  const [traits, setTraits] = useState<CatTraits>(DEFAULT_TRAITS);
+  const [shortDescription, setShortDescription] = useState("");
+  const [sharePhoto, setSharePhoto] = useState(false);
+  const [shareLocation, setShareLocation] = useState(false);
   const [coords, setCoords] = useState<Coords | null>(null);
   const [locationStatus, setLocationStatus] = useState<LocationStatus>("idle");
   const [saving, setSaving] = useState(false);
   const [coatClassifying, setCoatClassifying] = useState(false);
+  const [embedding, setEmbedding] = useState<number[] | null>(null);
+  const [strayMatch, setStrayMatch] = useState<StrayCatCandidate | null>(null);
+  const [confirmedStrayId, setConfirmedStrayId] = useState<string | null>(null);
+  const [skipMatch, setSkipMatch] = useState(false);
+  const [catCheckStatus, setCatCheckStatus] = useState<CatCheckStatus>("idle");
+  const [catCheckReason, setCatCheckReason] = useState<string | null>(null);
+
+  const stickerUrlRef = useRef<string | null>(null);
+  const catCheckGenRef = useRef(0);
 
   const previewUrlRef = useRef<string | null>(null);
-  const stickerUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     sessionStorage.removeItem("catch-chunk-retry");
@@ -135,16 +158,54 @@ export default function CatchPageClient() {
     setPreviewRarity(coatToRarity(selectedCoat));
   }, [selectedCoat]);
 
+  const runCatCheck = useCallback(async (captured: File) => {
+    const gen = ++catCheckGenRef.current;
+    setCatCheckStatus("checking");
+    setCatCheckReason(null);
+
+    try {
+      await preloadCaptureAssets();
+      const { isLikelyCat } = await import("@/lib/capture/cat-guard");
+
+      let guard = await isLikelyCat(captured);
+      if (gen !== catCheckGenRef.current) return;
+
+      if (!guard.ok && guard.reason.includes("still loading")) {
+        await new Promise((r) => setTimeout(r, 800));
+        if (gen !== catCheckGenRef.current) return;
+        guard = await isLikelyCat(captured);
+        if (gen !== catCheckGenRef.current) return;
+      }
+
+      if (!guard.ok) {
+        setCatCheckStatus("failed");
+        setCatCheckReason(guard.reason);
+        return;
+      }
+
+      setCatCheckStatus("passed");
+    } catch (err) {
+      if (gen !== catCheckGenRef.current) return;
+      console.warn("[catch] cat check failed:", err);
+      setCatCheckStatus("failed");
+      setCatCheckReason("AI is still loading — wait a moment and tap Retake.");
+    }
+  }, []);
+
   function handleCapture(captured: File) {
     revokePreview();
     const url = URL.createObjectURL(captured);
     previewUrlRef.current = url;
     setFile(captured);
     setPreviewUrl(url);
+    setCatCheckStatus("idle");
+    setCatCheckReason(null);
     setPhase("preview");
+    void runCatCheck(captured);
   }
 
   function retake() {
+    catCheckGenRef.current += 1;
     revokePreview();
     revokeSticker();
     setFile(null);
@@ -156,7 +217,17 @@ export default function CatchPageClient() {
     setSelectedCoat("gray tabby");
     setStickerScale(STICKER_SCALE_DEFAULT);
     setNickname("");
+    setTraits(DEFAULT_TRAITS);
+    setShortDescription("");
+    setSharePhoto(false);
+    setShareLocation(false);
     setCoords(null);
+    setEmbedding(null);
+    setStrayMatch(null);
+    setConfirmedStrayId(null);
+    setSkipMatch(false);
+    setCatCheckStatus("idle");
+    setCatCheckReason(null);
     setLocationStatus("idle");
     setPhase("capture");
   }
@@ -164,26 +235,36 @@ export default function CatchPageClient() {
   async function develop() {
     if (!file) return;
 
+    if (catCheckStatus === "failed") {
+      toast.error(catCheckReason ?? "This doesn't look like a cat.");
+      return;
+    }
+
+    if (catCheckStatus === "checking") {
+      toast.info("Still checking your photo…");
+      return;
+    }
+
     setPhase("processing");
     setProgress({ stage: "compressing", label: "Preparing…", pct: 2 });
     await yieldToMain();
 
-    setProgress({ stage: "compressing", label: "Checking photo…", pct: 8 });
-    await yieldToMain();
-
     try {
-      await preloadCaptureAssets();
+      const { processCatPhoto } = await import("@/lib/capture/pipeline");
 
-      const [{ isLikelyCat }, { processCatPhoto }] = await Promise.all([
-        import("@/lib/capture/cat-guard"),
-        import("@/lib/capture/pipeline"),
-      ]);
-
-      const guard = await isLikelyCat(file);
-      if (!guard.ok) {
-        setPhase("preview");
-        toast.error(guard.reason);
-        return;
+      if (catCheckStatus !== "passed") {
+        setProgress({ stage: "compressing", label: "Checking for a cat…", pct: 8 });
+        await yieldToMain();
+        const { isLikelyCat } = await import("@/lib/capture/cat-guard");
+        const guard = await isLikelyCat(file);
+        if (!guard.ok) {
+          setCatCheckStatus("failed");
+          setCatCheckReason(guard.reason);
+          setPhase("preview");
+          toast.error(guard.reason);
+          return;
+        }
+        setCatCheckStatus("passed");
       }
 
       const reportProgress = (update: CaptureProgress) => {
@@ -196,6 +277,9 @@ export default function CatchPageClient() {
       setPhase("review");
 
       setCoatClassifying(true);
+      void computeImageEmbedding(result.sticker)
+        .then(setEmbedding)
+        .catch(() => setEmbedding(null));
       void import("@/lib/capture/classify-coat")
         .then(({ classifyCoat }) => classifyCoat(result.sticker))
         .then((coatResult) => {
@@ -213,25 +297,24 @@ export default function CatchPageClient() {
     }
   }
 
-  async function save() {
+  async function performSave(strayCatId: string | null) {
     if (!processed) return;
-    if (isDemoSession()) {
-      toast.info("Demo mode — sign in to save your cats.");
-      return;
-    }
 
     const location = coords ?? (await requestLocation());
     if (!location) {
       toast.error("Location is required to save this catch.");
+      setSaving(false);
       return;
     }
 
-    setSaving(true);
     try {
       const stickerToUpload =
         Math.abs(stickerScale - 1) < 0.02
           ? processed.sticker
           : await scaleStickerBlob(processed.sticker, stickerScale);
+
+      const vec = embedding ?? (await computeImageEmbedding(processed.sticker));
+      setEmbedding(vec);
 
       const uploaded = await uploadCapture(processed.original, stickerToUpload);
       const result = await saveCapture({
@@ -243,6 +326,12 @@ export default function CatchPageClient() {
         lng: location.lng,
         coat_type: selectedCoat,
         rarity: previewRarity,
+        stray_cat_id: strayCatId,
+        image_embedding: vec,
+        traits,
+        short_description: shortDescription || null,
+        share_photo: sharePhoto,
+        share_location: shareLocation,
       });
 
       if (!result.success) {
@@ -261,35 +350,58 @@ export default function CatchPageClient() {
       router.push(`/cat/${result.id}`);
     } catch (err) {
       console.error(err);
-      const offline =
-        typeof navigator !== "undefined" && !navigator.onLine;
-
-      if (offline && processed && location) {
-        try {
-          const stickerToQueue =
-            Math.abs(stickerScale - 1) < 0.02
-              ? processed.sticker
-              : await scaleStickerBlob(processed.sticker, stickerScale);
-          await enqueueCapture({
-            photoBlob: processed.original,
-            stickerBlob: stickerToQueue,
-            nickname: nickname || null,
-            lat: location.lat,
-            lng: location.lng,
-            coat_type: selectedCoat,
-            rarity: previewRarity,
-          });
-          toast.success("Saved offline — will sync when you're back online.");
-          router.push("/catdex");
-          return;
-        } catch {
-          // fall through
-        }
-      }
-
       toast.error(err instanceof Error ? err.message : "Failed to save.");
       setSaving(false);
     }
+  }
+
+  async function save() {
+    if (!processed) return;
+    if (isDemoSession()) {
+      toast.info("Demo mode — sign in to save your cats.");
+      return;
+    }
+
+    const location = coords ?? (await requestLocation());
+    if (!location) {
+      toast.error("Location is required to save this catch.");
+      return;
+    }
+
+    setSaving(true);
+
+    if (!skipMatch && !confirmedStrayId) {
+      try {
+        const vec = embedding ?? (await computeImageEmbedding(processed.sticker));
+        setEmbedding(vec);
+        const candidates = await fetchNearbyStrayCats(location.lat, location.lng);
+        const match = findBestStrayMatch(vec, location.lat, location.lng, candidates);
+        if (match) {
+          setStrayMatch(match);
+          setSaving(false);
+          return;
+        }
+      } catch {
+        // Continue without match prompt
+      }
+    }
+
+    await performSave(confirmedStrayId);
+  }
+
+  function handleMatchConfirm() {
+    if (!strayMatch) return;
+    setConfirmedStrayId(strayMatch.id);
+    setStrayMatch(null);
+    setSaving(true);
+    void performSave(strayMatch.id);
+  }
+
+  function handleMatchNewCat() {
+    setSkipMatch(true);
+    setStrayMatch(null);
+    setSaving(true);
+    void performSave(null);
   }
 
   const canSave = locationStatus === "ready" && coords != null;
@@ -303,6 +415,17 @@ export default function CatchPageClient() {
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
+      {strayMatch && (
+        <StrayMatchDialog
+          match={strayMatch}
+          onConfirm={handleMatchConfirm}
+          onNewCat={handleMatchNewCat}
+          onCancel={() => {
+            setStrayMatch(null);
+            setSaving(false);
+          }}
+        />
+      )}
       <header className="flex shrink-0 items-center justify-between p-3 sm:p-4">
         <button
           type="button"
@@ -326,20 +449,53 @@ export default function CatchPageClient() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={previewUrl}
-              alt="Captured cat"
+              alt="Captured photo preview"
               className="h-full w-full object-cover"
             />
+            {catCheckStatus === "checking" && (
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-4 pb-4 pt-10">
+                <div className="flex items-center justify-center gap-2 rounded-full bg-white/95 px-4 py-2 text-sm font-semibold text-foreground shadow-lg">
+                  <Loader2 className="size-4 animate-spin text-primary" />
+                  AI checking for a cat…
+                </div>
+              </div>
+            )}
+            {catCheckStatus === "passed" && (
+              <div className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-green/90 px-3 py-1.5 text-xs font-bold text-white shadow-md">
+                <Check className="size-3.5" />
+                Cat detected
+              </div>
+            )}
           </div>
-          <p className="text-center text-xs text-muted-foreground">
-            Location is only needed when you save — you can make the sticker first.
-          </p>
+
+          {catCheckStatus === "failed" && (
+            <div className="flex items-start gap-2.5 rounded-2xl border border-destructive/25 bg-destructive/8 px-4 py-3 text-sm text-destructive">
+              <Cat className="mt-0.5 size-4 shrink-0" />
+              <p>{catCheckReason ?? "This doesn't look like a cat — try another photo."}</p>
+            </div>
+          )}
+
+          {catCheckStatus === "passed" && (
+            <p className="text-center text-xs text-muted-foreground">
+              Location is only needed when you save — you can make the sticker first.
+            </p>
+          )}
+
           <div className="flex gap-3">
             <CatButton variant="outline" block onClick={retake}>
               <RotateCcw className="size-5" />
               Retake
             </CatButton>
-            <CatButton block onClick={develop}>
-              Use photo
+            <CatButton
+              block
+              onClick={develop}
+              disabled={catCheckStatus !== "passed"}
+            >
+              {catCheckStatus === "checking"
+                ? "Checking…"
+                : catCheckStatus === "failed"
+                  ? "Not a cat"
+                  : "Use photo"}
             </CatButton>
           </div>
         </div>
@@ -393,6 +549,14 @@ export default function CatchPageClient() {
               coatClassifying={coatClassifying}
               nickname={nickname}
               onNicknameChange={setNickname}
+              traits={traits}
+              onTraitsChange={setTraits}
+              shortDescription={shortDescription}
+              onShortDescriptionChange={setShortDescription}
+              sharePhoto={sharePhoto}
+              onSharePhotoChange={setSharePhoto}
+              shareLocation={shareLocation}
+              onShareLocationChange={setShareLocation}
               locationStatus={locationStatus}
               onRetryLocation={() => void requestLocation()}
               canSave={canSave}

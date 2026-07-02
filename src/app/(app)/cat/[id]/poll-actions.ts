@@ -28,6 +28,86 @@ export type NamePollWithCounts = {
   my_choice: "a" | "b" | null;
 };
 
+async function applyPollWinner(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  pollId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { data: poll } = await supabase
+    .from("name_polls")
+    .select("*")
+    .eq("id", pollId)
+    .maybeSingle();
+
+  if (!poll) return { ok: false, error: "Poll not found." };
+  if (poll.closed_at) return { ok: true };
+
+  const { data: captureRow } = await supabase
+    .from("captures")
+    .select("stray_cat_id")
+    .eq("id", poll.capture_id)
+    .maybeSingle();
+
+  const { data: votes } = await supabase
+    .from("name_poll_votes")
+    .select("choice")
+    .eq("poll_id", pollId);
+
+  const votes_a = votes?.filter((v) => v.choice === "a").length ?? 0;
+  const votes_b = votes?.filter((v) => v.choice === "b").length ?? 0;
+  const winner = votes_a >= votes_b ? poll.option_a : poll.option_b;
+  const lockedAt = new Date().toISOString();
+
+  await supabase
+    .from("name_polls")
+    .update({ closed_at: lockedAt })
+    .eq("id", pollId);
+
+  await supabase
+    .from("captures")
+    .update({ nickname: winner, name_locked_at: lockedAt })
+    .eq("id", poll.capture_id);
+
+  const strayId = captureRow?.stray_cat_id;
+
+  if (strayId) {
+    await supabase
+      .from("stray_cats")
+      .update({ canonical_name: winner, name_locked_at: lockedAt })
+      .eq("id", strayId);
+
+    await supabase
+      .from("captures")
+      .update({ nickname: winner, name_locked_at: lockedAt })
+      .eq("stray_cat_id", strayId);
+  }
+
+  return { ok: true };
+}
+
+export async function applyPollWinnerAction(pollId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false as const, error: "Not signed in." };
+
+  const { data: poll } = await supabase
+    .from("name_polls")
+    .select("capture_id, user_id")
+    .eq("id", pollId)
+    .maybeSingle();
+
+  if (!poll || poll.user_id !== user.id) {
+    return { success: false as const, error: "Only the poll owner can apply the winner." };
+  }
+
+  const result = await applyPollWinner(supabase, pollId);
+  if (!result.ok) return { success: false as const, error: result.error };
+
+  revalidatePath(`/cat/${poll.capture_id}`);
+  return { success: true as const };
+}
+
 export async function getNamePollForCapture(
   captureId: string,
 ): Promise<NamePollWithCounts | null> {
@@ -136,6 +216,16 @@ export async function voteNamePollAction(input: unknown) {
   }
 
   await syncMissionProgress(supabase, user.id);
+
+  const { data: allVotes } = await supabase
+    .from("name_poll_votes")
+    .select("choice")
+    .eq("poll_id", parsed.data.pollId);
+
+  const totalVotes = allVotes?.length ?? 0;
+  if (totalVotes >= 5) {
+    await applyPollWinner(supabase, parsed.data.pollId);
+  }
 
   revalidatePath(`/cat/${poll.capture_id}`);
   revalidatePath("/missions");

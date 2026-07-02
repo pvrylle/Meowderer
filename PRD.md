@@ -66,7 +66,7 @@ rewarded.
 | AI-generated art | **System/UI art only** (icons, onboarding, empty states, mascot) — not gameplay entries |
 | Background removal | **On-device / in-browser** (free, private) |
 | Rarity | **Auto-classified** from coat color/pattern |
-| Duplicates | **Every photo = new entry** |
+| Duplicates | **AI-assisted identity linking** — each sighting remains a separate capture |
 | Accounts | **Yes** — accounts + cloud save, single-player |
 | Social | **Deferred** |
 

@@ -1,0 +1,638 @@
+export type RegionalShelter = {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  city: string;
+  region: string;
+  country: string;
+};
+
+/** Known local shelters/rescue groups — supplements sparse OpenStreetMap data. */
+export const REGIONAL_SHELTERS: RegionalShelter[] = [
+  // ── Philippines ──────────────────────────────────────────────
+  {
+    id: "bataan-animal-welfare",
+    name: "Bataan Animal Welfare and Rescue",
+    lat: 14.676,
+    lng: 120.5369,
+    city: "Balanga",
+    region: "Bataan",
+    country: "Philippines",
+  },
+  {
+    id: "mandaluyong-animal-shelter",
+    name: "Mandaluyong Animal Shelter",
+    lat: 14.5832,
+    lng: 121.0359,
+    city: "Mandaluyong",
+    region: "Metro Manila",
+    country: "Philippines",
+  },
+  {
+    id: "marikina-animal-shelter",
+    name: "Marikina City Animal Shelter",
+    lat: 14.6507,
+    lng: 121.1029,
+    city: "Marikina",
+    region: "Metro Manila",
+    country: "Philippines",
+  },
+  {
+    id: "taguig-animal-shelter",
+    name: "Taguig City Animal Shelter",
+    lat: 14.5176,
+    lng: 121.0509,
+    city: "Taguig",
+    region: "Metro Manila",
+    country: "Philippines",
+  },
+  {
+    id: "paranaque-animal-shelter",
+    name: "Parañaque City Animal Shelter",
+    lat: 14.4793,
+    lng: 121.0198,
+    city: "Parañaque",
+    region: "Metro Manila",
+    country: "Philippines",
+  },
+  {
+    id: "phil-animal-rescue",
+    name: "Philippine Animal Rescue Society",
+    lat: 14.5995,
+    lng: 121.0367,
+    city: "Manila",
+    region: "Metro Manila",
+    country: "Philippines",
+  },
+  {
+    id: "baguio-animal-shelter",
+    name: "Baguio City Animal Shelter",
+    lat: 16.4023,
+    lng: 120.596,
+    city: "Baguio",
+    region: "Benguet",
+    country: "Philippines",
+  },
+  {
+    id: "davao-animal-rescue",
+    name: "Davao Animal Rescue Volunteers",
+    lat: 7.0731,
+    lng: 125.6128,
+    city: "Davao City",
+    region: "Davao del Sur",
+    country: "Philippines",
+  },
+  {
+    id: "cebu-city-animal-shelter",
+    name: "Cebu City Animal Control & Care",
+    lat: 10.3157,
+    lng: 123.8854,
+    city: "Cebu City",
+    region: "Cebu",
+    country: "Philippines",
+  },
+
+  // ── United States ────────────────────────────────────────────
+  {
+    id: "nyc-acc-manhattan",
+    name: "NYC Animal Care Centers — Manhattan",
+    lat: 40.7484,
+    lng: -73.9967,
+    city: "New York",
+    region: "New York",
+    country: "United States",
+  },
+  {
+    id: "nyc-acc-brooklyn",
+    name: "NYC Animal Care Centers — Brooklyn",
+    lat: 40.6501,
+    lng: -73.9496,
+    city: "Brooklyn",
+    region: "New York",
+    country: "United States",
+  },
+  {
+    id: "la-animal-services",
+    name: "Los Angeles Animal Services — South LA",
+    lat: 34.0031,
+    lng: -118.2872,
+    city: "Los Angeles",
+    region: "California",
+    country: "United States",
+  },
+  {
+    id: "chicago-animal-care",
+    name: "Chicago Animal Care and Control",
+    lat: 41.8362,
+    lng: -87.6841,
+    city: "Chicago",
+    region: "Illinois",
+    country: "United States",
+  },
+  {
+    id: "seattle-animal-shelter",
+    name: "Seattle Animal Shelter",
+    lat: 47.6685,
+    lng: -122.3531,
+    city: "Seattle",
+    region: "Washington",
+    country: "United States",
+  },
+  {
+    id: "austin-animal-center",
+    name: "Austin Animal Center",
+    lat: 30.2723,
+    lng: -97.7316,
+    city: "Austin",
+    region: "Texas",
+    country: "United States",
+  },
+  {
+    id: "denver-animal-shelter",
+    name: "Denver Animal Shelter",
+    lat: 39.7405,
+    lng: -105.0152,
+    city: "Denver",
+    region: "Colorado",
+    country: "United States",
+  },
+  {
+    id: "miami-dade-animal",
+    name: "Miami-Dade Animal Services",
+    lat: 25.7617,
+    lng: -80.1918,
+    city: "Miami",
+    region: "Florida",
+    country: "United States",
+  },
+
+  // ── United Kingdom ───────────────────────────────────────────
+  {
+    id: "edinburgh-dog-cat-home",
+    name: "Edinburgh Dog and Cat Home",
+    lat: 55.929,
+    lng: -3.23,
+    city: "Edinburgh",
+    region: "Scotland",
+    country: "United Kingdom",
+  },
+  {
+    id: "manchester-cats-dogs-home",
+    name: "Manchester & Cheshire Dogs' Home",
+    lat: 53.4808,
+    lng: -2.2426,
+    city: "Manchester",
+    region: "England",
+    country: "United Kingdom",
+  },
+  {
+    id: "birmingham-dogs-home",
+    name: "Birmingham Dogs Home",
+    lat: 52.4862,
+    lng: -1.8904,
+    city: "Birmingham",
+    region: "England",
+    country: "United Kingdom",
+  },
+  {
+    id: "glasgow-dogs-home",
+    name: "Glasgow Dogs Home",
+    lat: 55.8642,
+    lng: -4.2518,
+    city: "Glasgow",
+    region: "Scotland",
+    country: "United Kingdom",
+  },
+  {
+    id: "rspca-brighton",
+    name: "RSPCA Brighton & Hove",
+    lat: 50.8225,
+    lng: -0.1372,
+    city: "Brighton",
+    region: "England",
+    country: "United Kingdom",
+  },
+  {
+    id: "cats-protection-leeds",
+    name: "Cats Protection — Leeds Adoption Centre",
+    lat: 53.8008,
+    lng: -1.5491,
+    city: "Leeds",
+    region: "England",
+    country: "United Kingdom",
+  },
+
+  // ── Canada ───────────────────────────────────────────────────
+  {
+    id: "vancouver-spca",
+    name: "BC SPCA Vancouver",
+    lat: 49.2488,
+    lng: -123.1089,
+    city: "Vancouver",
+    region: "British Columbia",
+    country: "Canada",
+  },
+  {
+    id: "montreal-spca",
+    name: "SPCA de Montréal",
+    lat: 45.5017,
+    lng: -73.5673,
+    city: "Montreal",
+    region: "Quebec",
+    country: "Canada",
+  },
+  {
+    id: "calgary-humane",
+    name: "Calgary Humane Society",
+    lat: 51.0447,
+    lng: -114.0719,
+    city: "Calgary",
+    region: "Alberta",
+    country: "Canada",
+  },
+  {
+    id: "ottawa-humane",
+    name: "Ottawa Humane Society",
+    lat: 45.4215,
+    lng: -75.6972,
+    city: "Ottawa",
+    region: "Ontario",
+    country: "Canada",
+  },
+
+  // ── Australia ───────────────────────────────────────────────
+  {
+    id: "rspca-victoria",
+    name: "RSPCA Victoria — Burwood East",
+    lat: -37.8497,
+    lng: 145.1021,
+    city: "Melbourne",
+    region: "Victoria",
+    country: "Australia",
+  },
+  {
+    id: "rspca-queensland",
+    name: "RSPCA Queensland — Wacol",
+    lat: -27.5598,
+    lng: 152.9362,
+    city: "Brisbane",
+    region: "Queensland",
+    country: "Australia",
+  },
+  {
+    id: "rspca-wa",
+    name: "RSPCA Western Australia",
+    lat: -31.9505,
+    lng: 115.8605,
+    city: "Perth",
+    region: "Western Australia",
+    country: "Australia",
+  },
+  {
+    id: "adelaide-hills-animal",
+    name: "RSPCA South Australia",
+    lat: -34.9285,
+    lng: 138.6007,
+    city: "Adelaide",
+    region: "South Australia",
+    country: "Australia",
+  },
+
+  // ── Japan ─────────────────────────────────────────────────────
+  {
+    id: "osaka-animal-welfare",
+    name: "Osaka Animal Welfare Center",
+    lat: 34.6937,
+    lng: 135.5023,
+    city: "Osaka",
+    region: "Osaka",
+    country: "Japan",
+  },
+  {
+    id: "yokohama-animal-care",
+    name: "Yokohama Animal Care Center",
+    lat: 35.4437,
+    lng: 139.638,
+    city: "Yokohama",
+    region: "Kanagawa",
+    country: "Japan",
+  },
+  {
+    id: "kyoto-animal-welfare",
+    name: "Kyoto City Animal Welfare Center",
+    lat: 35.0116,
+    lng: 135.7681,
+    city: "Kyoto",
+    region: "Kyoto",
+    country: "Japan",
+  },
+
+  // ── South Korea ───────────────────────────────────────────────
+  {
+    id: "seoul-animal-protection-center",
+    name: "Seoul Animal Protection Center",
+    lat: 37.4285,
+    lng: 126.989,
+    city: "Gwacheon",
+    region: "Gyeonggi",
+    country: "South Korea",
+  },
+  {
+    id: "busan-animal-shelter",
+    name: "Busan Metropolitan Animal Shelter",
+    lat: 35.1796,
+    lng: 129.0756,
+    city: "Busan",
+    region: "Busan",
+    country: "South Korea",
+  },
+
+  // ── Thailand ──────────────────────────────────────────────────
+  {
+    id: "bangkok-metropolitan-animal",
+    name: "Bangkok Metropolitan Animal Shelter",
+    lat: 13.7563,
+    lng: 100.5018,
+    city: "Bangkok",
+    region: "Bangkok",
+    country: "Thailand",
+  },
+  {
+    id: "chiang-mai-animal-shelter",
+    name: "Chiang Mai Animal Shelter",
+    lat: 18.7883,
+    lng: 98.9853,
+    city: "Chiang Mai",
+    region: "Chiang Mai",
+    country: "Thailand",
+  },
+
+  // ── Singapore ─────────────────────────────────────────────────
+  {
+    id: "avs-singapore-shelter",
+    name: "Animal & Veterinary Service — Shelter",
+    lat: 1.3521,
+    lng: 103.8198,
+    city: "Singapore",
+    region: "Singapore",
+    country: "Singapore",
+  },
+
+  // ── Hong Kong ─────────────────────────────────────────────────
+  {
+    id: "hk-afcd-animal-mgmt",
+    name: "AFCD Animal Management Centre",
+    lat: 22.3964,
+    lng: 114.1095,
+    city: "Hong Kong",
+    region: "New Territories",
+    country: "Hong Kong",
+  },
+
+  // ── Germany ───────────────────────────────────────────────────
+  {
+    id: "berlin-tierheim",
+    name: "Berliner Tierheim",
+    lat: 52.52,
+    lng: 13.405,
+    city: "Berlin",
+    region: "Berlin",
+    country: "Germany",
+  },
+  {
+    id: "munich-tierheim",
+    name: "Münchner Tierschutzverein Tierheim",
+    lat: 48.1351,
+    lng: 11.582,
+    city: "Munich",
+    region: "Bavaria",
+    country: "Germany",
+  },
+
+  // ── France ────────────────────────────────────────────────────
+  {
+    id: "spa-paris-refuge",
+    name: "SPA Paris — Refuge de Gennevilliers",
+    lat: 48.9333,
+    lng: 2.3,
+    city: "Gennevilliers",
+    region: "Île-de-France",
+    country: "France",
+  },
+  {
+    id: "lyon-spa",
+    name: "SPA Lyon Refuge",
+    lat: 45.764,
+    lng: 4.8357,
+    city: "Lyon",
+    region: "Auvergne-Rhône-Alpes",
+    country: "France",
+  },
+
+  // ── Netherlands ───────────────────────────────────────────────
+  {
+    id: "amsterdam-dierenasiel",
+    name: "Dierenasiel Amsterdam",
+    lat: 52.3676,
+    lng: 4.9041,
+    city: "Amsterdam",
+    region: "North Holland",
+    country: "Netherlands",
+  },
+
+  // ── Spain ─────────────────────────────────────────────────────
+  {
+    id: "barcelona-protectora",
+    name: "Protectora d'Animals de Barcelona",
+    lat: 41.3874,
+    lng: 2.1686,
+    city: "Barcelona",
+    region: "Catalonia",
+    country: "Spain",
+  },
+  {
+    id: "madrid-protectora",
+    name: "Protectora de Animales de Madrid",
+    lat: 40.4168,
+    lng: -3.7038,
+    city: "Madrid",
+    region: "Madrid",
+    country: "Spain",
+  },
+
+  // ── Italy ─────────────────────────────────────────────────────
+  {
+    id: "milan-canile",
+    name: "Canile Municipale di Milano",
+    lat: 45.4642,
+    lng: 9.19,
+    city: "Milan",
+    region: "Lombardy",
+    country: "Italy",
+  },
+  {
+    id: "rome-canile",
+    name: "Canile Municipale di Roma",
+    lat: 41.9028,
+    lng: 12.4964,
+    city: "Rome",
+    region: "Lazio",
+    country: "Italy",
+  },
+
+  // ── Mexico ────────────────────────────────────────────────────
+  {
+    id: "cdmx-centro-de-adopcion",
+    name: "Centro de Adopción CDMX",
+    lat: 19.4326,
+    lng: -99.1332,
+    city: "Mexico City",
+    region: "CDMX",
+    country: "Mexico",
+  },
+
+  // ── Brazil ────────────────────────────────────────────────────
+  {
+    id: "sao-paulo-ccz",
+    name: "CCZ São Paulo — Centro de Controle de Zoonoses",
+    lat: -23.5505,
+    lng: -46.6333,
+    city: "São Paulo",
+    region: "São Paulo",
+    country: "Brazil",
+  },
+  {
+    id: "rio-ccz",
+    name: "CCZ Rio de Janeiro",
+    lat: -22.9068,
+    lng: -43.1729,
+    city: "Rio de Janeiro",
+    region: "Rio de Janeiro",
+    country: "Brazil",
+  },
+
+  // ── Argentina ─────────────────────────────────────────────────
+  {
+    id: "buenos-aires-zoonosis",
+    name: "Dirección General de Zoonosis — Buenos Aires",
+    lat: -34.6037,
+    lng: -58.3816,
+    city: "Buenos Aires",
+    region: "Buenos Aires",
+    country: "Argentina",
+  },
+
+  // ── India ─────────────────────────────────────────────────────
+  {
+    id: "mumbai-spca",
+    name: "SPCA Mumbai",
+    lat: 19.076,
+    lng: 72.8777,
+    city: "Mumbai",
+    region: "Maharashtra",
+    country: "India",
+  },
+  {
+    id: "delhi-animal-welfare",
+    name: "Delhi Society for Prevention of Cruelty to Animals",
+    lat: 28.6139,
+    lng: 77.209,
+    city: "New Delhi",
+    region: "Delhi",
+    country: "India",
+  },
+  {
+    id: "bangalore-cuppa",
+    name: "CUPA Bangalore — Second Chance Adoption Centre",
+    lat: 12.9716,
+    lng: 77.5946,
+    city: "Bangalore",
+    region: "Karnataka",
+    country: "India",
+  },
+
+  // ── United Arab Emirates ────────────────────────────────────────
+  {
+    id: "dubai-municipality-animal",
+    name: "Dubai Municipality Veterinary Services",
+    lat: 25.2048,
+    lng: 55.2708,
+    city: "Dubai",
+    region: "Dubai",
+    country: "United Arab Emirates",
+  },
+
+  // ── New Zealand ─────────────────────────────────────────────────
+  {
+    id: "spca-auckland",
+    name: "SPCA Auckland",
+    lat: -36.8485,
+    lng: 174.7633,
+    city: "Auckland",
+    region: "Auckland",
+    country: "New Zealand",
+  },
+  {
+    id: "spca-wellington",
+    name: "SPCA Wellington",
+    lat: -41.2865,
+    lng: 174.7762,
+    city: "Wellington",
+    region: "Wellington",
+    country: "New Zealand",
+  },
+
+  // ── South Africa ────────────────────────────────────────────────
+  {
+    id: "cape-town-spca",
+    name: "SPCA Cape Town",
+    lat: -33.9249,
+    lng: 18.4241,
+    city: "Cape Town",
+    region: "Western Cape",
+    country: "South Africa",
+  },
+  {
+    id: "johannesburg-spca",
+    name: "SPCA Johannesburg",
+    lat: -26.2041,
+    lng: 28.0473,
+    city: "Johannesburg",
+    region: "Gauteng",
+    country: "South Africa",
+  },
+
+  // ── Ireland ─────────────────────────────────────────────────────
+  {
+    id: "dublin-spca",
+    name: "DSPCA Dublin",
+    lat: 53.3498,
+    lng: -6.2603,
+    city: "Dublin",
+    region: "Leinster",
+    country: "Ireland",
+  },
+
+  // ── Poland ──────────────────────────────────────────────────────
+  {
+    id: "warsaw-schronisko",
+    name: "Schronisko dla Zwierząt — Warszawa",
+    lat: 52.2297,
+    lng: 21.0122,
+    city: "Warsaw",
+    region: "Mazovia",
+    country: "Poland",
+  },
+
+  // ── Turkey ──────────────────────────────────────────────────────
+  {
+    id: "istanbul-belediye-barinak",
+    name: "İstanbul Büyükşehir Belediyesi Hayvan Barınağı",
+    lat: 41.0082,
+    lng: 28.9784,
+    city: "Istanbul",
+    region: "Istanbul",
+    country: "Turkey",
+  },
+];

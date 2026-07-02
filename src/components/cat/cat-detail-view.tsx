@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 
 import { CatDetailCardStage } from "@/components/cat/cat-detail-card-stage";
@@ -6,6 +7,7 @@ import { CatDetailDock } from "@/components/cat/cat-detail-dock";
 import { NamePollCard } from "@/components/name-poll-card";
 import type { NamePollWithCounts } from "@/app/(app)/cat/[id]/poll-actions";
 import { dexNumber, pickBiome } from "@/lib/cat-stats";
+import type { StraySighting } from "@/lib/stray-cats";
 import type { Capture } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 
@@ -24,10 +26,18 @@ export function CatDetailView({
   capture,
   poll,
   isOwner,
+  uploaderUsername,
+  album,
+  isSuperAdmin,
+  nameLocked,
 }: {
   capture: Capture;
   poll: NamePollWithCounts | null;
   isOwner: boolean;
+  uploaderUsername: string | null;
+  album: StraySighting[];
+  isSuperAdmin: boolean;
+  nameLocked: boolean;
 }) {
   const biome = pickBiome(capture);
   const dex = dexNumber(capture.id);
@@ -55,9 +65,56 @@ export function CatDetailView({
         className={cn("bg-gradient-to-b", BIOME_HERO[biome])}
       />
 
+      <div className="mx-4 mb-2 space-y-1 text-center text-sm text-muted-foreground">
+        {uploaderUsername && (
+          <p>
+            Spotted by{" "}
+            <span className="font-semibold text-foreground">@{uploaderUsername}</span>
+          </p>
+        )}
+        {(capture.place_label || capture.city) && (
+          <p>
+            {[capture.place_label, capture.city, capture.country]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        )}
+      </div>
+
+      {album.length > 0 && (
+        <section className="mx-4 mb-3">
+          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+            Others who met this cat
+          </p>
+          <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {album.map((s) => (
+              <div
+                key={s.id}
+                className="w-16 shrink-0 overflow-hidden rounded-xl border border-border bg-card"
+              >
+                <div className="relative aspect-square bg-muted">
+                  <Image
+                    src={s.sticker_url}
+                    alt=""
+                    fill
+                    className="object-contain p-0.5"
+                    sizes="64px"
+                    unoptimized
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       <NamePollCard capture={capture} poll={poll} isOwner={isOwner} />
 
-      <CatDetailDock capture={capture} />
+      <CatDetailDock
+        capture={capture}
+        isSuperAdmin={isSuperAdmin}
+        nameLocked={nameLocked}
+      />
     </div>
   );
 }

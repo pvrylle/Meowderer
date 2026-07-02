@@ -10,8 +10,15 @@ import { applyLocationEpicBonus, COAT_TYPES, coatToRarity, maxRarity } from "@/l
 import { reverseGeocode } from "@/lib/geocode";
 import { isDemoSession } from "@/lib/auth";
 import { updateStreakOnSave } from "@/lib/retention";
-import type { Rarity } from "@/lib/supabase/types";
+import type { CatTraits, Rarity } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/server";
+
+const traitsSchema = z.object({
+  chonk: z.number().int().min(1).max(5),
+  shy: z.number().int().min(1).max(5),
+  grumpy: z.number().int().min(1).max(5),
+  floof: z.number().int().min(1).max(5),
+});
 
 const saveCaptureSchema = z.object({
   captureId: z.string().uuid(),
@@ -22,11 +29,86 @@ const saveCaptureSchema = z.object({
   lng: z.number().min(-180).max(180),
   coat_type: z.enum(COAT_TYPES).optional().nullable(),
   rarity: z.enum(["common", "uncommon", "rare", "epic"]).optional().nullable(),
+  stray_cat_id: z.string().uuid().optional().nullable(),
+  image_embedding: z.array(z.number()).length(512).optional().nullable(),
+  traits: traitsSchema.optional().nullable(),
+  short_description: z.string().trim().max(100).optional().nullable(),
+  share_photo: z.boolean().optional().default(false),
+  share_location: z.boolean().optional().default(false),
 });
 
 export type SaveResult =
   | { success: true; id: string; newAchievements: Achievement[] }
   | { success: false; error: string };
+
+function formatEmbedding(vec: number[] | null | undefined): number[] | null {
+  if (!vec?.length) return null;
+  return vec;
+}
+
+async function resolveStrayCatId(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  input: {
+    stray_cat_id?: string | null;
+    nickname?: string | null;
+    lat: number;
+    lng: number;
+    place_label: string | null;
+    stickerUrl: string;
+    embedding: number[] | null;
+  },
+): Promise<string | null> {
+  if (input.stray_cat_id) {
+    const { data: existing } = await supabase
+      .from("stray_cats")
+      .select("id, sighting_count, primary_lat, primary_lng")
+      .eq("id", input.stray_cat_id)
+      .maybeSingle();
+
+    if (existing) {
+      const count = existing.sighting_count + 1;
+      const lat =
+        existing.primary_lat != null
+          ? (existing.primary_lat * existing.sighting_count + input.lat) / count
+          : input.lat;
+      const lng =
+        existing.primary_lng != null
+          ? (existing.primary_lng * existing.sighting_count + input.lng) / count
+          : input.lng;
+
+      await supabase
+        .from("stray_cats")
+        .update({
+          sighting_count: count,
+          primary_lat: lat,
+          primary_lng: lng,
+          cover_sticker_url: input.stickerUrl,
+          ...(input.embedding ? { image_embedding: input.embedding } : {}),
+          ...(input.nickname ? { canonical_name: input.nickname } : {}),
+        })
+        .eq("id", input.stray_cat_id);
+
+      return input.stray_cat_id;
+    }
+  }
+
+  const { data: created, error } = await supabase
+    .from("stray_cats")
+    .insert({
+      canonical_name: input.nickname,
+      primary_lat: input.lat,
+      primary_lng: input.lng,
+      place_label: input.place_label,
+      sighting_count: 1,
+      cover_sticker_url: input.stickerUrl,
+      image_embedding: input.embedding,
+    })
+    .select("id")
+    .single();
+
+  if (error || !created) return null;
+  return created.id;
+}
 
 export async function saveCapture(input: unknown): Promise<SaveResult> {
   if (await isDemoSession()) {
@@ -53,6 +135,12 @@ export async function saveCapture(input: unknown): Promise<SaveResult> {
     lng,
     coat_type,
     rarity: clientRarity,
+    stray_cat_id,
+    image_embedding,
+    traits,
+    short_description,
+    share_photo,
+    share_location,
   } = parsed.data;
 
   if (
@@ -69,14 +157,8 @@ export async function saveCapture(input: unknown): Promise<SaveResult> {
     return { success: false, error: "Capture ID does not match uploaded images." };
   }
 
-  let city: string | null = null;
-  let country: string | null = null;
-  let place_label: string | null = null;
-
   const place = await reverseGeocode(lat, lng);
-  city = place.city;
-  country = place.country;
-  place_label = place.place_label;
+  const { city, country, place_label } = place;
 
   const { data: existingCaptures } = await supabase
     .from("captures")
@@ -106,12 +188,21 @@ export async function saveCapture(input: unknown): Promise<SaveResult> {
       existingCities,
       existingCountries,
     );
-    rarity = clientRarity
-      ? maxRarity(clientRarity, withEpic)
-      : withEpic;
+    rarity = clientRarity ? maxRarity(clientRarity, withEpic) : withEpic;
   } else if (clientRarity) {
     rarity = clientRarity;
   }
+
+  const embeddingStr = formatEmbedding(image_embedding ?? null);
+  const resolvedStrayId = await resolveStrayCatId(supabase, {
+    stray_cat_id,
+    nickname,
+    lat,
+    lng,
+    place_label,
+    stickerUrl,
+    embedding: embeddingStr,
+  });
 
   const { data, error } = await supabase
     .from("captures")
@@ -128,6 +219,12 @@ export async function saveCapture(input: unknown): Promise<SaveResult> {
       place_label,
       coat_type: normalizedCoat,
       rarity,
+      stray_cat_id: resolvedStrayId,
+      share_photo: share_photo ?? false,
+      share_location: share_location ?? false,
+      short_description: short_description?.trim() || null,
+      traits: (traits as CatTraits) ?? null,
+      image_embedding: embeddingStr,
     })
     .select("*")
     .single();
@@ -136,11 +233,7 @@ export async function saveCapture(input: unknown): Promise<SaveResult> {
     return { success: false, error: "Failed to save your cat." };
   }
 
-  const newAchievements = await unlockAchievementsAfterSave(
-    supabase,
-    user.id,
-    data,
-  );
+  const newAchievements = await unlockAchievementsAfterSave(supabase, user.id, data);
 
   await progressMissionsAndBadgesAfterSave(supabase, user.id);
   await updateStreakOnSave(supabase, user.id);

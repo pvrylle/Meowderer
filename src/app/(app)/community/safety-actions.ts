@@ -181,19 +181,6 @@ export async function deleteCommentAction(commentId: string): Promise<{
 
   if (error) return { success: false, error: "Could not delete comment." };
 
-  const { data: post } = await supabase
-    .from("posts")
-    .select("comments_count")
-    .eq("id", comment.post_id)
-    .single();
-
-  if (post) {
-    await supabase
-      .from("posts")
-      .update({ comments_count: Math.max(0, post.comments_count - 1) })
-      .eq("id", comment.post_id);
-  }
-
   revalidatePath("/community");
   return { success: true };
 }

@@ -13,6 +13,23 @@ const CatchMap = dynamic(
   },
 );
 
-export function MapView({ geojson }: { geojson: CaptureGeoJSON }) {
-  return <CatchMap geojson={geojson} />;
+export function MapView({
+  geojson,
+  focusCatId,
+  focusStrayId,
+  initialLayer,
+}: {
+  geojson: CaptureGeoJSON;
+  focusCatId?: string;
+  focusStrayId?: string;
+  initialLayer?: string;
+}) {
+  return (
+    <CatchMap
+      geojson={geojson}
+      focusCatId={focusCatId}
+      focusStrayId={focusStrayId}
+      initialLayer={initialLayer}
+    />
+  );
 }

@@ -37,13 +37,45 @@ export async function renameCapture(input: unknown): Promise<ActionResult> {
   if (!parsed.success) return { success: false, error: "Invalid name." };
 
   const { id, nickname } = parsed.data;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_super_admin")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const { data: capture } = await supabase
+    .from("captures")
+    .select("name_locked_at, stray_cat_id, user_id")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!capture) return { success: false, error: "Cat not found." };
+
+  const isOwner = capture.user_id === user.id;
+  const isAdmin = profile?.is_super_admin === true;
+
+  if (!isOwner && !isAdmin) {
+    return { success: false, error: "You cannot rename this cat." };
+  }
+
+  if (capture.name_locked_at && !isAdmin) {
+    return { success: false, error: "This name is locked after the community poll." };
+  }
+
   const { error } = await supabase
     .from("captures")
     .update({ nickname: nickname || null })
-    .eq("id", id)
-    .eq("user_id", user.id);
+    .eq("id", id);
 
   if (error) return { success: false, error: "Could not rename this cat." };
+
+  if (capture.stray_cat_id && isAdmin) {
+    await supabase
+      .from("stray_cats")
+      .update({ canonical_name: nickname || null })
+      .eq("id", capture.stray_cat_id);
+  }
 
   revalidatePath(`/cat/${id}`);
   revalidatePath("/catdex");

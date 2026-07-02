@@ -2,7 +2,11 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { BLOCKED_TEXT_PATTERNS } from "@/content/community-guidelines";
+import {
+  censorCommunityText,
+  normalizeCommunityText,
+  validateCommunityText,
+} from "@/lib/community-text-filter";
 import type { Database } from "@/lib/supabase/types";
 
 type Supabase = SupabaseClient<Database>;
@@ -25,43 +29,9 @@ const RATE_LIMITS: Record<
   upload: { windowMinutes: 60, maxCount: 10 },
 };
 
-const URL_PATTERN = /https?:\/\/|www\./i;
 const CHAT_MIN_ACCOUNT_HOURS = 24;
 
-export function normalizeCommunityText(text: string): string {
-  return text
-    .trim()
-    .replace(/\s+/g, " ")
-    .replace(/[\u200B-\u200D\uFEFF]/g, "");
-}
-
-export function validateCommunityText(
-  text: string,
-  options: { allowLinks?: boolean } = {},
-): { ok: true } | { ok: false; error: string } {
-  const normalized = normalizeCommunityText(text);
-  if (!normalized) {
-    return { ok: false, error: "Message cannot be empty." };
-  }
-
-  for (const pattern of BLOCKED_TEXT_PATTERNS) {
-    if (pattern.test(normalized)) {
-      return {
-        ok: false,
-        error: "This content violates community guidelines.",
-      };
-    }
-  }
-
-  if (!options.allowLinks && URL_PATTERN.test(normalized)) {
-    return {
-      ok: false,
-      error: "Links are not allowed in community messages.",
-    };
-  }
-
-  return { ok: true };
-}
+export { censorCommunityText, normalizeCommunityText, validateCommunityText };
 
 export async function getBlockedUserIds(
   supabase: Supabase,

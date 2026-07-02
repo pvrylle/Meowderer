@@ -3,7 +3,7 @@ import { HelpCircle } from "lucide-react";
 
 export function AuthFooter() {
   return (
-    <footer className="shrink-0 flex flex-col items-center gap-2 border-t border-border/40 px-5 pb-6 pt-4 text-center sm:px-7 sm:pb-8">
+    <footer className="shrink-0 flex flex-col items-center gap-1 border-t border-border/40 px-4 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] pt-2 text-center sm:px-6 max-[600px]:pt-1.5">
       <Link
         href="/help#account"
         className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"

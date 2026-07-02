@@ -59,9 +59,9 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <div className="flex flex-1 flex-col justify-center gap-8 px-7 py-10">
-      <div className="flex flex-col items-center gap-4 text-center">
-        <BrandMark variant="logo" />
+    <div className="flex min-h-0 flex-1 flex-col justify-center gap-6 px-5 py-6 sm:gap-8 sm:px-7 sm:py-10 [@media(max-height:700px)]:gap-4 [@media(max-height:700px)]:py-4">
+      <div className="flex flex-col items-center gap-3 text-center sm:gap-4 [@media(max-height:700px)]:gap-2">
+        <BrandMark variant="logo" className="[@media(max-height:700px)]:w-28" />
         <div className="space-y-2">
           <h1 className="text-xl font-extrabold text-foreground">Choose a new password</h1>
           <p className="text-sm text-muted-foreground">

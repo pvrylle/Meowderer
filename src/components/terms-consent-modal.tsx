@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { acceptTermsAction } from "@/app/auth/actions";
 import { CatButton } from "@/components/ui/cat-button";
+import { PhoneOverlayPortal } from "@/components/phone-overlay-portal";
 
 export function TermsConsentModal({ show }: { show: boolean }) {
   const router = useRouter();
@@ -28,12 +29,13 @@ export function TermsConsentModal({ show }: { show: boolean }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
-      <div
-        role="dialog"
-        aria-labelledby="terms-consent-title"
-        className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl ring-1 ring-border"
-      >
+    <PhoneOverlayPortal>
+      <div className="absolute inset-0 z-50 flex items-end justify-center bg-black/40 p-4">
+        <div
+          role="dialog"
+          aria-labelledby="terms-consent-title"
+          className="w-full rounded-2xl bg-card p-6 shadow-xl ring-1 ring-border"
+        >
         <h2 id="terms-consent-title" className="text-lg font-extrabold text-foreground">
           Terms & Privacy
         </h2>
@@ -51,7 +53,8 @@ export function TermsConsentModal({ show }: { show: boolean }) {
         <CatButton block className="mt-6" loading={accepting} onClick={handleAccept}>
           I agree
         </CatButton>
+        </div>
       </div>
-    </div>
+    </PhoneOverlayPortal>
   );
 }
