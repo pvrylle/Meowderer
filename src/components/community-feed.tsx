@@ -87,6 +87,7 @@ export function CommunityFeed({
         };
       }),
     );
+    router.refresh();
   }
 
   async function handleDeletePost(postId: string) {

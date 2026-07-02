@@ -8,6 +8,7 @@ import {
   assertCommunityWriteAccess,
   assertRateLimit,
   assertUrgentAlertAllowed,
+  censorCommunityText,
   isAllowedPostImageUrl,
   validateCommunityText,
 } from "@/lib/community-safety";
@@ -89,7 +90,7 @@ export async function createPostAction(input: unknown) {
 
   const { error } = await supabase.from("posts").insert({
     user_id: user.id,
-    body: parsed.data.body,
+    body: censorCommunityText(parsed.data.body),
     category: parsed.data.category,
     image_url: imageUrl,
     capture_id: parsed.data.captureId ?? null,
@@ -120,38 +121,18 @@ export async function toggleLikeAction(postId: string) {
     .maybeSingle();
 
   if (existing) {
-    await supabase
+    const { error } = await supabase
       .from("post_likes")
       .delete()
       .eq("post_id", postId)
       .eq("user_id", user.id);
-    const { data: post } = await supabase
-      .from("posts")
-      .select("likes_count")
-      .eq("id", postId)
-      .single();
-    if (post) {
-      await supabase
-        .from("posts")
-        .update({ likes_count: Math.max(0, post.likes_count - 1) })
-        .eq("id", postId);
-    }
+    if (error) return { success: false as const, error: "Could not unlike post." };
   } else {
-    await supabase.from("post_likes").insert({
+    const { error } = await supabase.from("post_likes").insert({
       post_id: postId,
       user_id: user.id,
     });
-    const { data: post } = await supabase
-      .from("posts")
-      .select("likes_count")
-      .eq("id", postId)
-      .single();
-    if (post) {
-      await supabase
-        .from("posts")
-        .update({ likes_count: post.likes_count + 1 })
-        .eq("id", postId);
-    }
+    if (error) return { success: false as const, error: "Could not like post." };
   }
 
   revalidatePath("/community");
@@ -185,23 +166,10 @@ export async function addCommentAction(input: unknown) {
   const { error } = await supabase.from("post_comments").insert({
     post_id: parsed.data.postId,
     user_id: user.id,
-    body: parsed.data.body,
+    body: censorCommunityText(parsed.data.body),
   });
 
   if (error) return { success: false as const, error: "Could not comment." };
-
-  const { data: post } = await supabase
-    .from("posts")
-    .select("comments_count")
-    .eq("id", parsed.data.postId)
-    .single();
-
-  if (post) {
-    await supabase
-      .from("posts")
-      .update({ comments_count: post.comments_count + 1 })
-      .eq("id", parsed.data.postId);
-  }
 
   revalidatePath("/community");
   return { success: true as const };
@@ -236,7 +204,7 @@ export async function sendChatAction(input: unknown) {
     .from("chat_messages")
     .insert({
       user_id: user.id,
-      body: parsed.data.body,
+      body: censorCommunityText(parsed.data.body),
       channel: parsed.data.channel,
     })
     .select("id, channel, user_id, body, created_at, hidden_at")
@@ -316,8 +284,8 @@ export async function createAlertAction(input: unknown) {
 
   const { error } = await supabase.from("rescue_alerts").insert({
     user_id: user.id,
-    title: parsed.data.title,
-    body: parsed.data.body ?? null,
+    title: censorCommunityText(parsed.data.title),
+    body: parsed.data.body ? censorCommunityText(parsed.data.body) : null,
     urgent: parsed.data.urgent,
     lat: parsed.data.lat ?? null,
     lng: parsed.data.lng ?? null,
