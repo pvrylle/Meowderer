@@ -1,6 +1,7 @@
 import type { FeatureExtractionPipeline } from "@huggingface/transformers";
 
-import { getMobileNetClassifier } from "./mobilenet-classifier";
+import { configureTransformersEnv } from "./configure-transformers-env";
+import { preloadMobileNet } from "./mobilenet-classifier";
 
 const EMBEDDING_DIM = 512;
 const MODEL_ID = "Xenova/clip-vit-base-patch32";
@@ -12,9 +13,8 @@ async function getEmbeddingPipeline(): Promise<FeatureExtractionPipeline> {
     pipelinePromise = (async () => {
       const { ensureSingleThreadWasm } = await import("./configure-wasm");
       await ensureSingleThreadWasm();
-      const { pipeline, env } = await import("@huggingface/transformers");
-      env.allowLocalModels = false;
-      env.useBrowserCache = true;
+      await configureTransformersEnv();
+      const { pipeline } = await import("@huggingface/transformers");
       return pipeline("feature-extraction", MODEL_ID);
     })();
   }
@@ -84,5 +84,5 @@ export function cosineSimilarity(a: number[], b: number[]): number {
 
 export function preloadImageEmbeddingModel(): void {
   void getEmbeddingPipeline().catch(() => undefined);
-  void getMobileNetClassifier().catch(() => undefined);
+  preloadMobileNet();
 }

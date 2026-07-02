@@ -17,6 +17,8 @@
     "@imgly/background-removal": "^1.7.0",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.2",
+    "@tensorflow-models/mobilenet": "^2.1.1",
+    "@tensorflow/tfjs": "^4.22.0",
     "browser-image-compression": "^2.0.2",
     "class-variance-authority": "^0.7.1",
     "cloudinary": "^2.10.0",

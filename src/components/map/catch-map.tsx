@@ -633,6 +633,8 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
 
   const placeStrayMarkers = useCallback(
     (map: maplibregl.Map, strays: NearbyStrayCat[]) => {
+      if (!map.isStyleLoaded()) return;
+
       if (!showCats) {
         strayMarkersRef.current.forEach((m) => m.remove());
         strayMarkersRef.current = [];
@@ -869,6 +871,8 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
   ]);
 
   const syncCatMarkers = useCallback((map: maplibregl.Map) => {
+    if (!map.isStyleLoaded()) return;
+
     catMarkersRef.current.forEach((m) => m.remove());
     catMarkersRef.current = [];
 
@@ -923,6 +927,8 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
 
   const syncPoiMarkers = useCallback(
     (map: maplibregl.Map) => {
+      if (!map.isStyleLoaded()) return;
+
       if (!showShelters && !showVets) {
         poiMarkersRef.current.forEach((m) => m.remove());
         poiMarkersRef.current = [];
@@ -936,6 +942,8 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
 
   const refreshFeaturedOnMap = useCallback(
     (map: maplibregl.Map) => {
+      if (!map.isStyleLoaded()) return;
+
       const center = map.getCenter();
       const b = map.getBounds();
       const bounds: MapBounds = {
@@ -994,11 +1002,13 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
   );
 
   const scheduleMarkerResync = useCallback(
-    (map: maplibregl.Map) => {
+    () => {
       if (markerResyncTimerRef.current) {
         clearTimeout(markerResyncTimerRef.current);
       }
       markerResyncTimerRef.current = setTimeout(() => {
+        const map = mapRef.current;
+        if (!map?.isStyleLoaded()) return;
         syncCatMarkers(map);
         syncStrayMarkers(map);
         syncPoiMarkers(map);
@@ -1090,6 +1100,7 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
 
   const loadPois = useCallback(async (map: maplibregl.Map) => {
     if (!showShelters && !showVets) return;
+    if (!map.isStyleLoaded()) return;
 
     const b = map.getBounds();
     const center = map.getCenter();
@@ -1256,13 +1267,17 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
     };
 
     whenStyleReady(map, onLoad, () => cancelled);
-    map.on("moveend", () => {
-      scheduleMarkerResyncRef.current(map);
-      void loadPois(map);
-    });
+    const onMoveEnd = () => {
+      if (cancelled) return;
+      const m = mapRef.current;
+      if (!m?.isStyleLoaded()) return;
+      scheduleMarkerResyncRef.current();
+      void loadPois(m);
+    };
+    map.on("moveend", onMoveEnd);
     geolocate.on("geolocate", (e) => {
       const m = mapRef.current;
-      if (!m) return;
+      if (!m?.isStyleLoaded()) return;
       const pos = e.coords;
       const tab = layerTabRef.current;
       if (tab === "shelters") {
@@ -1289,6 +1304,11 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
 
     return () => {
       cancelled = true;
+      if (markerResyncTimerRef.current) {
+        clearTimeout(markerResyncTimerRef.current);
+        markerResyncTimerRef.current = null;
+      }
+      map.off("moveend", onMoveEnd);
       ro.disconnect();
       catMarkersRef.current.forEach((m) => m.remove());
       strayMarkersRef.current.forEach((m) => m.remove());
