@@ -1,7 +1,9 @@
 import type { Poi } from "@/lib/overpass";
 import type { FeaturedPlace } from "@/lib/featured-places";
+import type { FeaturedVet } from "@/lib/featured-vets";
 
 const PRIMARY = "#8b6cc7";
+const VET_CURATED = "#5b7fc7";
 const GOLD = "#f0c14d";
 const SHELTER_GREEN = "#6bc49a";
 const VET_BLUE = "#6ba3e0";
@@ -102,6 +104,24 @@ export function buildFeaturedPinButton(
     fill: PRIMARY,
     badgeFill: GOLD,
     icon: "home",
+  });
+  return btn;
+}
+
+export function buildFeaturedVetPinButton(
+  place: FeaturedVet,
+  zoom: number,
+  onClick: () => void,
+): HTMLButtonElement {
+  const btn = markerButton(onClick, `${place.name}, curated vet`);
+  const height = pinHeightForZoom(zoom);
+  const width = Math.round(height * 0.8);
+  btn.innerHTML = teardropSvg({
+    width,
+    height,
+    fill: VET_CURATED,
+    badgeFill: GOLD,
+    icon: "vet",
   });
   return btn;
 }

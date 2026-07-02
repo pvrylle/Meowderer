@@ -32,12 +32,19 @@ import {
   haversineKm,
   type FeaturedPlace,
 } from "@/lib/featured-places";
+import {
+  dedupePoisAgainstFeaturedVets,
+  getFeaturedVetsForMap,
+  type FeaturedVet,
+} from "@/lib/featured-vets";
 import { getRegionalSheltersForMap } from "@/lib/regional-shelters";
+import { getRegionalVetsForMap } from "@/lib/regional-vets";
 import { getCurrentPosition } from "@/lib/geo";
 import type { AreaStats, NearbyStrayCat } from "@/lib/nearby-stray-cats";
 import { useShelterCheckIn } from "@/hooks/use-shelter-check-in";
 import {
   buildFeaturedPinButton,
+  buildFeaturedVetPinButton,
   buildPoiPinButton,
   bindMarkerTap,
 } from "@/lib/map-marker-html";
@@ -62,6 +69,10 @@ function parseInitialLayer(layer?: string): LayerTab {
 
 type LayerTab = "all" | "cats" | "shelters" | "vets";
 type RarityFilter = "all" | Rarity;
+type CuratedSelection = {
+  kind: "shelter" | "vet";
+  place: FeaturedPlace | FeaturedVet;
+};
 
 const LAYER_TABS: { key: LayerTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: "all", label: "All", icon: MapPinIcon },
@@ -106,6 +117,24 @@ function ShelterLegendDots() {
       </span>
       <span className="inline-flex items-center gap-1 text-muted-foreground">
         <span className="size-2 shrink-0 rounded-full bg-[#6bc49a] ring-1 ring-white/80" />
+        Local
+      </span>
+    </>
+  );
+}
+
+function VetLegendDots() {
+  return (
+    <>
+      <span className="inline-flex items-center gap-1 text-muted-foreground">
+        <span className="size-2 shrink-0 rounded-full bg-[#5b7fc7] ring-1 ring-white/80" />
+        Curated
+      </span>
+      <span className="text-border/80" aria-hidden>
+        ·
+      </span>
+      <span className="inline-flex items-center gap-1 text-muted-foreground">
+        <span className="size-2 shrink-0 rounded-full bg-[#6ba3e0] ring-1 ring-white/80" />
         Local
       </span>
     </>
@@ -348,6 +377,83 @@ function placeFeaturedMarkers(
   }
 }
 
+function placeFeaturedVetMarkers(
+  map: maplibregl.Map,
+  places: FeaturedVet[],
+  markersRef: React.MutableRefObject<maplibregl.Marker[]>,
+  onSelect: (place: FeaturedVet) => void,
+  cacheKeyRef: React.MutableRefObject<string>,
+): void {
+  const zoom = map.getZoom();
+  const key = markerCacheKey(
+    zoom,
+    places.map((p) => `vet:${p.id}`),
+  );
+  if (cacheKeyRef.current === key && markersRef.current.length === places.length) {
+    return;
+  }
+  cacheKeyRef.current = key;
+
+  markersRef.current.forEach((m) => m.remove());
+  markersRef.current = [];
+
+  for (const place of places) {
+    const el = buildFeaturedVetPinButton(place, zoom, () => onSelect(place));
+    markersRef.current.push(
+      new maplibregl.Marker({
+        element: el,
+        anchor: "bottom",
+        className: MARKER_CLASS,
+      })
+        .setLngLat([place.lng, place.lat])
+        .addTo(map),
+    );
+  }
+}
+
+function fitMapToCuratedLayer(
+  map: maplibregl.Map,
+  getFeatured: (
+    centerLat: number,
+    centerLng: number,
+    bounds: MapBounds,
+    zoom: number,
+  ) => Array<{ lat: number; lng: number }>,
+  getRegional: (
+    centerLat: number,
+    centerLng: number,
+    bounds: MapBounds,
+    zoom: number,
+  ) => Poi[],
+): void {
+  const center = map.getCenter();
+  const b = map.getBounds();
+  const bounds: MapBounds = {
+    south: b.getSouth(),
+    west: b.getWest(),
+    north: b.getNorth(),
+    east: b.getEast(),
+  };
+  const zoom = Math.max(map.getZoom(), POI_MIN_ZOOM + 1);
+  const featured = getFeatured(center.lat, center.lng, bounds, zoom);
+  const regional = getRegional(center.lat, center.lng, bounds, zoom);
+  if (featured.length === 0 && regional.length === 0) return;
+
+  const fit = new maplibregl.LngLatBounds();
+  fit.extend([center.lng, center.lat]);
+  for (const place of featured) {
+    fit.extend([place.lng, place.lat]);
+  }
+  for (const poi of regional) {
+    fit.extend([poi.lng, poi.lat]);
+  }
+  map.fitBounds(fit, {
+    padding: { top: 180, bottom: 160, left: 48, right: 48 },
+    maxZoom: 13,
+    duration: 700,
+  });
+}
+
 function placePoiMarkers(
   map: maplibregl.Map,
   pois: Poi[],
@@ -396,8 +502,10 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
   const strayMarkersRef = useRef<maplibregl.Marker[]>([]);
   const strayMarkerKeyRef = useRef("");
   const poiMarkersRef = useRef<maplibregl.Marker[]>([]);
-  const featuredMarkersRef = useRef<maplibregl.Marker[]>([]);
-  const featuredMarkerKeyRef = useRef("");
+  const featuredShelterMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const featuredVetMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const featuredShelterMarkerKeyRef = useRef("");
+  const featuredVetMarkerKeyRef = useRef("");
   const poiMarkerKeyRef = useRef("");
   const markerResyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [query, setQuery] = useState("");
@@ -408,14 +516,15 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedCat, setSelectedCat] = useState<CapturePointProps | null>(null);
   const [selectedPoi, setSelectedPoi] = useState<Poi | null>(null);
-  const [selectedFeatured, setSelectedFeatured] = useState<FeaturedPlace | null>(null);
+  const [selectedCurated, setSelectedCurated] = useState<CuratedSelection | null>(null);
   const [selectedStray, setSelectedStray] = useState<NearbyStrayCat | null>(null);
   const [areaStrays, setAreaStrays] = useState<NearbyStrayCat[]>([]);
   const [areaStrayTotal, setAreaStrayTotal] = useState(0);
   const areaStraysRef = useRef(areaStrays);
   areaStraysRef.current = areaStrays;
   const [pois, setPois] = useState<Poi[]>([]);
-  const [featuredInView, setFeaturedInView] = useState<FeaturedPlace[]>([]);
+  const [featuredSheltersInView, setFeaturedSheltersInView] = useState<FeaturedPlace[]>([]);
+  const [featuredVetsInView, setFeaturedVetsInView] = useState<FeaturedVet[]>([]);
   const [poiLoading, setPoiLoading] = useState(false);
   const [poiError, setPoiError] = useState(false);
 
@@ -429,12 +538,23 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
     });
   }, []);
 
-  const selectFeatured = useCallback(
+  const selectCuratedShelter = useCallback(
     (place: FeaturedPlace) => {
       setSelectedCat(null);
       setSelectedPoi(null);
       setSelectedStray(null);
-      setSelectedFeatured(place);
+      setSelectedCurated({ kind: "shelter", place });
+      focusMapPoint(place.lng, place.lat);
+    },
+    [focusMapPoint],
+  );
+
+  const selectCuratedVet = useCallback(
+    (place: FeaturedVet) => {
+      setSelectedCat(null);
+      setSelectedPoi(null);
+      setSelectedStray(null);
+      setSelectedCurated({ kind: "vet", place });
       focusMapPoint(place.lng, place.lat);
     },
     [focusMapPoint],
@@ -443,7 +563,7 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
   const selectPoi = useCallback(
     (poi: Poi) => {
       setSelectedCat(null);
-      setSelectedFeatured(null);
+      setSelectedCurated(null);
       setSelectedStray(null);
       setSelectedPoi(poi);
       focusMapPoint(poi.lng, poi.lat);
@@ -454,7 +574,7 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
   const selectCat = useCallback(
     (props: CapturePointProps) => {
       setSelectedPoi(null);
-      setSelectedFeatured(null);
+      setSelectedCurated(null);
       setSelectedStray(null);
       setSelectedCat(props);
       const feature = geojson.features.find((f) => f.properties.id === props.id);
@@ -470,7 +590,7 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
     (stray: NearbyStrayCat) => {
       setSelectedCat(null);
       setSelectedPoi(null);
-      setSelectedFeatured(null);
+      setSelectedCurated(null);
       setSelectedStray(stray);
       if (stray.primary_lat != null && stray.primary_lng != null) {
         focusMapPoint(stray.primary_lng, stray.primary_lat);
@@ -613,17 +733,28 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
     [pois],
   );
 
+  const localVetCount = useMemo(
+    () => pois.filter((p) => p.type === "vet").length,
+    [pois],
+  );
+
   const mapOverlayStatus = useMemo((): {
     kind: "loading" | "error" | "info" | "count" | "hint";
     message?: string;
     showLegend?: boolean;
+    legend?: "shelter" | "vet";
   } | null => {
     if (poiLoading && (showShelters || showVets)) {
       return { kind: "loading", message: "Loading nearby places…" };
     }
 
-    if (poiError && !poiLoading && (showShelters || showVets) && featuredInView.length === 0) {
-      return { kind: "error" };
+    if (poiError && !poiLoading && (showShelters || showVets)) {
+      const hasCurated =
+        (showShelters && featuredSheltersInView.length > 0) ||
+        (showVets && featuredVetsInView.length > 0);
+      if (!hasCurated) {
+        return { kind: "error" };
+      }
     }
 
     if (showCats && hasCatPoints && !hasFilteredCats) {
@@ -656,9 +787,9 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
 
     if (showShelters && (layerTab === "shelters" || layerTab === "all")) {
       const parts: string[] = [];
-      if (featuredInView.length > 0) {
+      if (featuredSheltersInView.length > 0) {
         parts.push(
-          `${featuredInView.length} curated shelter${featuredInView.length === 1 ? "" : "s"}`,
+          `${featuredSheltersInView.length} curated shelter${featuredSheltersInView.length === 1 ? "" : "s"}`,
         );
       }
       if (localShelterCount > 0) {
@@ -672,6 +803,7 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
           kind: "count",
           message: `${parts.join(" · ")} — tap a pin`,
           showLegend: true,
+          legend: "shelter" as const,
         };
       }
 
@@ -680,6 +812,39 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
           kind: "hint",
           message: "Use location or zoom in to discover shelters",
           showLegend: true,
+          legend: "shelter" as const,
+        };
+      }
+    }
+
+    if (showVets && (layerTab === "vets" || layerTab === "all")) {
+      const parts: string[] = [];
+      if (featuredVetsInView.length > 0) {
+        parts.push(
+          `${featuredVetsInView.length} curated vet${featuredVetsInView.length === 1 ? "" : "s"}`,
+        );
+      }
+      if (localVetCount > 0) {
+        parts.push(
+          `${localVetCount} local vet${localVetCount === 1 ? "" : "s"}`,
+        );
+      }
+
+      if (parts.length > 0) {
+        return {
+          kind: "count",
+          message: `${parts.join(" · ")} — tap a pin`,
+          showLegend: true,
+          legend: "vet" as const,
+        };
+      }
+
+      if (layerTab === "vets" && !poiLoading) {
+        return {
+          kind: "hint",
+          message: "Use location or zoom in to discover vets",
+          showLegend: true,
+          legend: "vet" as const,
         };
       }
     }
@@ -690,7 +855,8 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
     showShelters,
     showVets,
     poiError,
-    featuredInView.length,
+    featuredSheltersInView.length,
+    featuredVetsInView.length,
     showCats,
     hasCatPoints,
     hasFilteredCats,
@@ -699,6 +865,7 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
     areaStrayTotal,
     layerTab,
     localShelterCount,
+    localVetCount,
   ]);
 
   const syncCatMarkers = useCallback((map: maplibregl.Map) => {
@@ -769,14 +936,6 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
 
   const refreshFeaturedOnMap = useCallback(
     (map: maplibregl.Map) => {
-      if (!showShelters) {
-        featuredMarkersRef.current.forEach((m) => m.remove());
-        featuredMarkersRef.current = [];
-        featuredMarkerKeyRef.current = "";
-        setFeaturedInView([]);
-        return;
-      }
-
       const center = map.getCenter();
       const b = map.getBounds();
       const bounds: MapBounds = {
@@ -785,22 +944,53 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
         north: b.getNorth(),
         east: b.getEast(),
       };
-      const featured = getFeaturedPlacesForMap(
-        center.lat,
-        center.lng,
-        bounds,
-        map.getZoom(),
-      );
-      setFeaturedInView(featured);
-      placeFeaturedMarkers(
-        map,
-        featured,
-        featuredMarkersRef,
-        selectFeatured,
-        featuredMarkerKeyRef,
-      );
+      const zoom = map.getZoom();
+
+      if (showShelters) {
+        const featured = getFeaturedPlacesForMap(
+          center.lat,
+          center.lng,
+          bounds,
+          zoom,
+        );
+        setFeaturedSheltersInView(featured);
+        placeFeaturedMarkers(
+          map,
+          featured,
+          featuredShelterMarkersRef,
+          selectCuratedShelter,
+          featuredShelterMarkerKeyRef,
+        );
+      } else {
+        featuredShelterMarkersRef.current.forEach((m) => m.remove());
+        featuredShelterMarkersRef.current = [];
+        featuredShelterMarkerKeyRef.current = "";
+        setFeaturedSheltersInView([]);
+      }
+
+      if (showVets) {
+        const featured = getFeaturedVetsForMap(
+          center.lat,
+          center.lng,
+          bounds,
+          zoom,
+        );
+        setFeaturedVetsInView(featured);
+        placeFeaturedVetMarkers(
+          map,
+          featured,
+          featuredVetMarkersRef,
+          selectCuratedVet,
+          featuredVetMarkerKeyRef,
+        );
+      } else {
+        featuredVetMarkersRef.current.forEach((m) => m.remove());
+        featuredVetMarkersRef.current = [];
+        featuredVetMarkerKeyRef.current = "";
+        setFeaturedVetsInView([]);
+      }
     },
-    [showShelters, selectFeatured],
+    [showShelters, showVets, selectCuratedShelter, selectCuratedVet],
   );
 
   const scheduleMarkerResync = useCallback(
@@ -819,42 +1009,23 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
   );
 
   const fitMapToShelters = useCallback((map: maplibregl.Map) => {
-    const center = map.getCenter();
-    const b = map.getBounds();
-    const bounds: MapBounds = {
-      south: b.getSouth(),
-      west: b.getWest(),
-      north: b.getNorth(),
-      east: b.getEast(),
-    };
-    const zoom = Math.max(map.getZoom(), POI_MIN_ZOOM + 1);
-    const featured = getFeaturedPlacesForMap(
-      center.lat,
-      center.lng,
-      bounds,
-      zoom,
+    fitMapToCuratedLayer(
+      map,
+      (centerLat, centerLng, bounds, zoom) =>
+        getFeaturedPlacesForMap(centerLat, centerLng, bounds, zoom),
+      (centerLat, centerLng, bounds, zoom) =>
+        getRegionalSheltersForMap(centerLat, centerLng, bounds, zoom),
     );
-    const regional = getRegionalSheltersForMap(
-      center.lat,
-      center.lng,
-      bounds,
-      zoom,
-    );
-    if (featured.length === 0 && regional.length === 0) return;
+  }, []);
 
-    const fit = new maplibregl.LngLatBounds();
-    fit.extend([center.lng, center.lat]);
-    for (const place of featured) {
-      fit.extend([place.lng, place.lat]);
-    }
-    for (const poi of regional) {
-      fit.extend([poi.lng, poi.lat]);
-    }
-    map.fitBounds(fit, {
-      padding: { top: 180, bottom: 160, left: 48, right: 48 },
-      maxZoom: 13,
-      duration: 700,
-    });
+  const fitMapToVets = useCallback((map: maplibregl.Map) => {
+    fitMapToCuratedLayer(
+      map,
+      (centerLat, centerLng, bounds, zoom) =>
+        getFeaturedVetsForMap(centerLat, centerLng, bounds, zoom),
+      (centerLat, centerLng, bounds, zoom) =>
+        getRegionalVetsForMap(centerLat, centerLng, bounds, zoom),
+    );
   }, []);
 
   const focusShelterLayer = useCallback(
@@ -871,13 +1042,29 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
     [fitMapToShelters, refreshFeaturedOnMap],
   );
 
+  const focusVetLayer = useCallback(
+    (map: maplibregl.Map) => {
+      geolocateRef.current?.trigger();
+
+      if (map.getZoom() < POI_MIN_ZOOM + 1) {
+        map.easeTo({ zoom: POI_MIN_ZOOM + 1, duration: 600 });
+      }
+
+      fitMapToVets(map);
+      refreshFeaturedOnMap(map);
+    },
+    [fitMapToVets, refreshFeaturedOnMap],
+  );
+
   const handleLayerTabChange = useCallback(
     (key: LayerTab) => {
       setLayerTab(key);
       const map = mapRef.current;
       if (!map) return;
-      if (key === "shelters" || key === "vets") {
+      if (key === "shelters") {
         focusShelterLayer(map);
+      } else if (key === "vets") {
+        focusVetLayer(map);
       } else {
         refreshFeaturedOnMap(map);
         if (key === "cats" || key === "all") {
@@ -887,16 +1074,18 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
         }
       }
     },
-    [focusShelterLayer, refreshFeaturedOnMap, loadAreaStrays],
+    [focusShelterLayer, focusVetLayer, refreshFeaturedOnMap, loadAreaStrays],
   );
 
   const syncPoiMarkersRef = useRef(syncPoiMarkers);
   const refreshFeaturedRef = useRef(refreshFeaturedOnMap);
   const focusShelterLayerRef = useRef(focusShelterLayer);
+  const focusVetLayerRef = useRef(focusVetLayer);
   const scheduleMarkerResyncRef = useRef(scheduleMarkerResync);
   syncPoiMarkersRef.current = syncPoiMarkers;
   refreshFeaturedRef.current = refreshFeaturedOnMap;
   focusShelterLayerRef.current = focusShelterLayer;
+  focusVetLayerRef.current = focusVetLayer;
   scheduleMarkerResyncRef.current = scheduleMarkerResync;
 
   const loadPois = useCallback(async (map: maplibregl.Map) => {
@@ -912,28 +1101,45 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
     };
 
     if (map.getZoom() < POI_MIN_ZOOM) {
-      if (showShelters) {
-        setPois(
-          getRegionalSheltersForMap(
-            center.lat,
-            center.lng,
-            bounds,
-            map.getZoom(),
-          ),
-        );
-      } else {
-        setPois([]);
-      }
+      const regional = [
+        ...(showShelters
+          ? getRegionalSheltersForMap(
+              center.lat,
+              center.lng,
+              bounds,
+              map.getZoom(),
+            )
+          : []),
+        ...(showVets
+          ? getRegionalVetsForMap(
+              center.lat,
+              center.lng,
+              bounds,
+              map.getZoom(),
+            )
+          : []),
+      ];
+      setPois(regional);
       setPoiError(false);
       return;
     }
 
-    const featured = getFeaturedPlacesForMap(
-      center.lat,
-      center.lng,
-      bounds,
-      map.getZoom(),
-    );
+    const featuredShelters = showShelters
+      ? getFeaturedPlacesForMap(
+          center.lat,
+          center.lng,
+          bounds,
+          map.getZoom(),
+        )
+      : [];
+    const featuredVets = showVets
+      ? getFeaturedVetsForMap(
+          center.lat,
+          center.lng,
+          bounds,
+          map.getZoom(),
+        )
+      : [];
 
     const types: PoiType[] = [];
     if (showShelters) types.push("shelter");
@@ -951,14 +1157,24 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
       osmFailed = true;
     }
 
-    const regional = showShelters
-      ? getRegionalSheltersForMap(
-          center.lat,
-          center.lng,
-          bounds,
-          map.getZoom(),
-        )
-      : [];
+    const regional = [
+      ...(showShelters
+        ? getRegionalSheltersForMap(
+            center.lat,
+            center.lng,
+            bounds,
+            map.getZoom(),
+          )
+        : []),
+      ...(showVets
+        ? getRegionalVetsForMap(
+            center.lat,
+            center.lng,
+            bounds,
+            map.getZoom(),
+          )
+        : []),
+    ];
 
     try {
       const merged = dedupePoisByProximity([...osmResults, ...regional]);
@@ -968,14 +1184,21 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
         center.lng,
         POI_MAX_PER_TYPE,
       );
-      const deduped = dedupePoisAgainstFeatured(capped, featured);
+      const shelters = capped.filter((p) => p.type === "shelter");
+      const vets = capped.filter((p) => p.type === "vet");
+      const deduped = [
+        ...dedupePoisAgainstFeatured(shelters, featuredShelters),
+        ...dedupePoisAgainstFeaturedVets(vets, featuredVets),
+      ];
       setPois(deduped);
-      if (deduped.length === 0 && featured.length === 0 && osmFailed) {
+      const hasCurated = featuredShelters.length > 0 || featuredVets.length > 0;
+      if (deduped.length === 0 && !hasCurated && osmFailed) {
         setPoiError(true);
       }
     } catch {
       setPois(regional);
-      if (regional.length === 0 && featured.length === 0) {
+      const hasCurated = featuredShelters.length > 0 || featuredVets.length > 0;
+      if (regional.length === 0 && !hasCurated) {
         setPoiError(true);
       }
     } finally {
@@ -1020,8 +1243,10 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
       refreshFeaturedRef.current(map);
 
       const startLayer = parseInitialLayer(initialLayer);
-      if (startLayer === "shelters" || startLayer === "vets") {
+      if (startLayer === "shelters") {
         focusShelterLayerRef.current(map);
+      } else if (startLayer === "vets") {
+        focusVetLayerRef.current(map);
       } else if (startLayer === "cats" || startLayer === "all") {
         geolocateRef.current?.trigger();
       }
@@ -1040,8 +1265,10 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
       if (!m) return;
       const pos = e.coords;
       const tab = layerTabRef.current;
-      if (tab === "shelters" || tab === "vets") {
+      if (tab === "shelters") {
         fitMapToShelters(m);
+      } else if (tab === "vets") {
+        fitMapToVets(m);
       }
       refreshFeaturedRef.current(m);
       if (tab === "cats" || tab === "all") {
@@ -1051,7 +1278,7 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
     map.on("click", () => {
       setSelectedCat(null);
       setSelectedPoi(null);
-      setSelectedFeatured(null);
+      setSelectedCurated(null);
       setSelectedStray(null);
     });
 
@@ -1066,11 +1293,13 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
       catMarkersRef.current.forEach((m) => m.remove());
       strayMarkersRef.current.forEach((m) => m.remove());
       poiMarkersRef.current.forEach((m) => m.remove());
-      featuredMarkersRef.current.forEach((m) => m.remove());
+      featuredShelterMarkersRef.current.forEach((m) => m.remove());
+      featuredVetMarkersRef.current.forEach((m) => m.remove());
       catMarkersRef.current = [];
       strayMarkersRef.current = [];
       poiMarkersRef.current = [];
-      featuredMarkersRef.current = [];
+      featuredShelterMarkersRef.current = [];
+      featuredVetMarkersRef.current = [];
       map.remove();
       mapRef.current = null;
     };
@@ -1255,7 +1484,12 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
           mapOverlayStatus.kind !== "error" &&
           mapOverlayStatus.message && (
             <div className="pointer-events-none inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 rounded-full border border-white/60 bg-card/90 px-3 py-1.5 text-[11px] shadow-md backdrop-blur-xl">
-              {mapOverlayStatus.showLegend && <ShelterLegendDots />}
+              {mapOverlayStatus.showLegend &&
+                (mapOverlayStatus.legend === "vet" ? (
+                  <VetLegendDots />
+                ) : (
+                  <ShelterLegendDots />
+                ))}
               {mapOverlayStatus.showLegend && (
                 <span className="text-border/80" aria-hidden>
                   ·
@@ -1410,7 +1644,7 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
         </div>
       )}
 
-      {selectedFeatured && (
+      {selectedCurated && (
         <div
           className={cn(
             "pointer-events-auto absolute inset-x-4 z-20 max-w-sm overflow-hidden rounded-2xl border border-border/50 bg-card/95 shadow-lg shadow-black/10 backdrop-blur-xl",
@@ -1419,29 +1653,35 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
         >
           <div className="relative flex items-start gap-2.5 p-3 pr-10">
             <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
-              <Building2 className="size-4" strokeWidth={2} />
+              {selectedCurated.kind === "shelter" ? (
+                <Building2 className="size-4" strokeWidth={2} />
+              ) : (
+                <Stethoscope className="size-4" strokeWidth={2} />
+              )}
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-extrabold text-foreground">
-                {selectedFeatured.name}
+                {selectedCurated.place.name}
               </p>
               <p className="truncate text-xs text-muted-foreground">
-                {selectedFeatured.city}
-                {selectedFeatured.country ? ` · ${selectedFeatured.country}` : ""}
+                {selectedCurated.place.city}
+                {selectedCurated.place.country
+                  ? ` · ${selectedCurated.place.country}`
+                  : ""}
               </p>
-              {selectedFeatured.blurb && (
+              {selectedCurated.place.blurb && (
                 <p className="mt-1 line-clamp-2 text-xs leading-snug text-muted-foreground">
-                  {shortBlurb(selectedFeatured.blurb)}
+                  {shortBlurb(selectedCurated.place.blurb)}
                 </p>
               )}
             </div>
-            <MapSheetClose onClose={() => setSelectedFeatured(null)} />
+            <MapSheetClose onClose={() => setSelectedCurated(null)} />
           </div>
           <div className="grid grid-cols-2 gap-1.5 border-t border-border/40 p-2">
             <a
               href={googleMapsDirectionsLink(
-                selectedFeatured.lat,
-                selectedFeatured.lng,
+                selectedCurated.place.lat,
+                selectedCurated.place.lng,
               )}
               target="_blank"
               rel="noopener noreferrer"
@@ -1452,9 +1692,9 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
             </a>
             <a
               href={googleMapsSearchLink(
-                selectedFeatured.lat,
-                selectedFeatured.lng,
-                selectedFeatured.name,
+                selectedCurated.place.lat,
+                selectedCurated.place.lng,
+                selectedCurated.place.name,
               )}
               target="_blank"
               rel="noopener noreferrer"

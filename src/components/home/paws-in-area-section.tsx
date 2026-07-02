@@ -8,6 +8,7 @@ import { PawsInAreaGrid } from "@/components/home/paws-in-area-grid";
 import { CatButton } from "@/components/ui/cat-button";
 import { getCurrentPosition } from "@/lib/geo";
 import { countNearbyFeaturedShelters } from "@/lib/featured-places";
+import { countNearbyFeaturedVets } from "@/lib/featured-vets";
 import type { AreaStats, NearbyStrayCat } from "@/lib/nearby-stray-cats";
 
 const CACHE_KEY = "catdex-area-stats";
@@ -51,6 +52,7 @@ function writeCache(lat: number, lng: number, stats: AreaStats): void {
 export function PawsInAreaSection({ userId }: { userId: string }) {
   const [stats, setStats] = useState<AreaStats | null>(null);
   const [featuredShelterCount, setFeaturedShelterCount] = useState(0);
+  const [featuredVetCount, setFeaturedVetCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [needsLocation, setNeedsLocation] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -60,6 +62,7 @@ export function PawsInAreaSection({ userId }: { userId: string }) {
     if (cached) {
       setStats(cached);
       setFeaturedShelterCount(countNearbyFeaturedShelters(lat, lng));
+      setFeaturedVetCount(countNearbyFeaturedVets(lat, lng));
       setLoading(false);
       setNeedsLocation(false);
       setLoadError(null);
@@ -78,6 +81,7 @@ export function PawsInAreaSection({ userId }: { userId: string }) {
       setStats(data);
       writeCache(lat, lng, data);
       setFeaturedShelterCount(countNearbyFeaturedShelters(lat, lng));
+      setFeaturedVetCount(countNearbyFeaturedVets(lat, lng));
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Could not load cats in your area.";
@@ -146,6 +150,19 @@ export function PawsInAreaSection({ userId }: { userId: string }) {
             </span>{" "}
             near you —{" "}
             <Link href="/map?layer=shelters" className="font-semibold text-primary">
+              View on map
+            </Link>
+          </p>
+        )}
+
+        {!loading && !needsLocation && featuredVetCount > 0 && !loadError && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            <span className="font-semibold text-foreground">
+              {featuredVetCount} featured vet
+              {featuredVetCount === 1 ? "" : "s"}
+            </span>{" "}
+            near you —{" "}
+            <Link href="/map?layer=vets" className="font-semibold text-primary">
               View on map
             </Link>
           </p>

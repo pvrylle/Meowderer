@@ -1,4 +1,4 @@
-export type RegionalShelter = {
+export type RegionalVet = {
   id: string;
   name: string;
   lat: number;
@@ -8,84 +8,84 @@ export type RegionalShelter = {
   country: string;
 };
 
-/** Known local shelters/rescue groups — supplements sparse OpenStreetMap data. */
-export const REGIONAL_SHELTERS: RegionalShelter[] = [
+/** Known local vet clinics — supplements sparse OpenStreetMap data. */
+export const REGIONAL_VETS: RegionalVet[] = [
   // ── Philippines ──────────────────────────────────────────────
   {
-    id: "bataan-animal-welfare",
-    name: "Bataan Animal Welfare and Rescue",
+    id: "olongapo-city-vet",
+    name: "Olongapo City Veterinary Office",
+    lat: 14.8294,
+    lng: 120.2826,
+    city: "Olongapo",
+    region: "Zambales",
+    country: "Philippines",
+  },
+  {
+    id: "subic-agri-vet",
+    name: "Subic Municipal Agriculture & Veterinary Office",
+    lat: 14.8721,
+    lng: 120.2338,
+    city: "Subic",
+    region: "Zambales",
+    country: "Philippines",
+  },
+  {
+    id: "zambales-provincial-vet",
+    name: "Zambales Provincial Veterinary Office",
+    lat: 15.3312,
+    lng: 119.9754,
+    city: "Iba",
+    region: "Zambales",
+    country: "Philippines",
+  },
+  {
+    id: "angeles-animal-hospital",
+    name: "Angeles City Animal Hospital",
+    lat: 15.1455,
+    lng: 120.593,
+    city: "Angeles",
+    region: "Pampanga",
+    country: "Philippines",
+  },
+  {
+    id: "sbma-vet-clinic",
+    name: "SBMA Veterinary Clinic",
+    lat: 14.7958,
+    lng: 120.2694,
+    city: "Subic Bay",
+    region: "Zambales",
+    country: "Philippines",
+  },
+  {
+    id: "makati-vet-center",
+    name: "Makati Veterinary Services",
+    lat: 14.5547,
+    lng: 121.0244,
+    city: "Makati",
+    region: "Metro Manila",
+    country: "Philippines",
+  },
+  {
+    id: "quezon-city-vet",
+    name: "Quezon City Veterinary Department",
     lat: 14.676,
-    lng: 120.5369,
-    city: "Balanga",
-    region: "Bataan",
-    country: "Philippines",
-  },
-  {
-    id: "mandaluyong-animal-shelter",
-    name: "Mandaluyong Animal Shelter",
-    lat: 14.5832,
-    lng: 121.0359,
-    city: "Mandaluyong",
+    lng: 121.0437,
+    city: "Quezon City",
     region: "Metro Manila",
     country: "Philippines",
   },
   {
-    id: "marikina-animal-shelter",
-    name: "Marikina City Animal Shelter",
-    lat: 14.6507,
-    lng: 121.1029,
-    city: "Marikina",
+    id: "pasig-city-vet",
+    name: "Pasig City Veterinary Office",
+    lat: 14.5606,
+    lng: 121.0845,
+    city: "Pasig",
     region: "Metro Manila",
     country: "Philippines",
   },
   {
-    id: "taguig-animal-shelter",
-    name: "Taguig City Animal Shelter",
-    lat: 14.5176,
-    lng: 121.0509,
-    city: "Taguig",
-    region: "Metro Manila",
-    country: "Philippines",
-  },
-  {
-    id: "paranaque-animal-shelter",
-    name: "Parañaque City Animal Shelter",
-    lat: 14.4793,
-    lng: 121.0198,
-    city: "Parañaque",
-    region: "Metro Manila",
-    country: "Philippines",
-  },
-  {
-    id: "phil-animal-rescue",
-    name: "Philippine Animal Rescue Society",
-    lat: 14.5995,
-    lng: 121.0367,
-    city: "Manila",
-    region: "Metro Manila",
-    country: "Philippines",
-  },
-  {
-    id: "baguio-animal-shelter",
-    name: "Baguio City Animal Shelter",
-    lat: 16.4023,
-    lng: 120.596,
-    city: "Baguio",
-    region: "Benguet",
-    country: "Philippines",
-  },
-  {
-    id: "davao-animal-rescue",
-    name: "Davao Animal Rescue Volunteers",
-    lat: 7.0731,
-    lng: 125.6128,
-    city: "Davao City",
-    region: "Davao del Sur",
-    country: "Philippines",
-  },
-  {
-    id: "cebu-city-animal-shelter",
-    name: "Cebu City Animal Control & Care",
+    id: "cebu-vet-office",
+    name: "Cebu City Veterinary Office",
     lat: 10.3157,
     lng: 123.8854,
     city: "Cebu City",
@@ -95,35 +95,26 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
 
   // ── United States ────────────────────────────────────────────
   {
-    id: "nyc-acc-manhattan",
-    name: "NYC Animal Care Centers — Manhattan",
-    lat: 40.7484,
-    lng: -73.9967,
+    id: "nyc-vet-public-health",
+    name: "NYC Veterinary Public Health Services",
+    lat: 40.7128,
+    lng: -74.006,
     city: "New York",
     region: "New York",
     country: "United States",
   },
   {
-    id: "nyc-acc-brooklyn",
-    name: "NYC Animal Care Centers — Brooklyn",
-    lat: 40.6501,
-    lng: -73.9496,
-    city: "Brooklyn",
-    region: "New York",
-    country: "United States",
-  },
-  {
-    id: "la-animal-services",
-    name: "Los Angeles Animal Services — South LA",
-    lat: 34.0031,
-    lng: -118.2872,
+    id: "la-county-vet",
+    name: "Los Angeles County Veterinary Public Health",
+    lat: 34.0522,
+    lng: -118.2437,
     city: "Los Angeles",
     region: "California",
     country: "United States",
   },
   {
-    id: "chicago-animal-care",
-    name: "Chicago Animal Care and Control",
+    id: "chicago-animal-care-vet",
+    name: "Chicago Animal Care and Control — Veterinary",
     lat: 41.8362,
     lng: -87.6841,
     city: "Chicago",
@@ -131,8 +122,17 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
     country: "United States",
   },
   {
-    id: "seattle-animal-shelter",
-    name: "Seattle Animal Shelter",
+    id: "sf-acc-vet",
+    name: "San Francisco Animal Care & Control",
+    lat: 37.7749,
+    lng: -122.4194,
+    city: "San Francisco",
+    region: "California",
+    country: "United States",
+  },
+  {
+    id: "seattle-animal-shelter-vet",
+    name: "Seattle Animal Shelter — Veterinary Services",
     lat: 47.6685,
     lng: -122.3531,
     city: "Seattle",
@@ -140,46 +140,37 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
     country: "United States",
   },
   {
-    id: "austin-animal-center",
-    name: "Austin Animal Center",
-    lat: 30.2723,
-    lng: -97.7316,
-    city: "Austin",
+    id: "houston-barc-vet",
+    name: "BARC Animal Shelter & Adoptions — Veterinary",
+    lat: 29.7604,
+    lng: -95.3698,
+    city: "Houston",
     region: "Texas",
-    country: "United States",
-  },
-  {
-    id: "denver-animal-shelter",
-    name: "Denver Animal Shelter",
-    lat: 39.7405,
-    lng: -105.0152,
-    city: "Denver",
-    region: "Colorado",
-    country: "United States",
-  },
-  {
-    id: "miami-dade-animal",
-    name: "Miami-Dade Animal Services",
-    lat: 25.7617,
-    lng: -80.1918,
-    city: "Miami",
-    region: "Florida",
     country: "United States",
   },
 
   // ── United Kingdom ───────────────────────────────────────────
   {
-    id: "edinburgh-dog-cat-home",
-    name: "Edinburgh Dog and Cat Home",
-    lat: 55.929,
-    lng: -3.23,
+    id: "pdsa-london-bow",
+    name: "PDSA Pet Hospital — Bow",
+    lat: 51.5273,
+    lng: -0.0217,
+    city: "London",
+    region: "England",
+    country: "United Kingdom",
+  },
+  {
+    id: "pdsa-edinburgh",
+    name: "PDSA Pet Hospital — Edinburgh",
+    lat: 55.9533,
+    lng: -3.1883,
     city: "Edinburgh",
     region: "Scotland",
     country: "United Kingdom",
   },
   {
-    id: "manchester-cats-dogs-home",
-    name: "Manchester & Cheshire Dogs' Home",
+    id: "blue-cross-manchester",
+    name: "Blue Cross Animal Hospital — Manchester",
     lat: 53.4808,
     lng: -2.2426,
     city: "Manchester",
@@ -187,122 +178,86 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
     country: "United Kingdom",
   },
   {
-    id: "birmingham-dogs-home",
-    name: "Birmingham Dogs Home",
-    lat: 52.4862,
-    lng: -1.8904,
-    city: "Birmingham",
-    region: "England",
-    country: "United Kingdom",
-  },
-  {
-    id: "glasgow-dogs-home",
-    name: "Glasgow Dogs Home",
-    lat: 55.8642,
-    lng: -4.2518,
-    city: "Glasgow",
-    region: "Scotland",
-    country: "United Kingdom",
-  },
-  {
-    id: "rspca-brighton",
-    name: "RSPCA Brighton & Hove",
-    lat: 50.8225,
-    lng: -0.1372,
-    city: "Brighton",
-    region: "England",
-    country: "United Kingdom",
-  },
-  {
-    id: "cats-protection-leeds",
-    name: "Cats Protection — Leeds Adoption Centre",
-    lat: 53.8008,
-    lng: -1.5491,
-    city: "Leeds",
+    id: "bristol-animal-rescue-vet",
+    name: "Bristol A.R.C. Veterinary Clinic",
+    lat: 51.4545,
+    lng: -2.5879,
+    city: "Bristol",
     region: "England",
     country: "United Kingdom",
   },
 
   // ── Canada ───────────────────────────────────────────────────
   {
-    id: "vancouver-spca",
-    name: "BC SPCA Vancouver",
-    lat: 49.2488,
-    lng: -123.1089,
+    id: "toronto-animal-services",
+    name: "Toronto Animal Services — North Shelter",
+    lat: 43.6532,
+    lng: -79.3832,
+    city: "Toronto",
+    region: "Ontario",
+    country: "Canada",
+  },
+  {
+    id: "vancouver-animal-control",
+    name: "Vancouver Animal Control",
+    lat: 49.2827,
+    lng: -123.1207,
     city: "Vancouver",
     region: "British Columbia",
     country: "Canada",
   },
   {
-    id: "montreal-spca",
-    name: "SPCA de Montréal",
+    id: "montreal-spca-vet",
+    name: "SPCA de Montréal — Veterinary Clinic",
     lat: 45.5017,
     lng: -73.5673,
     city: "Montreal",
     region: "Quebec",
     country: "Canada",
   },
-  {
-    id: "calgary-humane",
-    name: "Calgary Humane Society",
-    lat: 51.0447,
-    lng: -114.0719,
-    city: "Calgary",
-    region: "Alberta",
-    country: "Canada",
-  },
-  {
-    id: "ottawa-humane",
-    name: "Ottawa Humane Society",
-    lat: 45.4215,
-    lng: -75.6972,
-    city: "Ottawa",
-    region: "Ontario",
-    country: "Canada",
-  },
 
   // ── Australia ───────────────────────────────────────────────
   {
-    id: "rspca-victoria",
-    name: "RSPCA Victoria — Burwood East",
-    lat: -37.8497,
-    lng: 145.1021,
+    id: "melbourne-council-animal",
+    name: "Melbourne City Council — Animal Management",
+    lat: -37.8136,
+    lng: 144.9631,
     city: "Melbourne",
     region: "Victoria",
     country: "Australia",
   },
   {
-    id: "rspca-queensland",
-    name: "RSPCA Queensland — Wacol",
-    lat: -27.5598,
-    lng: 152.9362,
+    id: "brisbane-animal-mgmt",
+    name: "Brisbane City Council — Animal Management",
+    lat: -27.4698,
+    lng: 153.0251,
     city: "Brisbane",
     region: "Queensland",
     country: "Australia",
   },
   {
-    id: "rspca-wa",
-    name: "RSPCA Western Australia",
+    id: "perth-ranger-vet",
+    name: "City of Perth — Ranger & Animal Services",
     lat: -31.9505,
     lng: 115.8605,
     city: "Perth",
     region: "Western Australia",
     country: "Australia",
   },
-  {
-    id: "adelaide-hills-animal",
-    name: "RSPCA South Australia",
-    lat: -34.9285,
-    lng: 138.6007,
-    city: "Adelaide",
-    region: "South Australia",
-    country: "Australia",
-  },
 
   // ── Japan ─────────────────────────────────────────────────────
   {
-    id: "osaka-animal-welfare",
-    name: "Osaka Animal Welfare Center",
+    id: "tokyo-metropolitan-vet",
+    name: "Tokyo Metropolitan Veterinary Medical Center",
+    lat: 35.6762,
+    lng: 139.6503,
+    city: "Tokyo",
+    region: "Tokyo",
+    country: "Japan",
+  },
+  {
+    id: "osaka-city-vet",
+    name: "Osaka City Veterinary Office",
     lat: 34.6937,
     lng: 135.5023,
     city: "Osaka",
@@ -310,37 +265,28 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
     country: "Japan",
   },
   {
-    id: "yokohama-animal-care",
-    name: "Yokohama Animal Care Center",
+    id: "yokohama-city-vet",
+    name: "Yokohama City Animal Welfare — Veterinary",
     lat: 35.4437,
     lng: 139.638,
     city: "Yokohama",
     region: "Kanagawa",
     country: "Japan",
   },
-  {
-    id: "kyoto-animal-welfare",
-    name: "Kyoto City Animal Welfare Center",
-    lat: 35.0116,
-    lng: 135.7681,
-    city: "Kyoto",
-    region: "Kyoto",
-    country: "Japan",
-  },
 
   // ── South Korea ───────────────────────────────────────────────
   {
-    id: "seoul-animal-protection-center",
-    name: "Seoul Animal Protection Center",
-    lat: 37.4285,
-    lng: 126.989,
-    city: "Gwacheon",
-    region: "Gyeonggi",
+    id: "seoul-metropolitan-vet",
+    name: "Seoul Metropolitan Government — Veterinary Services",
+    lat: 37.5665,
+    lng: 126.978,
+    city: "Seoul",
+    region: "Seoul",
     country: "South Korea",
   },
   {
-    id: "busan-animal-shelter",
-    name: "Busan Metropolitan Animal Shelter",
+    id: "busan-metropolitan-vet",
+    name: "Busan Metropolitan City — Veterinary Office",
     lat: 35.1796,
     lng: 129.0756,
     city: "Busan",
@@ -350,8 +296,8 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
 
   // ── Thailand ──────────────────────────────────────────────────
   {
-    id: "bangkok-metropolitan-animal",
-    name: "Bangkok Metropolitan Animal Shelter",
+    id: "bangkok-metropolitan-vet",
+    name: "Bangkok Metropolitan Administration — Veterinary",
     lat: 13.7563,
     lng: 100.5018,
     city: "Bangkok",
@@ -359,8 +305,8 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
     country: "Thailand",
   },
   {
-    id: "chiang-mai-animal-shelter",
-    name: "Chiang Mai Animal Shelter",
+    id: "chiang-mai-provincial-vet",
+    name: "Chiang Mai Provincial Livestock Office",
     lat: 18.7883,
     lng: 98.9853,
     city: "Chiang Mai",
@@ -370,8 +316,8 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
 
   // ── Singapore ─────────────────────────────────────────────────
   {
-    id: "avs-singapore-shelter",
-    name: "Animal & Veterinary Service — Shelter",
+    id: "nparks-avs-singapore",
+    name: "NParks Animal & Veterinary Service",
     lat: 1.3521,
     lng: 103.8198,
     city: "Singapore",
@@ -381,8 +327,8 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
 
   // ── Hong Kong ─────────────────────────────────────────────────
   {
-    id: "hk-afcd-animal-mgmt",
-    name: "AFCD Animal Management Centre",
+    id: "hk-afcd-vet",
+    name: "AFCD Veterinary Services",
     lat: 22.3964,
     lng: 114.1095,
     city: "Hong Kong",
@@ -392,8 +338,8 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
 
   // ── Germany ───────────────────────────────────────────────────
   {
-    id: "berlin-tierheim",
-    name: "Berliner Tierheim",
+    id: "berlin-veterinaeramt",
+    name: "Veterinäramt Berlin",
     lat: 52.52,
     lng: 13.405,
     city: "Berlin",
@@ -401,8 +347,8 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
     country: "Germany",
   },
   {
-    id: "munich-tierheim",
-    name: "Münchner Tierschutzverein Tierheim",
+    id: "munich-veterinaeramt",
+    name: "Veterinäramt München",
     lat: 48.1351,
     lng: 11.582,
     city: "Munich",
@@ -412,17 +358,17 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
 
   // ── France ────────────────────────────────────────────────────
   {
-    id: "spa-paris-refuge",
-    name: "SPA Paris — Refuge de Gennevilliers",
-    lat: 48.9333,
-    lng: 2.3,
-    city: "Gennevilliers",
+    id: "paris-ddpp-vet",
+    name: "DDPP Paris — Services Vétérinaires",
+    lat: 48.8566,
+    lng: 2.3522,
+    city: "Paris",
     region: "Île-de-France",
     country: "France",
   },
   {
-    id: "lyon-spa",
-    name: "SPA Lyon Refuge",
+    id: "lyon-vet-services",
+    name: "DDPP Rhône — Services Vétérinaires",
     lat: 45.764,
     lng: 4.8357,
     city: "Lyon",
@@ -432,8 +378,8 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
 
   // ── Netherlands ───────────────────────────────────────────────
   {
-    id: "amsterdam-dierenasiel",
-    name: "Dierenasiel Amsterdam",
+    id: "amsterdam-dierenpolitie",
+    name: "Dierenpolitie Amsterdam",
     lat: 52.3676,
     lng: 4.9041,
     city: "Amsterdam",
@@ -443,8 +389,8 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
 
   // ── Spain ─────────────────────────────────────────────────────
   {
-    id: "barcelona-protectora",
-    name: "Protectora d'Animals de Barcelona",
+    id: "barcelona-sanidad-animal",
+    name: "Ajuntament de Barcelona — Sanitat Animal",
     lat: 41.3874,
     lng: 2.1686,
     city: "Barcelona",
@@ -452,8 +398,8 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
     country: "Spain",
   },
   {
-    id: "madrid-protectora",
-    name: "Protectora de Animales de Madrid",
+    id: "madrid-sanidad-animal",
+    name: "Ayuntamiento de Madrid — Sanidad Animal",
     lat: 40.4168,
     lng: -3.7038,
     city: "Madrid",
@@ -463,8 +409,8 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
 
   // ── Italy ─────────────────────────────────────────────────────
   {
-    id: "milan-canile",
-    name: "Canile Municipale di Milano",
+    id: "milan-azienda-zoo",
+    name: "Azienda Zootecnica — Comune di Milano",
     lat: 45.4642,
     lng: 9.19,
     city: "Milan",
@@ -472,8 +418,8 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
     country: "Italy",
   },
   {
-    id: "rome-canile",
-    name: "Canile Municipale di Roma",
+    id: "rome-azienda-zoo",
+    name: "Azienda Zootecnica — Roma Capitale",
     lat: 41.9028,
     lng: 12.4964,
     city: "Rome",
@@ -483,8 +429,8 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
 
   // ── Mexico ────────────────────────────────────────────────────
   {
-    id: "cdmx-centro-de-adopcion",
-    name: "Centro de Adopción CDMX",
+    id: "cdmx-sedema-vet",
+    name: "SEDEMA CDMX — Servicios Veterinarios",
     lat: 19.4326,
     lng: -99.1332,
     city: "Mexico City",
@@ -494,8 +440,8 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
 
   // ── Brazil ────────────────────────────────────────────────────
   {
-    id: "sao-paulo-ccz",
-    name: "CCZ São Paulo — Centro de Controle de Zoonoses",
+    id: "sao-paulo-ccz-vet",
+    name: "CCZ São Paulo — Serviços Veterinários",
     lat: -23.5505,
     lng: -46.6333,
     city: "São Paulo",
@@ -503,8 +449,8 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
     country: "Brazil",
   },
   {
-    id: "rio-ccz",
-    name: "CCZ Rio de Janeiro",
+    id: "rio-ccz-vet",
+    name: "CCZ Rio — Centro de Vigilância em Zoonoses",
     lat: -22.9068,
     lng: -43.1729,
     city: "Rio de Janeiro",
@@ -514,8 +460,8 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
 
   // ── Argentina ─────────────────────────────────────────────────
   {
-    id: "buenos-aires-zoonosis",
-    name: "Dirección General de Zoonosis — Buenos Aires",
+    id: "buenos-aires-zoonosis-vet",
+    name: "Dirección de Zoonosis — Veterinaria",
     lat: -34.6037,
     lng: -58.3816,
     city: "Buenos Aires",
@@ -525,8 +471,8 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
 
   // ── India ─────────────────────────────────────────────────────
   {
-    id: "mumbai-spca",
-    name: "SPCA Mumbai",
+    id: "mumbai-spca-vet",
+    name: "SPCA Mumbai — Veterinary Hospital",
     lat: 19.076,
     lng: 72.8777,
     city: "Mumbai",
@@ -534,8 +480,8 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
     country: "India",
   },
   {
-    id: "delhi-animal-welfare",
-    name: "Delhi Society for Prevention of Cruelty to Animals",
+    id: "delhi-dspca-vet",
+    name: "DSPCA Delhi — Veterinary Clinic",
     lat: 28.6139,
     lng: 77.209,
     city: "New Delhi",
@@ -543,8 +489,8 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
     country: "India",
   },
   {
-    id: "bangalore-cuppa",
-    name: "CUPA Bangalore — Second Chance Adoption Centre",
+    id: "bangalore-cuppa-vet",
+    name: "CUPA Bangalore — Veterinary Hospital",
     lat: 12.9716,
     lng: 77.5946,
     city: "Bangalore",
@@ -554,19 +500,28 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
 
   // ── United Arab Emirates ────────────────────────────────────────
   {
-    id: "dubai-municipality-animal",
-    name: "Dubai Municipality Veterinary Services",
+    id: "dubai-municipality-vet",
+    name: "Dubai Municipality — Veterinary Services",
     lat: 25.2048,
     lng: 55.2708,
     city: "Dubai",
     region: "Dubai",
     country: "United Arab Emirates",
   },
+  {
+    id: "abu-dhabi-municipality-vet",
+    name: "Abu Dhabi Municipality — Veterinary Services",
+    lat: 24.4539,
+    lng: 54.3773,
+    city: "Abu Dhabi",
+    region: "Abu Dhabi",
+    country: "United Arab Emirates",
+  },
 
   // ── New Zealand ─────────────────────────────────────────────────
   {
-    id: "spca-auckland",
-    name: "SPCA Auckland",
+    id: "auckland-council-animal",
+    name: "Auckland Council — Animal Management",
     lat: -36.8485,
     lng: 174.7633,
     city: "Auckland",
@@ -574,8 +529,8 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
     country: "New Zealand",
   },
   {
-    id: "spca-wellington",
-    name: "SPCA Wellington",
+    id: "wellington-spca-vet",
+    name: "SPCA Wellington — Veterinary Clinic",
     lat: -41.2865,
     lng: 174.7762,
     city: "Wellington",
@@ -585,8 +540,8 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
 
   // ── South Africa ────────────────────────────────────────────────
   {
-    id: "cape-town-spca",
-    name: "SPCA Cape Town",
+    id: "cape-town-state-vet",
+    name: "Western Cape State Veterinary Services",
     lat: -33.9249,
     lng: 18.4241,
     city: "Cape Town",
@@ -594,8 +549,8 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
     country: "South Africa",
   },
   {
-    id: "johannesburg-spca",
-    name: "SPCA Johannesburg",
+    id: "johannesburg-spca-vet",
+    name: "SPCA Johannesburg — Veterinary Clinic",
     lat: -26.2041,
     lng: 28.0473,
     city: "Johannesburg",
@@ -605,8 +560,8 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
 
   // ── Ireland ─────────────────────────────────────────────────────
   {
-    id: "dublin-spca",
-    name: "DSPCA Dublin",
+    id: "dublin-dspca-vet",
+    name: "DSPCA Dublin — Veterinary Hospital",
     lat: 53.3498,
     lng: -6.2603,
     city: "Dublin",
@@ -616,8 +571,8 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
 
   // ── Poland ──────────────────────────────────────────────────────
   {
-    id: "warsaw-schronisko",
-    name: "Schronisko dla Zwierząt — Warszawa",
+    id: "warsaw-vet-inspection",
+    name: "Inspekcja Weterynaryjna — Warszawa",
     lat: 52.2297,
     lng: 21.0122,
     city: "Warsaw",
@@ -627,12 +582,45 @@ export const REGIONAL_SHELTERS: RegionalShelter[] = [
 
   // ── Turkey ──────────────────────────────────────────────────────
   {
-    id: "istanbul-belediye-barinak",
-    name: "İstanbul Büyükşehir Belediyesi Hayvan Barınağı",
+    id: "istanbul-vet-services",
+    name: "İstanbul İl Tarım ve Orman Müdürlüğü — Veteriner",
     lat: 41.0082,
     lng: 28.9784,
     city: "Istanbul",
     region: "Istanbul",
     country: "Turkey",
+  },
+
+  // ── Sweden ──────────────────────────────────────────────────────
+  {
+    id: "stockholm-djurvard",
+    name: "Stockholm Stad — Djurvård",
+    lat: 59.3293,
+    lng: 18.0686,
+    city: "Stockholm",
+    region: "Stockholm",
+    country: "Sweden",
+  },
+
+  // ── Norway ──────────────────────────────────────────────────────
+  {
+    id: "oslo-dyrevern",
+    name: "Oslo Kommune — Dyrevern",
+    lat: 59.9139,
+    lng: 10.7522,
+    city: "Oslo",
+    region: "Oslo",
+    country: "Norway",
+  },
+
+  // ── Greece ──────────────────────────────────────────────────────
+  {
+    id: "athens-municipal-vet",
+    name: "Δήμος Αθηναίων — Κτηνιατρικές Υπηρεσίες",
+    lat: 37.9838,
+    lng: 23.7275,
+    city: "Athens",
+    region: "Attica",
+    country: "Greece",
   },
 ];
