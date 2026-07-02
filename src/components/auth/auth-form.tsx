@@ -43,7 +43,10 @@ export function AuthForm({
     else if (modeFromQuery === "signin") setMode("signin");
   }, [searchParams]);
 
-  function handleSubmit(formData: FormData) {
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+
     if (mode === "signup" && !termsAccepted) {
       toast.error("Please accept the Terms of Service and Privacy Policy.");
       return;
@@ -110,7 +113,7 @@ export function AuthForm({
 
         <form
           id="auth-main-form"
-          action={handleSubmit}
+          onSubmit={handleSubmit}
           className="flex flex-col gap-2 max-[700px]:gap-1.5"
         >
           <div className="flex flex-col gap-1">

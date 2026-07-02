@@ -5,6 +5,7 @@ import { Check, Pencil, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { deleteCapture, renameCapture } from "@/app/(app)/cat/[id]/actions";
+import { ConfirmSheet } from "@/components/confirm-sheet";
 import { CatButton } from "@/components/ui/cat-button";
 import { Input } from "@/components/ui/input";
 
@@ -102,25 +103,39 @@ export function CatName({
 
 export function DeleteCatButton({ id }: { id: string }) {
   const [isPending, startTransition] = useTransition();
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
-  function handleDelete() {
-    if (!window.confirm("Release this cat from your collection?")) return;
+  function confirmDelete() {
     startTransition(async () => {
+      setConfirmOpen(false);
       await deleteCapture(id);
     });
   }
 
   return (
-    <CatButton
-      type="button"
-      variant="ghost"
-      block
-      loading={isPending}
-      onClick={handleDelete}
-      className="h-10 text-destructive hover:text-destructive"
-    >
-      <Trash2 className="size-5" />
-      Release cat
-    </CatButton>
+    <>
+      <CatButton
+        type="button"
+        variant="ghost"
+        block
+        loading={isPending}
+        onClick={() => setConfirmOpen(true)}
+        className="h-10 text-destructive hover:text-destructive"
+      >
+        <Trash2 className="size-5" />
+        Release cat
+      </CatButton>
+
+      <ConfirmSheet
+        open={confirmOpen}
+        title="Release this cat?"
+        description="This cat will be removed from your collection. This can't be undone."
+        confirmLabel="Release cat"
+        destructive
+        loading={isPending}
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmOpen(false)}
+      />
+    </>
   );
 }

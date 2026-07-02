@@ -39,7 +39,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Main"
-      className="relative z-30 bg-card pb-[env(safe-area-inset-bottom)]"
+      className="relative z-30 bg-card pb-[calc(env(safe-area-inset-bottom)+0.75rem)]"
     >
       <div className="flex h-16 items-center border-t border-border/30">
         <div className="flex flex-1 items-center justify-evenly">

@@ -6,6 +6,7 @@ import { Send } from "lucide-react";
 import { toast } from "sonner";
 
 import { sendChatAction } from "@/app/(app)/community/actions";
+import { deleteChatMessageAction } from "@/app/(app)/community/safety-actions";
 import { ReportContentButton } from "@/components/report-content-button";
 import { UserAvatar } from "@/components/user-avatar";
 import type { ChatMessageWithAuthor } from "@/lib/community";
@@ -118,6 +119,15 @@ export function CommunityChat({
           }
         },
       )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "chat_messages" },
+        (payload) => {
+          const old = payload.old as { id?: string };
+          if (!old.id) return;
+          setMessages((prev) => prev.filter((m) => m.id !== old.id));
+        },
+      )
       .subscribe();
 
     return () => {
@@ -142,6 +152,17 @@ export function CommunityChat({
       });
     }
     setDraft("");
+  }
+
+  async function handleDelete(messageId: string) {
+    const result = await deleteChatMessageAction(messageId);
+    if (!result.success) {
+      toast.error(result.error ?? "Could not delete message.");
+      return;
+    }
+    setMessages((prev) => prev.filter((m) => m.id !== messageId));
+    toast.success("Message deleted.");
+    router.refresh();
   }
 
   return (
@@ -216,23 +237,33 @@ export function CommunityChat({
                   <span className="text-[10px] text-muted-foreground">
                     {formatChatTime(msg.created_at)}
                   </span>
-                  {!mine && (
-                    <ReportContentButton
-                      target={{
-                        contentType: "chat_message",
-                        contentId: msg.id,
-                        reportedUserId: msg.user_id,
-                        label: msg.body.slice(0, 80),
-                      }}
-                      className="text-[10px] font-semibold text-muted-foreground hover:text-destructive"
-                      onBlocked={() => {
-                        setMessages((prev) =>
-                          prev.filter((m) => m.user_id !== msg.user_id),
-                        );
-                        router.refresh();
-                      }}
-                    />
-                  )}
+                  <div className={cn("flex items-center gap-2", mine && "justify-end")}>
+                    {mine ? (
+                      <button
+                        type="button"
+                        onClick={() => void handleDelete(msg.id)}
+                        className="text-[10px] font-semibold text-muted-foreground hover:text-destructive"
+                      >
+                        Delete
+                      </button>
+                    ) : (
+                      <ReportContentButton
+                        target={{
+                          contentType: "chat_message",
+                          contentId: msg.id,
+                          reportedUserId: msg.user_id,
+                          label: msg.body.slice(0, 80),
+                        }}
+                        className="text-[10px] font-semibold text-muted-foreground hover:text-destructive"
+                        onBlocked={() => {
+                          setMessages((prev) =>
+                            prev.filter((m) => m.user_id !== msg.user_id),
+                          );
+                          router.refresh();
+                        }}
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
             );

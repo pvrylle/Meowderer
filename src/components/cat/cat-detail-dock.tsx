@@ -15,6 +15,7 @@ import { createPostAction } from "@/app/(app)/community/actions";
 import { deleteCapture } from "@/app/(app)/cat/[id]/actions";
 import { CatName } from "@/components/cat/cat-actions";
 import { CaptureCard } from "@/components/cat-trading-card";
+import { ConfirmSheet } from "@/components/confirm-sheet";
 import { cn } from "@/lib/utils";
 import type { Capture } from "@/lib/supabase/types";
 
@@ -88,6 +89,8 @@ export function CatDetailDock({
   const cardRef = useRef<HTMLDivElement>(null);
   const [sharingCard, setSharingCard] = useState(false);
   const [sharingCommunity, setSharingCommunity] = useState(false);
+  const [communityConfirmOpen, setCommunityConfirmOpen] = useState(false);
+  const [releaseConfirmOpen, setReleaseConfirmOpen] = useState(false);
   const [deleting, startDelete] = useTransition();
 
   const hasMap = capture.lat != null && capture.lng != null;
@@ -125,7 +128,7 @@ export function CatDetailDock({
     }
   }
 
-  async function shareCommunity() {
+  async function confirmShareCommunity() {
     setSharingCommunity(true);
     const result = await createPostAction({
       body: defaultBody,
@@ -136,6 +139,7 @@ export function CatDetailDock({
       lng: capture.share_location ? capture.lng : null,
     });
     setSharingCommunity(false);
+    setCommunityConfirmOpen(false);
 
     if (!result.success) {
       toast.error(result.error ?? "Could not share.");
@@ -145,9 +149,9 @@ export function CatDetailDock({
     router.push("/community");
   }
 
-  function releaseCat() {
-    if (!window.confirm("Release this cat from your collection?")) return;
+  function confirmReleaseCat() {
     startDelete(async () => {
+      setReleaseConfirmOpen(false);
       await deleteCapture(capture.id);
     });
   }
@@ -189,20 +193,58 @@ export function CatDetailDock({
         </DockAction>
         <DockAction
           label="Community"
-          onClick={shareCommunity}
+          onClick={() => setCommunityConfirmOpen(true)}
           loading={sharingCommunity}
         >
           <Users className="size-5" />
         </DockAction>
         <DockAction
           label="Release"
-          onClick={releaseCat}
+          onClick={() => setReleaseConfirmOpen(true)}
           loading={deleting}
           destructive
         >
           <Trash2 className="size-5" />
         </DockAction>
       </div>
+
+      <ConfirmSheet
+        open={communityConfirmOpen}
+        title="Share to Community?"
+        description={
+          <>
+            <p>
+              Post <strong className="text-foreground">{name}</strong> as a sighting
+              for other cat lovers to see.
+            </p>
+            <p className="mt-2 rounded-xl bg-muted/60 px-3 py-2 text-foreground">
+              &ldquo;{defaultBody}&rdquo;
+            </p>
+          </>
+        }
+        confirmLabel="Share to Community"
+        loading={sharingCommunity}
+        onConfirm={() => void confirmShareCommunity()}
+        onCancel={() => setCommunityConfirmOpen(false)}
+      />
+
+      <ConfirmSheet
+        open={releaseConfirmOpen}
+        title="Release this cat?"
+        description={
+          <>
+            <p>
+              <strong className="text-foreground">{name}</strong> will be removed from
+              your collection. This can&apos;t be undone.
+            </p>
+          </>
+        }
+        confirmLabel="Release cat"
+        destructive
+        loading={deleting}
+        onConfirm={confirmReleaseCat}
+        onCancel={() => setReleaseConfirmOpen(false)}
+      />
     </footer>
   );
 }

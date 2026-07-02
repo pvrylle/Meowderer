@@ -28,6 +28,10 @@ export function CommunityTabs({
 }: CommunityTabsProps) {
   const [tab, setTab] = useState<"feed" | "chat">("feed");
   const shelterCount = useNearbyShelterCount();
+  const tabLabels = {
+    feed: "Feed",
+    chat: "Channels",
+  } as const;
 
   return (
     <div className="flex flex-col gap-4">
@@ -79,7 +83,7 @@ export function CommunityTabs({
                 : "text-muted-foreground",
             )}
           >
-            {key}
+            {tabLabels[key]}
           </button>
         ))}
       </div>

@@ -184,3 +184,38 @@ export async function deleteCommentAction(commentId: string): Promise<{
   revalidatePath("/community");
   return { success: true };
 }
+
+export async function deleteChatMessageAction(messageId: string): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  if (await isDemoSession()) {
+    return { success: false, error: "Not available in demo mode." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Not signed in." };
+
+  const { data: message } = await supabase
+    .from("chat_messages")
+    .select("id, user_id")
+    .eq("id", messageId)
+    .maybeSingle();
+
+  if (!message || message.user_id !== user.id) {
+    return { success: false, error: "Message not found." };
+  }
+
+  const { error } = await supabase
+    .from("chat_messages")
+    .delete()
+    .eq("id", messageId);
+
+  if (error) return { success: false, error: "Could not delete message." };
+
+  revalidatePath("/community");
+  return { success: true };
+}

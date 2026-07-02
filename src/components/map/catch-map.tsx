@@ -501,6 +501,8 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
   const catMarkersRef = useRef<maplibregl.Marker[]>([]);
   const strayMarkersRef = useRef<maplibregl.Marker[]>([]);
   const strayMarkerKeyRef = useRef("");
+  // Capture ids already represented by a stray pin — avoids doubled pins.
+  const strayCaptureIdsRef = useRef<Set<string>>(new Set());
   const poiMarkersRef = useRef<maplibregl.Marker[]>([]);
   const featuredShelterMarkersRef = useRef<maplibregl.Marker[]>([]);
   const featuredVetMarkersRef = useRef<maplibregl.Marker[]>([]);
@@ -522,6 +524,13 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
   const [areaStrayTotal, setAreaStrayTotal] = useState(0);
   const areaStraysRef = useRef(areaStrays);
   areaStraysRef.current = areaStrays;
+  strayCaptureIdsRef.current = useMemo(() => {
+    const set = new Set<string>();
+    for (const stray of areaStrays) {
+      if (stray.user_capture_id) set.add(stray.user_capture_id);
+    }
+    return set;
+  }, [areaStrays]);
   const [pois, setPois] = useState<Poi[]>([]);
   const [featuredSheltersInView, setFeaturedSheltersInView] = useState<FeaturedPlace[]>([]);
   const [featuredVetsInView, setFeaturedVetsInView] = useState<FeaturedVet[]>([]);
@@ -912,6 +921,9 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
         const id = props.id as string;
         if (placed.has(id)) continue;
         placed.add(id);
+
+        // Skip captures already shown as a stray pin (prevents doubled markers).
+        if (strayCaptureIdsRef.current.has(id)) continue;
 
         const pointProps = props as unknown as CapturePointProps;
         const el = buildCatPinButton(pointProps, () => selectCat(pointProps));
@@ -1377,7 +1389,9 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
     const map = mapRef.current;
     if (!map) return;
     syncStrayMarkers(map);
-  }, [areaStrays, showCats, syncStrayMarkers]);
+    // Re-run capture pins so any now-linked capture is de-duped against strays.
+    syncCatMarkers(map);
+  }, [areaStrays, showCats, syncStrayMarkers, syncCatMarkers]);
 
   useEffect(() => {
     const map = mapRef.current;
