@@ -6,11 +6,14 @@ import {
   type MobileNetClassifier,
 } from "./mobilenet-classifier";
 
-/** Minimum model confidence to accept a cat label. */
-const MIN_CAT_SCORE = 0.08;
+/** Any cat-ish label at or above this in the top-k accepts the photo. */
+const MIN_CAT_SCORE = 0.03;
 
-/** Reject humans when clearly a portrait and no cat signal. */
-const HUMAN_REJECT_SCORE = 0.12;
+/** A person must clearly dominate (and no cat signal) to be rejected. */
+const HUMAN_REJECT_SCORE = 0.4;
+
+/** A specific non-cat animal/object must strongly dominate to be rejected. */
+const NON_CAT_REJECT_SCORE = 0.55;
 
 const CAT_KEYWORDS = [
   "tabby",
@@ -24,6 +27,7 @@ const CAT_KEYWORDS = [
   "cougar",
   "madagascar cat",
   "wildcat",
+  "cat",
 ];
 
 const HUMAN_KEYWORDS = [
@@ -138,15 +142,12 @@ function evaluateResults(
   const catScore = bestScore(results, labelLooksLikeCat);
   const humanScore = bestScore(results, labelLooksHuman);
 
+  // 1) Any cat signal in the top-k → accept. MobileNet often ranks the right
+  //    cat class a little lower when the background is plain, so keep this loose.
   const catHit = results.find(
     (r) => r.score >= MIN_CAT_SCORE && labelLooksLikeCat(r.label),
   );
-
-  const catInTopFive = results
-    .slice(0, 5)
-    .some((r) => labelLooksLikeCat(r.label) && r.score >= MIN_CAT_SCORE);
-
-  if (catHit && (catHit.score > humanScore || catInTopFive)) {
+  if (catHit) {
     return {
       ok: true,
       confidence: catHit.score,
@@ -154,51 +155,31 @@ function evaluateResults(
     };
   }
 
-  if (
-    humanScore >= HUMAN_REJECT_SCORE &&
-    humanScore >= catScore &&
-    catScore < MIN_CAT_SCORE
-  ) {
+  // 2) Clear person (dominant, no cat signal) → reject.
+  if (humanScore >= HUMAN_REJECT_SCORE && humanScore > catScore) {
     return {
       ok: false,
       reason: "That's a person, not a cat — try a kitty photo!",
     };
   }
 
+  // 3) A specific non-cat animal/object that strongly dominates → reject.
   const nonCatHit = results.find(
     (r) =>
-      r.score > 0.22 &&
+      r.score >= NON_CAT_REJECT_SCORE &&
       labelLooksNonCat(r.label) &&
       !labelLooksLikeCat(r.label),
   );
-  if (nonCatHit && catScore < MIN_CAT_SCORE) {
+  if (nonCatHit) {
     return {
       ok: false,
       reason: `That looks like a ${friendlyLabel(nonCatHit.label)} — try a cat photo!`,
     };
   }
 
-  const top = results[0];
-  if (
-    top &&
-    top.score > 0.35 &&
-    !labelLooksLikeCat(top.label) &&
-    catScore < MIN_CAT_SCORE
-  ) {
-    return {
-      ok: false,
-      reason: `That looks like a ${friendlyLabel(top.label)} — try a cat photo!`,
-    };
-  }
-
-  if (catScore >= MIN_CAT_SCORE) {
-    return { ok: true, confidence: catScore, label: "cat" };
-  }
-
-  return {
-    ok: false,
-    reason: "We couldn't spot a cat — try a clearer photo of a kitty.",
-  };
+  // 4) Uncertain (weird/low-confidence labels like "fire screen") → allow.
+  //    The model isn't reliable enough to hard-block real cats on a guess.
+  return { ok: true, confidence: Math.max(catScore, 0.2), label: "cat" };
 }
 
 export type CatGuardResult =

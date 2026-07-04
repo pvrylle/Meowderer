@@ -20,6 +20,32 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+/**
+ * Pick a backend that produces correct math. Some mobile GPUs return
+ * constant/garbage output on WebGL (every image → same label), so we verify
+ * WebGL works and fall back to CPU when it doesn't.
+ */
+async function selectBackend(tf: typeof import("@tensorflow/tfjs")): Promise<void> {
+  try {
+    await tf.setBackend("webgl");
+    await tf.ready();
+
+    // Sanity check: sum of a known tensor must be finite and correct.
+    const probe = tf.tidy(() => tf.tensor1d([1, 2, 3, 4]).sum());
+    const value = (await probe.data())[0];
+    probe.dispose();
+
+    if (Number.isFinite(value) && Math.abs(value - 10) < 1e-3) {
+      return;
+    }
+  } catch {
+    // fall through to CPU
+  }
+
+  await tf.setBackend("cpu");
+  await tf.ready();
+}
+
 export async function getMobileNetClassifier(): Promise<MobileNetClassifier> {
   if (!classifierPromise) {
     classifierPromise = (async () => {
@@ -28,10 +54,10 @@ export async function getMobileNetClassifier(): Promise<MobileNetClassifier> {
         import("@tensorflow/tfjs"),
       ]);
 
-      await tf.setBackend("webgl");
-      await tf.ready();
+      await selectBackend(tf);
 
-      const model = await mobilenet.load({ version: 1, alpha: 1.0 });
+      // v2 is far more accurate than v1 — fixes cats getting mislabeled.
+      const model = await mobilenet.load({ version: 2, alpha: 1.0 });
 
       return async (input: string, options?: { top_k?: number }) => {
         const img = await loadImage(input);
