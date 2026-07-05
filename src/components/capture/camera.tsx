@@ -178,16 +178,8 @@ export function Camera({ onCapture }: { onCapture: (file: File) => void }) {
               </>
             ) : (
               <>
-                <button
-                  type="button"
-                  aria-label="Take photo"
-                  onClick={shoot}
-                  disabled={!ready}
-                  className="flex size-16 items-center justify-center rounded-2xl bg-primary text-white shadow-lg disabled:opacity-50"
-                >
-                  <CameraIcon className="size-7" strokeWidth={2.2} />
-                </button>
-                <CatButton type="button" variant="outline" size="sm" onClick={stopCamera}>
+                <ShutterButton onClick={shoot} disabled={!ready} />
+                <CatButton type="button" variant="ghost" size="sm" onClick={stopCamera}>
                   Back to gallery
                 </CatButton>
               </>
@@ -195,17 +187,7 @@ export function Camera({ onCapture }: { onCapture: (file: File) => void }) {
           </>
         ) : (
           <>
-            {!unavailable && (
-              <button
-                type="button"
-                aria-label="Take photo"
-                onClick={shoot}
-                disabled={!ready}
-                className="flex size-16 items-center justify-center rounded-2xl bg-primary text-white shadow-lg disabled:opacity-50"
-              >
-                <CameraIcon className="size-7" strokeWidth={2.2} />
-              </button>
-            )}
+            {!unavailable && <ShutterButton onClick={shoot} disabled={!ready} />}
             <CatButton
               type="button"
               variant={unavailable ? "primary" : "outline"}
@@ -220,5 +202,25 @@ export function Camera({ onCapture }: { onCapture: (file: File) => void }) {
         )}
       </div>
     </div>
+  );
+}
+
+function ShutterButton({
+  onClick,
+  disabled,
+}: {
+  onClick: () => void;
+  disabled: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label="Take photo"
+      onClick={onClick}
+      disabled={disabled}
+      className="group relative flex size-[74px] items-center justify-center rounded-full border-[3px] border-primary shadow-sm transition-transform active:scale-95 disabled:opacity-40"
+    >
+      <span className="size-[58px] rounded-full bg-primary transition-all duration-150 group-active:size-[50px]" />
+    </button>
   );
 }

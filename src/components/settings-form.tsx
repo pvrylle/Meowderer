@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, MapPin } from "lucide-react";
+import { ChevronLeft, Database, HardDrive, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -109,21 +109,29 @@ export function SettingsForm({
       <header className="flex items-center gap-3">
         <Link
           href="/profile"
-          className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground"
+          className="flex size-10 items-center justify-center rounded-full bg-muted text-muted-foreground transition-transform active:scale-95"
           aria-label="Back to profile"
         >
           <ChevronLeft className="size-5" />
         </Link>
-        <h1 className="text-2xl font-extrabold text-foreground">Settings</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
+          Settings
+        </h1>
       </header>
 
-      <section className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-6">
+      <section className="flex items-center gap-4 rounded-2xl bg-gradient-to-br from-primary/12 to-primary/5 p-4 ring-1 ring-primary/10">
         <UserAvatar
           name={displayName ?? "You"}
           avatarUrl={avatarUrl}
           size="md"
-          className="!size-20 text-lg"
+          className="!size-16 text-lg shadow-sm ring-2 ring-white"
         />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-lg font-bold text-foreground">
+            {displayName ?? "You"}
+          </p>
+          <p className="text-xs text-muted-foreground">Your profile picture</p>
+        </div>
         <input
           ref={avatarRef}
           type="file"
@@ -137,21 +145,24 @@ export function SettingsForm({
           loading={uploadingAvatar}
           onClick={() => avatarRef.current?.click()}
         >
-          Change avatar
+          Change
         </CatButton>
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
+          <MapPin className="size-4" />
           Location
         </h2>
         <button
           type="button"
           onClick={() => setGpsDefaultOn(!gpsDefaultOn)}
-          className="flex w-full items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4"
+          className="flex w-full items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4 transition-colors hover:bg-muted/30"
         >
           <span className="flex min-w-0 items-center gap-3">
-            <MapPin className="size-5 text-primary" />
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+              <MapPin className="size-5 text-primary" />
+            </span>
             <span className="text-left">
               <span className="block font-semibold text-foreground">
                 Tag location by default
@@ -166,7 +177,8 @@ export function SettingsForm({
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
+          <HardDrive className="size-4" />
           Storage
         </h2>
         <div className="rounded-2xl border border-border bg-card p-4">
@@ -211,16 +223,19 @@ export function SettingsForm({
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
+          <Database className="size-4" />
           Map data
         </h2>
-        <p className="text-sm text-muted-foreground">
-          Fill in city and country for older catches that have GPS but no place
-          name yet.
-        </p>
-        <CatButton variant="outline" block onClick={handleBackfill}>
-          Backfill place names
-        </CatButton>
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <p className="text-sm text-muted-foreground">
+            Fill in city and country for older catches that have GPS but no place
+            name yet.
+          </p>
+          <CatButton variant="outline" block className="mt-3" onClick={handleBackfill}>
+            Backfill place names
+          </CatButton>
+        </div>
       </section>
 
       <SettingsAccountSection />

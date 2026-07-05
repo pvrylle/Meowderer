@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, FileText, ShieldCheck, Trash2, UserCog } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -51,7 +51,8 @@ export function SettingsAccountSection() {
   return (
     <>
       <section className="space-y-3">
-        <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
+          <UserCog className="size-4" />
           Account
         </h2>
         <form
@@ -100,7 +101,8 @@ export function SettingsAccountSection() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-destructive/80">
+          <Trash2 className="size-4" />
           Delete account
         </h2>
         <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4">
@@ -131,8 +133,9 @@ export function SettingsAccountSection() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-          Legal & help
+        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
+          <FileText className="size-4" />
+          Legal &amp; help
         </h2>
         <div className="overflow-hidden rounded-2xl border border-border bg-card">
           <Link
@@ -157,7 +160,8 @@ export function SettingsAccountSection() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
+          <ShieldCheck className="size-4" />
           Privacy
         </h2>
         <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">

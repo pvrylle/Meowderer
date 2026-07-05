@@ -6,6 +6,7 @@ import { BrandMark } from "@/components/brand-mark";
 import { PreloadCaptureAssets } from "@/components/capture/preload-capture-assets";
 import { CatCard } from "@/components/cat-card";
 import { PawsInAreaSection } from "@/components/home/paws-in-area-section";
+import { StreakWeekCalendar } from "@/components/home/streak-week-calendar";
 import { DexPlaceholderCard } from "@/components/dex-placeholder-card";
 import { MascotEmpty } from "@/components/mascot-empty";
 import { CatButton } from "@/components/ui/cat-button";
@@ -92,6 +93,12 @@ export default async function HomePage() {
           </div>
         </div>
       </div>
+
+      {/* Streak week calendar */}
+      <StreakWeekCalendar
+        caughtAt={captures.map((c) => c.caught_at)}
+        streakCount={streakCount}
+      />
 
       {/* CTA */}
       <Link href="/catch" className="block">

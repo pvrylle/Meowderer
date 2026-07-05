@@ -114,21 +114,22 @@ export function PawsInAreaSection({ userId }: { userId: string }) {
   return (
     <section className="space-y-3">
       <div className="border-b border-border/50 pb-2.5">
-        <Link
-          href="/map?layer=cats"
-          className="group block rounded-lg transition-colors active:bg-muted/40"
-        >
-          <h2 className="text-base font-semibold tracking-tight text-foreground">
-            {loading
-              ? "Paws in your area"
-              : total === 0
+        <div className="group block rounded-lg transition-colors active:bg-muted/40">
+          <Link href="/map?layer=cats" className="block">
+            <h2 className="text-base font-semibold tracking-tight text-foreground">
+              {loading
                 ? "Paws in your area"
-                : `${total} cat${total === 1 ? "" : "s"} in your area`}
-          </h2>
+                : total === 0
+                  ? "Paws in your area"
+                  : `${total} cat${total === 1 ? "" : "s"} in your area`}
+            </h2>
+          </Link>
           {!loading && !needsLocation && !loadError && total > 0 && (
-            <p className="mt-0.5 text-xs text-muted-foreground group-hover:text-foreground/80">
-              {found} found · {locked} to unlock · within 15 km
-            </p>
+            <Link href="/map?layer=cats" className="block">
+              <p className="mt-0.5 text-xs text-muted-foreground group-hover:text-foreground/80">
+                {found} found · {locked} to unlock · within 15 km
+              </p>
+            </Link>
           )}
           {!loading && !needsLocation && !loadError && total === 0 && (
             <p className="mt-0.5 text-xs text-muted-foreground">
@@ -140,7 +141,7 @@ export function PawsInAreaSection({ userId }: { userId: string }) {
               Popular cats nearby — catch them to unlock
             </p>
           )}
-        </Link>
+        </div>
 
         {!loading && !needsLocation && featuredShelterCount > 0 && !loadError && (
           <p className="mt-2 text-xs text-muted-foreground">
