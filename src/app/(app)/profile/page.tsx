@@ -12,6 +12,7 @@ import {
 
 import { signOut } from "@/app/auth/actions";
 import { AchievementsGrid } from "@/components/achievements-grid";
+import { ShopEntry } from "@/components/shop/shop-entry";
 import { UserAvatar } from "@/components/user-avatar";
 import { CatButton } from "@/components/ui/cat-button";
 import {
@@ -203,6 +204,8 @@ export default async function ProfilePage() {
             </div>
             <ChevronRight className="size-5 text-muted-foreground" />
           </Link>
+
+          <ShopEntry points={xp.xp} />
         </div>
 
         {/* Recent achievements */}
