@@ -15,13 +15,14 @@ import { cn } from "@/lib/utils";
 
 type ProfileTab = "about" | "story" | "sightings" | "comments";
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({ label, value, helper }: { label: string; value: string; helper?: string }) {
   return (
-    <div className="rounded-2xl border border-border/50 bg-card p-4 shadow-sm">
+    <div className="min-h-[5rem] rounded-2xl border border-border/50 bg-card p-4 shadow-sm">
       <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-muted-foreground">
         {label}
       </p>
       <p className="mt-1 text-xl font-extrabold leading-none text-foreground">{value}</p>
+      {helper && <p className="mt-1 text-[10px] font-semibold text-muted-foreground">{helper}</p>}
     </div>
   );
 }
@@ -52,7 +53,7 @@ export function CatProfileTabs({
     [capture.caught_at],
   );
   const lastSeen = formatRelativeTime(album[0]?.caught_at ?? capture.caught_at);
-  const place = [capture.place_label, capture.city, capture.country].filter(Boolean).join(" · ");
+  const place = [capture.place_label, capture.city, capture.country].filter(Boolean).join(" - ");
   const tabs: { key: ProfileTab; label: string }[] = [
     { key: "about", label: "About" },
     { key: "story", label: "Story" },
@@ -61,7 +62,7 @@ export function CatProfileTabs({
   ];
 
   return (
-    <div className="relative z-10 mx-2 mt-3 flex min-h-0 flex-1 flex-col gap-4 pb-0">
+    <div className="relative z-10 mx-2 mt-3 flex flex-col gap-3 pb-3">
       <div className="flex justify-center gap-4 overflow-x-auto border-b border-border/40 px-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {tabs.map(({ key, label }) => {
           const active = tab === key;
@@ -88,10 +89,10 @@ export function CatProfileTabs({
         })}
       </div>
 
-      <div className={cn("flex min-h-0 flex-1 flex-col gap-3 pb-2", tab !== "about" && "hidden") }>
+      <div className={cn("flex flex-col gap-3", tab !== "about" && "hidden")}>
           <div className="grid grid-cols-2 gap-3">
             <StatCard label="Sightings" value={totalSightings.toLocaleString()} />
-            <StatCard label="Popularity" value={`${popularity}%`} />
+            <StatCard label="Popularity" value={`${popularity}%`} helper="Charm score" />
             <StatCard label="First seen" value={firstSeen} />
             <StatCard label="Last seen" value={lastSeen} />
           </div>
@@ -101,16 +102,9 @@ export function CatProfileTabs({
               <span className="text-sm font-medium text-foreground">{place}</span>
             </div>
           )}
-          <div className="mt-auto pt-1">
-            <CatDetailDock
-              capture={capture}
-              isSuperAdmin={isSuperAdmin}
-              nameLocked={nameLocked}
-            />
-          </div>
       </div>
 
-      <div className={cn("rounded-[1.5rem] border border-border/50 bg-card p-4 shadow-sm", tab !== "story" && "hidden") }>
+      <div className={cn("rounded-[1.5rem] border border-border/50 bg-card p-4 shadow-sm", tab !== "story" && "hidden")}>
           <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-muted-foreground">
             Story
           </p>
@@ -133,7 +127,7 @@ export function CatProfileTabs({
           </div>
       </div>
 
-      <div className={cn("rounded-[1.5rem] border border-border/50 bg-card p-4 shadow-sm", tab !== "sightings" && "hidden") }>
+      <div className={cn("rounded-[1.5rem] border border-border/50 bg-card p-4 shadow-sm", tab !== "sightings" && "hidden")}>
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-muted-foreground">
@@ -168,7 +162,7 @@ export function CatProfileTabs({
           </div>
       </div>
 
-      <div className={cn("space-y-3", tab !== "comments" && "hidden") }>
+      <div className={cn("space-y-3", tab !== "comments" && "hidden")}>
           <div className="rounded-[1.5rem] border border-border/50 bg-card p-4 shadow-sm">
             <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-muted-foreground">
               Comments
@@ -179,6 +173,12 @@ export function CatProfileTabs({
           </div>
           <NamePollCard capture={capture} poll={poll} isOwner={isOwner} />
       </div>
+
+      <CatDetailDock
+        capture={capture}
+        isSuperAdmin={isSuperAdmin}
+        nameLocked={nameLocked}
+      />
     </div>
   );
 }

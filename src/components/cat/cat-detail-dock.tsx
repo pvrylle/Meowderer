@@ -97,7 +97,11 @@ export function CatDetailDock({
   const [releaseConfirmOpen, setReleaseConfirmOpen] = useState(false);
   const [deleting, startDelete] = useTransition();
 
-  const hasMap = capture.lat != null && capture.lng != null;
+  const mapHref = capture.stray_cat_id
+    ? `/map?stray=${capture.stray_cat_id}`
+    : capture.lat != null && capture.lng != null
+      ? `/map?cat=${capture.id}`
+      : "/map";
   const name = capture.nickname?.trim() || "a stray cat";
   const place = [capture.city, capture.country].filter(Boolean).join(", ");
   const defaultBody = place
@@ -161,7 +165,7 @@ export function CatDetailDock({
   }
 
   return (
-    <footer className="relative z-20 shrink-0 rounded-t-[1.6rem] border border-border/70 bg-card/90 px-4 pt-2.5 pb-2 shadow-[0_-16px_40px_rgba(58,53,80,0.10)] backdrop-blur-xl">
+    <footer className="relative z-20 shrink-0 rounded-[1.35rem] border border-border/70 bg-card/95 px-4 py-3 shadow-[0_14px_34px_rgba(58,53,80,0.10)] backdrop-blur-xl">
       <div
         ref={cardRef}
         className="pointer-events-none fixed -left-[9999px] top-0 w-[17rem] rounded-3xl bg-background p-2"
@@ -170,7 +174,7 @@ export function CatDetailDock({
         <CaptureCard capture={capture} size="lg" />
       </div>
 
-      <div className="mb-2 text-center">
+      <div className="mb-2.5 text-center">
         <CatName
           id={capture.id}
           initialName={capture.nickname}
@@ -180,18 +184,9 @@ export function CatDetailDock({
       </div>
 
       <div className="grid grid-cols-4 gap-1">
-        {hasMap && (
-          <DockAction
-            label="Map"
-            href={
-              capture.stray_cat_id
-                ? `/map?stray=${capture.stray_cat_id}`
-                : `/map?cat=${capture.id}`
-            }
-          >
-            <MapPin className="size-5" />
-          </DockAction>
-        )}
+        <DockAction label="Map" href={mapHref}>
+          <MapPin className="size-5" />
+        </DockAction>
         <DockAction label="Share" onClick={shareCard} loading={sharingCard}>
           <Share2 className="size-5" />
         </DockAction>
