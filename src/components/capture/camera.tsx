@@ -159,21 +159,23 @@ export function Camera({ onCapture }: { onCapture: (file: File) => void }) {
       <div className="flex flex-col items-center gap-3">
         {prefersGalleryFirst ? (
           <>
-            <CatButton type="button" size="md" block onClick={openGallery}>
-              <ImagePlus className="size-5" />
-              Choose from gallery
-            </CatButton>
             {!useLiveCamera ? (
-              <CatButton
-                type="button"
-                variant="outline"
-                size="md"
-                block
-                onClick={() => setUseLiveCamera(true)}
-              >
-                <CameraIcon className="size-5" />
-                Use camera instead
-              </CatButton>
+              <>
+                <CatButton type="button" size="md" block onClick={openGallery}>
+                  <ImagePlus className="size-5" />
+                  Choose from gallery
+                </CatButton>
+                <CatButton
+                  type="button"
+                  variant="outline"
+                  size="md"
+                  block
+                  onClick={() => setUseLiveCamera(true)}
+                >
+                  <CameraIcon className="size-5" />
+                  Use camera instead
+                </CatButton>
+              </>
             ) : (
               <>
                 <button

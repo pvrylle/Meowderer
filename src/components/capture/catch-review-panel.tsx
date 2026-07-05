@@ -29,6 +29,44 @@ import { cn } from "@/lib/utils";
 
 type LocationStatus = "idle" | "loading" | "ready" | "denied";
 
+function locationCopy(status: LocationStatus, errorCode?: string | null) {
+  if (status === "ready") {
+    return {
+      title: "Location ready",
+      detail: "Your catch will be saved at this spot.",
+    };
+  }
+  if (status === "loading" || status === "idle") {
+    return {
+      title: "Getting location…",
+      detail: "Required to save — allow when your browser asks.",
+    };
+  }
+  if (errorCode === "denied") {
+    return {
+      title: "Allow location for this site",
+      detail:
+        "Phone GPS can be on but the browser still needs permission. Tap Retry, or allow location in site settings (lock icon in the address bar).",
+    };
+  }
+  if (errorCode === "timeout") {
+    return {
+      title: "Location timed out",
+      detail: "Try again near a window or outdoors, then tap Retry.",
+    };
+  }
+  if (errorCode === "unavailable") {
+    return {
+      title: "Location unavailable",
+      detail: "Check that location services are on, then tap Retry.",
+    };
+  }
+  return {
+    title: "Could not get location",
+    detail: "Tap Retry or check browser location settings for this site.",
+  };
+}
+
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
     <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground sm:text-[11px]">
@@ -56,6 +94,7 @@ export function CatchReviewPanel({
   shareLocation,
   onShareLocationChange,
   locationStatus,
+  locationErrorCode,
   onRetryLocation,
   canSave,
   saving,
@@ -80,6 +119,7 @@ export function CatchReviewPanel({
   shareLocation: boolean;
   onShareLocationChange: (value: boolean) => void;
   locationStatus: LocationStatus;
+  locationErrorCode?: string | null;
   onRetryLocation: () => void;
   canSave: boolean;
   saving: boolean;
@@ -88,6 +128,7 @@ export function CatchReviewPanel({
 }) {
   const coatOverridden =
     classification != null && selectedCoat !== classification.coat_type;
+  const locationText = locationCopy(locationStatus, locationErrorCode);
 
   return (
     <section className="relative z-10 flex h-full min-h-0 flex-col overflow-hidden rounded-t-[1.25rem] border border-b-0 border-border/80 bg-card shadow-[0_-8px_32px_rgba(58,53,80,0.12)] sm:rounded-t-[1.75rem]">
@@ -231,7 +272,7 @@ export function CatchReviewPanel({
           />
         </div>
 
-        {/* Privacy */}
+        {/* Privacy + location (single section — location is required; checkbox is public map only) */}
         <div className="space-y-2 rounded-xl border border-border/60 p-2.5 sm:rounded-2xl sm:p-3">
           <FieldLabel>Privacy</FieldLabel>
           <label className="flex cursor-pointer items-center justify-between gap-2 text-sm">
@@ -244,7 +285,7 @@ export function CatchReviewPanel({
             />
           </label>
           <label className="flex cursor-pointer items-center justify-between gap-2 text-sm">
-            <span className="text-muted-foreground">Share location on map</span>
+            <span className="text-muted-foreground">Show pin on public map</span>
             <input
               type="checkbox"
               checked={shareLocation}
@@ -252,61 +293,54 @@ export function CatchReviewPanel({
               className="size-4 accent-primary"
             />
           </label>
-        </div>
 
-        {/* Location */}
-        <div
-          className={cn(
-            "flex items-center gap-2.5 rounded-xl border px-2.5 py-2.5 sm:gap-3 sm:rounded-2xl sm:px-3.5 sm:py-3",
-            locationStatus === "ready" && "border-green/40 bg-green/10",
-            locationStatus === "denied" && "border-destructive/35 bg-destructive/5",
-            (locationStatus === "loading" || locationStatus === "idle") &&
-              "border-border bg-muted/30",
-          )}
-        >
-          <span
+          <div
             className={cn(
-              "flex size-8 shrink-0 items-center justify-center rounded-full sm:size-9",
-              locationStatus === "ready" && "bg-green/25 text-green",
-              locationStatus === "denied" && "bg-destructive/15 text-destructive",
+              "mt-1 flex items-center gap-2.5 rounded-xl border px-2.5 py-2.5 sm:gap-3 sm:px-3 sm:py-2.5",
+              locationStatus === "ready" && "border-green/40 bg-green/10",
+              locationStatus === "denied" && "border-destructive/35 bg-destructive/5",
               (locationStatus === "loading" || locationStatus === "idle") &&
-                "bg-muted text-muted-foreground",
+                "border-border bg-muted/30",
             )}
           >
-            {locationStatus === "loading" || locationStatus === "idle" ? (
-              <Loader2 className="size-3.5 animate-spin sm:size-4" />
-            ) : locationStatus === "ready" ? (
-              <CheckCircle2 className="size-3.5 sm:size-4" />
-            ) : (
-              <XCircle className="size-3.5 sm:size-4" />
-            )}
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-foreground sm:text-sm">
-              {locationStatus === "ready" && "Location pinned"}
-              {locationStatus === "denied" && "Location blocked"}
-              {(locationStatus === "loading" || locationStatus === "idle") &&
-                "Finding you…"}
-            </p>
-            <p className="text-[10px] text-muted-foreground sm:text-xs">
-              {locationStatus === "ready" && "Shows on your map."}
-              {locationStatus === "denied" && "Allow location to save."}
-              {(locationStatus === "loading" || locationStatus === "idle") &&
-                "Required to save."}
-            </p>
-          </div>
-          {locationStatus === "denied" && (
-            <button
-              type="button"
-              onClick={onRetryLocation}
-              className="shrink-0 rounded-full bg-card px-2.5 py-1 text-[10px] font-bold text-primary shadow-sm sm:px-3 sm:py-1.5 sm:text-xs"
+            <span
+              className={cn(
+                "flex size-8 shrink-0 items-center justify-center rounded-full sm:size-9",
+                locationStatus === "ready" && "bg-green/25 text-green",
+                locationStatus === "denied" && "bg-destructive/15 text-destructive",
+                (locationStatus === "loading" || locationStatus === "idle") &&
+                  "bg-muted text-muted-foreground",
+              )}
             >
-              Retry
-            </button>
-          )}
-          {locationStatus === "ready" && (
-            <MapPin className="size-3.5 shrink-0 text-green opacity-70 sm:size-4" />
-          )}
+              {locationStatus === "loading" || locationStatus === "idle" ? (
+                <Loader2 className="size-3.5 animate-spin sm:size-4" />
+              ) : locationStatus === "ready" ? (
+                <CheckCircle2 className="size-3.5 sm:size-4" />
+              ) : (
+                <XCircle className="size-3.5 sm:size-4" />
+              )}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-foreground sm:text-sm">
+                {locationText.title}
+              </p>
+              <p className="text-[10px] leading-snug text-muted-foreground sm:text-xs">
+                {locationText.detail}
+              </p>
+            </div>
+            {locationStatus === "denied" && (
+              <button
+                type="button"
+                onClick={onRetryLocation}
+                className="shrink-0 rounded-full bg-card px-2.5 py-1 text-[10px] font-bold text-primary shadow-sm sm:px-3 sm:py-1.5 sm:text-xs"
+              >
+                Retry
+              </button>
+            )}
+            {locationStatus === "ready" && (
+              <MapPin className="size-3.5 shrink-0 text-green opacity-70 sm:size-4" />
+            )}
+          </div>
         </div>
       </div>
 
@@ -331,7 +365,13 @@ export function CatchReviewPanel({
           disabled={!canSave || saving}
           className="rounded-xl sm:!h-12 sm:rounded-2xl sm:text-sm"
         >
-          {saving ? "Saving…" : canSave ? "Save catch" : "Need location"}
+          {saving
+            ? "Saving…"
+            : canSave
+              ? "Save catch"
+              : locationStatus === "loading" || locationStatus === "idle"
+                ? "Getting location…"
+                : "Need location"}
         </CatButton>
       </div>
     </section>

@@ -30,7 +30,7 @@ import { uploadCapture } from "@/lib/capture/upload";
 import { yieldToMain } from "@/lib/capture/yield-to-main";
 import { coatToRarity, type CoatType } from "@/lib/coat-rarity";
 import { DEMO_COOKIE } from "@/lib/demo";
-import { getCurrentPosition, type Coords } from "@/lib/geo";
+import { getCurrentPosition, GeoError, type Coords } from "@/lib/geo";
 import { enqueueCapture } from "@/lib/offline-capture-queue";
 import type { CatTraits, Rarity } from "@/lib/supabase/types";
 import {
@@ -76,6 +76,7 @@ export default function CatchPageClient() {
   const [shareLocation, setShareLocation] = useState(false);
   const [coords, setCoords] = useState<Coords | null>(null);
   const [locationStatus, setLocationStatus] = useState<LocationStatus>("idle");
+  const [locationErrorCode, setLocationErrorCode] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [coatClassifying, setCoatClassifying] = useState(false);
   const [embedding, setEmbedding] = useState<number[] | null>(null);
@@ -136,14 +137,16 @@ export default function CatchPageClient() {
 
   const requestLocation = useCallback(async (): Promise<Coords | null> => {
     setLocationStatus("loading");
+    setLocationErrorCode(null);
     try {
       const position = await getCurrentPosition();
       setCoords(position);
       setLocationStatus("ready");
       return position;
-    } catch {
+    } catch (err) {
       setCoords(null);
       setLocationStatus("denied");
+      setLocationErrorCode(err instanceof GeoError ? err.code : "unknown");
       return null;
     }
   }, []);
@@ -229,6 +232,7 @@ export default function CatchPageClient() {
     setCatCheckStatus("idle");
     setCatCheckReason(null);
     setLocationStatus("idle");
+    setLocationErrorCode(null);
     setPhase("capture");
   }
 
@@ -558,6 +562,7 @@ export default function CatchPageClient() {
               shareLocation={shareLocation}
               onShareLocationChange={setShareLocation}
               locationStatus={locationStatus}
+              locationErrorCode={locationErrorCode}
               onRetryLocation={() => void requestLocation()}
               canSave={canSave}
               saving={saving}
