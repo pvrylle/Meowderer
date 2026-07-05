@@ -1,12 +1,11 @@
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 
 import { CatDetailCardStage } from "@/components/cat/cat-detail-card-stage";
-import { CatDetailDock } from "@/components/cat/cat-detail-dock";
-import { NamePollCard } from "@/components/name-poll-card";
+import { CatDetailHeaderActions } from "@/components/cat/cat-detail-header-actions";
+import { CatProfileTabs } from "@/components/cat/cat-profile-tabs";
 import type { NamePollWithCounts } from "@/app/(app)/cat/[id]/poll-actions";
-import { dexNumber, pickBiome } from "@/lib/cat-stats";
+import { pickBiome } from "@/lib/cat-stats";
 import type { StraySighting } from "@/lib/stray-cats";
 import type { Capture } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
@@ -40,81 +39,44 @@ export function CatDetailView({
   nameLocked: boolean;
 }) {
   const biome = pickBiome(capture);
-  const dex = dexNumber(capture.id);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <header className="relative z-10 flex shrink-0 items-center justify-between px-4 py-2">
+    <div className="relative flex min-h-full flex-1 flex-col overflow-visible bg-gradient-to-b from-background via-background/95 to-muted/25 pb-0">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -left-10 top-10 size-36 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute right-[-2rem] top-32 size-44 rounded-full bg-secondary/35 blur-3xl" />
+        <div className="absolute bottom-24 left-1/2 size-52 -translate-x-1/2 rounded-full bg-rare/10 blur-3xl" />
+      </div>
+
+      <header className="sticky top-0 z-30 flex shrink-0 items-center justify-between border-b border-border/25 bg-background/55 px-4 pb-2 pt-3 backdrop-blur-2xl">
         <Link
           href="/home"
           aria-label="Back to collection"
-          className="flex size-9 items-center justify-center rounded-full bg-card/90 text-muted-foreground shadow-sm backdrop-blur-sm"
+          className="flex size-10 items-center justify-center rounded-full border border-border/60 bg-card/85 text-muted-foreground shadow-[0_8px_24px_rgba(58,53,80,0.08)] backdrop-blur-xl transition-transform active:scale-95"
         >
           <ArrowLeft className="size-5" />
         </Link>
-        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          Tap to flip
-        </span>
-        <span className="rounded-full bg-card/90 px-2.5 py-1 text-[11px] font-bold text-muted-foreground shadow-sm backdrop-blur-sm">
-          {dex}
-        </span>
+        <CatDetailHeaderActions
+          shareTitle={capture.nickname?.trim() || "Meowderer cat"}
+          shareText={`Check out ${capture.nickname?.trim() || "this cat"} on Meowderer.`}
+        />
       </header>
 
       <CatDetailCardStage
         capture={capture}
-        className={cn("bg-gradient-to-b", BIOME_HERO[biome])}
+        className={cn("mx-2 mt-1", BIOME_HERO[biome])}
       />
 
-      <div className="mx-4 mb-2 space-y-1 text-center text-sm text-muted-foreground">
-        {uploaderUsername && (
-          <p>
-            Spotted by{" "}
-            <span className="font-semibold text-foreground">@{uploaderUsername}</span>
-          </p>
-        )}
-        {(capture.place_label || capture.city) && (
-          <p>
-            {[capture.place_label, capture.city, capture.country]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
-        )}
-      </div>
-
-      {album.length > 0 && (
-        <section className="mx-4 mb-3">
-          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-            Others who met this cat
-          </p>
-          <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {album.map((s) => (
-              <div
-                key={s.id}
-                className="w-16 shrink-0 overflow-hidden rounded-xl border border-border bg-card"
-              >
-                <div className="relative aspect-square bg-muted">
-                  <Image
-                    src={s.sticker_url}
-                    alt=""
-                    fill
-                    className="object-contain p-0.5"
-                    sizes="64px"
-                    unoptimized
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <NamePollCard capture={capture} poll={poll} isOwner={isOwner} />
-
-      <CatDetailDock
+      <CatProfileTabs
         capture={capture}
+        album={album}
+        poll={poll}
+        isOwner={isOwner}
+        uploaderUsername={uploaderUsername}
         isSuperAdmin={isSuperAdmin}
         nameLocked={nameLocked}
       />
+
     </div>
   );
 }

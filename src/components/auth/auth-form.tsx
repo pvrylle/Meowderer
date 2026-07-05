@@ -69,14 +69,16 @@ export function AuthForm({
           <BrandMark
             variant="logo"
             priority
-            className={cn(
-              "auth-logo w-[min(7rem,52vw)] sm:w-[min(8rem,58vw)]",
-              mode === "signup" && "w-[min(5.75rem,44vw)] sm:w-[min(6.5rem,48vw)]",
-            )}
+            className="auth-logo w-[min(7rem,52vw)] sm:w-[min(8rem,58vw)]"
           />
           {mode === "signin" && (
             <p className="text-sm text-muted-foreground max-[600px]:text-xs">
               Welcome back, cat catcher.
+            </p>
+          )}
+          {mode === "signup" && (
+            <p className="text-sm text-muted-foreground max-[600px]:text-xs">
+              Create an account, cat catcher.
             </p>
           )}
         </div>
