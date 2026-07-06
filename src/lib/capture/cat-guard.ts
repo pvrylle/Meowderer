@@ -6,14 +6,17 @@ import {
   type MobileNetClassifier,
 } from "./mobilenet-classifier";
 
-/** Any cat-ish label at or above this in the top-k accepts the photo. */
-const MIN_CAT_SCORE = 0.03;
+/** Floor for treating a cat-ish label as a real signal (not model noise). */
+const MIN_CAT_SCORE = 0.05;
 
-/** A person must clearly dominate (and no cat signal) to be rejected. */
+/** A cat label at/above this is a confident accept on its own. */
+const STRONG_CAT_SCORE = 0.15;
+
+/** A person label at/above this produces the "that's a person" message. */
 const HUMAN_REJECT_SCORE = 0.4;
 
-/** A specific non-cat animal/object must strongly dominate to be rejected. */
-const NON_CAT_REJECT_SCORE = 0.55;
+/** A known non-cat label at/above this names the thing in the reject message. */
+const NON_CAT_REJECT_SCORE = 0.5;
 
 const CAT_KEYWORDS = [
   "tabby",
@@ -141,29 +144,39 @@ function evaluateResults(
 ): CatGuardResult {
   const catScore = bestScore(results, labelLooksLikeCat);
   const humanScore = bestScore(results, labelLooksHuman);
-
-  // 1) Any cat signal in the top-k → accept. MobileNet often ranks the right
-  //    cat class a little lower when the background is plain, so keep this loose.
-  const catHit = results.find(
-    (r) => r.score >= MIN_CAT_SCORE && labelLooksLikeCat(r.label),
+  const nonCatScore = bestScore(
+    results,
+    (label) => labelLooksNonCat(label) && !labelLooksLikeCat(label),
   );
-  if (catHit) {
+  const dominantNonCat = Math.max(humanScore, nonCatScore);
+
+  // 1) Accept only when there is a genuine cat signal: either the cat label is
+  //    confident on its own, or it leads the top-k over any non-cat label.
+  //    MobileNet keeps cat scores modest on plain backgrounds, so allowing the
+  //    "leading signal" case covers real cats without letting non-cats through.
+  if (
+    catScore >= STRONG_CAT_SCORE ||
+    (catScore >= MIN_CAT_SCORE && catScore >= dominantNonCat)
+  ) {
+    const catHit = results.find((r) => labelLooksLikeCat(r.label));
     return {
       ok: true,
-      confidence: catHit.score,
-      label: friendlyLabel(catHit.label),
+      confidence: catScore,
+      label: catHit ? friendlyLabel(catHit.label) : "cat",
     };
   }
 
-  // 2) Clear person (dominant, no cat signal) → reject.
-  if (humanScore >= HUMAN_REJECT_SCORE && humanScore > catScore) {
+  // 2) No convincing cat signal → reject. Tailor the message when we can tell
+  //    what the photo actually is (ImageNet has no "person" class, so this only
+  //    fires for the rare human-adjacent labels; dogs/objects fall to case 4).
+  if (humanScore >= HUMAN_REJECT_SCORE && humanScore >= nonCatScore) {
     return {
       ok: false,
       reason: "That's a person, not a cat — try a kitty photo!",
     };
   }
 
-  // 3) A specific non-cat animal/object that strongly dominates → reject.
+  // 3) A specific, strongly-dominant non-cat animal/object → name it.
   const nonCatHit = results.find(
     (r) =>
       r.score >= NON_CAT_REJECT_SCORE &&
@@ -177,9 +190,12 @@ function evaluateResults(
     };
   }
 
-  // 4) Uncertain (weird/low-confidence labels like "fire screen") → allow.
-  //    The model isn't reliable enough to hard-block real cats on a guess.
-  return { ok: true, confidence: Math.max(catScore, 0.2), label: "cat" };
+  // 4) Nothing cat-like in the predictions. Previously this fell through to
+  //    "accept", which let people, dogs, and objects become stickers. Reject.
+  return {
+    ok: false,
+    reason: "We couldn't spot a cat in that photo — try a clear shot of the kitty.",
+  };
 }
 
 export type CatGuardResult =
