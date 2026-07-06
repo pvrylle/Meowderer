@@ -46,18 +46,20 @@ function DockAction({
   children: React.ReactNode;
 }) {
   const className = cn(
-    "flex flex-1 flex-col items-center justify-center gap-1 rounded-2xl py-2.5 text-center transition-colors active:scale-[0.97]",
+    "flex flex-1 flex-col items-center justify-center gap-1 rounded-2xl px-1.5 py-2 text-center transition-all active:scale-[0.97]",
     destructive
       ? "text-destructive active:bg-destructive/10"
-      : "text-muted-foreground active:bg-muted",
+      : "text-muted-foreground hover:bg-muted/60 active:bg-muted",
     loading && "pointer-events-none opacity-60",
   );
 
   if (href) {
     return (
       <Link href={href} aria-label={label} className={className}>
-        {children}
-        <span className="text-[10px] font-bold">{label}</span>
+        <span className="flex size-9 items-center justify-center rounded-2xl bg-background/70 shadow-sm ring-1 ring-border/60">
+          {children}
+        </span>
+        <span className="text-[10px] font-bold tracking-wide">{label}</span>
       </Link>
     );
   }
@@ -70,8 +72,10 @@ function DockAction({
       disabled={loading}
       className={className}
     >
-      {children}
-      <span className="text-[10px] font-bold">{label}</span>
+      <span className="flex size-9 items-center justify-center rounded-2xl bg-background/70 shadow-sm ring-1 ring-border/60">
+        {children}
+      </span>
+      <span className="text-[10px] font-bold tracking-wide">{label}</span>
     </button>
   );
 }
@@ -93,7 +97,11 @@ export function CatDetailDock({
   const [releaseConfirmOpen, setReleaseConfirmOpen] = useState(false);
   const [deleting, startDelete] = useTransition();
 
-  const hasMap = capture.lat != null && capture.lng != null;
+  const mapHref = capture.stray_cat_id
+    ? `/map?stray=${capture.stray_cat_id}`
+    : capture.lat != null && capture.lng != null
+      ? `/map?cat=${capture.id}`
+      : "/map";
   const name = capture.nickname?.trim() || "a stray cat";
   const place = [capture.city, capture.country].filter(Boolean).join(", ");
   const defaultBody = place
@@ -157,7 +165,7 @@ export function CatDetailDock({
   }
 
   return (
-    <footer className="relative z-20 shrink-0 rounded-t-[1.75rem] border border-border/80 bg-card px-4 pt-2.5 shadow-[0_-8px_28px_rgba(58,53,80,0.08)] pb-[var(--nav-clearance)]">
+    <footer className="relative z-20 shrink-0 rounded-[1.35rem] border border-border/70 bg-card/95 px-4 py-3 shadow-[0_14px_34px_rgba(58,53,80,0.10)] backdrop-blur-xl">
       <div
         ref={cardRef}
         className="pointer-events-none fixed -left-[9999px] top-0 w-[17rem] rounded-3xl bg-background p-2"
@@ -166,7 +174,7 @@ export function CatDetailDock({
         <CaptureCard capture={capture} size="lg" />
       </div>
 
-      <div className="mb-2 text-center">
+      <div className="mb-2.5 text-center">
         <CatName
           id={capture.id}
           initialName={capture.nickname}
@@ -175,19 +183,10 @@ export function CatDetailDock({
         />
       </div>
 
-      <div className="flex gap-1.5">
-        {hasMap && (
-          <DockAction
-            label="Map"
-            href={
-              capture.stray_cat_id
-                ? `/map?stray=${capture.stray_cat_id}`
-                : `/map?cat=${capture.id}`
-            }
-          >
-            <MapPin className="size-5" />
-          </DockAction>
-        )}
+      <div className="grid grid-cols-4 gap-1">
+        <DockAction label="Map" href={mapHref}>
+          <MapPin className="size-5" />
+        </DockAction>
         <DockAction label="Share" onClick={shareCard} loading={sharingCard}>
           <Share2 className="size-5" />
         </DockAction>

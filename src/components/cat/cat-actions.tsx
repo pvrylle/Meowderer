@@ -42,8 +42,10 @@ export function CatName({
   if (!editing) {
     return (
       <div className="flex flex-col items-center gap-1">
-        <div className="flex items-center justify-center gap-2">
-          <h1 className="text-2xl font-extrabold text-foreground">{display}</h1>
+        <div className="relative flex min-h-8 w-full items-start justify-center px-10">
+          <h1 className="max-w-full truncate text-center text-2xl font-extrabold leading-tight text-foreground">
+            {display}
+          </h1>
           {canEdit && (
             <button
               type="button"
@@ -52,7 +54,7 @@ export function CatName({
                 setName(initialName ?? "");
                 setEditing(true);
               }}
-              className="text-muted-foreground"
+              className="absolute right-0 top-0 flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
             >
               <Pencil className="size-4" />
             </button>
@@ -71,7 +73,7 @@ export function CatName({
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex w-full items-center gap-2">
       <Input
         value={name}
         onChange={(e) => setName(e.target.value)}

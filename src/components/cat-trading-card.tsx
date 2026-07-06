@@ -280,7 +280,7 @@ export function CatTradingCard({
     <div
       className={cn(
         "relative",
-        isTcg && "aspect-[5/7] w-[17.5rem]",
+        isTcg && "aspect-[5/7] w-[22rem] max-w-full",
         className,
       )}
     >

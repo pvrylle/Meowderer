@@ -75,7 +75,7 @@ export function CardPreviewButton({
       onClick={onClick}
       aria-label="View card larger"
       className={cn(
-        "flex items-center gap-1.5 rounded-full bg-card/90 px-3 py-1.5 text-[10px] font-semibold text-muted-foreground shadow-sm backdrop-blur-sm transition-colors active:bg-card",
+        "inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card/90 px-3.5 py-1.5 text-[10px] font-semibold text-muted-foreground shadow-[0_8px_24px_rgba(58,53,80,0.08)] backdrop-blur-xl transition-all hover:text-foreground active:scale-95",
         className,
       )}
     >
