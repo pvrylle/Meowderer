@@ -139,7 +139,7 @@ function bestScore(
   return best;
 }
 
-function evaluateResults(
+export function evaluateResults(
   results: { label: string; score: number }[],
 ): CatGuardResult {
   const catScore = bestScore(results, labelLooksLikeCat);
