@@ -129,3 +129,114 @@ export async function deleteCapture(id: string): Promise<void> {
   revalidatePath("/profile");
   redirect("/catdex");
 }
+
+const updatePrivacySchema = z.object({
+  captureId: z.string().uuid(),
+  field: z.enum(["share_photo", "share_location"]),
+  value: z.boolean(),
+});
+
+export async function updatePrivacy(input: unknown): Promise<ActionResult> {
+  if (await isDemoSession()) {
+    return { success: false, error: "Changes aren't saved in demo mode." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "You must be signed in." };
+
+  const parsed = updatePrivacySchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "Invalid request." };
+
+  const { captureId, field, value } = parsed.data;
+
+  const { data: capture } = await supabase
+    .from("captures")
+    .select("user_id")
+    .eq("id", captureId)
+    .maybeSingle();
+
+  if (!capture) return { success: false, error: "Cat not found." };
+  if (capture.user_id !== user.id) {
+    return { success: false, error: "Unauthorized." };
+  }
+
+  const updateData = field === "share_photo" 
+    ? { share_photo: value } 
+    : { share_location: value };
+
+  const { error } = await supabase
+    .from("captures")
+    .update(updateData)
+    .eq("id", captureId);
+
+  if (error) return { success: false, error: "Could not update privacy." };
+
+  revalidatePath(`/cat/${captureId}`);
+  return { success: true };
+}
+
+const toggleFavoriteSchema = z.object({
+  captureId: z.string().uuid(),
+});
+
+export async function toggleFavorite(
+  input: unknown,
+): Promise<ActionResult & { isFavorited?: boolean }> {
+  if (await isDemoSession()) {
+    return { success: false, error: "Favorites aren't saved in demo mode." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Sign in to save favorites" };
+
+  const parsed = toggleFavoriteSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "Invalid request" };
+
+  const { captureId } = parsed.data;
+
+  const { data: existing, error: fetchError } = await supabase
+    .from("user_cat_favorites")
+    .select("capture_id")
+    .eq("user_id", user.id)
+    .eq("capture_id", captureId)
+    .maybeSingle();
+
+  if (fetchError) {
+    console.error("[toggleFavorite] fetch error:", fetchError.message, fetchError.code);
+    return { success: false, error: "Could not update favorites." };
+  }
+
+  if (existing) {
+    const { error } = await supabase
+      .from("user_cat_favorites")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("capture_id", captureId);
+
+    if (error) {
+      console.error("[toggleFavorite] delete error:", error.message);
+      return { success: false, error: "Could not update favorites." };
+    }
+
+    revalidatePath(`/cat/${captureId}`);
+    return { success: true, isFavorited: false };
+  } else {
+    const { error } = await supabase
+      .from("user_cat_favorites")
+      .insert({ user_id: user.id, capture_id: captureId });
+
+    if (error) {
+      console.error("[toggleFavorite] insert error:", error.message);
+      return { success: false, error: "Could not update favorites." };
+    }
+
+    revalidatePath(`/cat/${captureId}`);
+    return { success: true, isFavorited: true };
+  }
+}
