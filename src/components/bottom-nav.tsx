@@ -2,23 +2,26 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Camera, Compass, Home, MessageCircle, User } from "lucide-react";
+import { BookOpen, Camera, Compass, Home, User } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 const LEFT_ITEMS = [
   { href: "/home", icon: Home, label: "Home" },
-  { href: "/map", icon: Compass, label: "Map" },
+  { href: "/catdex", icon: BookOpen, label: "CatDex" },
 ] as const;
 
 const RIGHT_ITEMS = [
-  { href: "/community", icon: MessageCircle, label: "Community" },
+  { href: "/map", icon: Compass, label: "Map" },
   { href: "/profile", icon: User, label: "Profile" },
 ] as const;
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/home") {
-    return pathname === "/home" || pathname === "/catdex" || pathname.startsWith("/catdex/");
+    return pathname === "/home";
+  }
+  if (href === "/catdex") {
+    return pathname === "/catdex" || pathname.startsWith("/catdex/") || pathname.startsWith("/cat/");
   }
   if (href === "/profile") {
     return (

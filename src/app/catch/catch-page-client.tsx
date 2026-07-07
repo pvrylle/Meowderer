@@ -1,9 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { RotateCcw, X, Check, Loader2, Cat } from "lucide-react";
+import { RotateCcw, X, Check, Loader2, Cat, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 import { persistNewAchievements } from "@/components/achievement-session-toasts";
@@ -34,7 +35,10 @@ import { getCurrentPosition, GeoError, type Coords } from "@/lib/geo";
 import type { CatTraits } from "@/lib/supabase/types";
 import {
   fetchNearbyStrayCats,
+  fetchStrayHint,
   findStrayMatches,
+  verifyStrayMatch,
+  type StrayHint,
   type StrayMatch,
 } from "@/lib/capture/match-stray-cat";
 import { computeImageEmbedding } from "@/lib/capture/image-embedding";
@@ -53,7 +57,7 @@ type LocationStatus = "idle" | "loading" | "ready" | "denied";
 
 type CatCheckStatus = "idle" | "checking" | "passed" | "failed";
 
-export default function CatchPageClient() {
+export default function CatchPageClient({ prelinkedStrayId = null }: { prelinkedStrayId?: string | null }) {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("capture");
 
@@ -79,8 +83,11 @@ export default function CatchPageClient() {
   const [coatClassifying, setCoatClassifying] = useState(false);
   const [embedding, setEmbedding] = useState<number[] | null>(null);
   const [strayMatch, setStrayMatch] = useState<StrayMatch[] | null>(null);
-  const [confirmedStrayId, setConfirmedStrayId] = useState<string | null>(null);
-  const [skipMatch, setSkipMatch] = useState(false);
+  // If a stray ID was passed via ?stray=, pre-confirm it so the match dialog
+  // is skipped and the catch is directly linked to that stray.
+  const [confirmedStrayId, setConfirmedStrayId] = useState<string | null>(prelinkedStrayId);
+  const [skipMatch, setSkipMatch] = useState(prelinkedStrayId !== null);
+  const [strayHint, setStrayHint] = useState<StrayHint | null>(null);
   const [catCheckStatus, setCatCheckStatus] = useState<CatCheckStatus>("idle");
   const [catCheckReason, setCatCheckReason] = useState<string | null>(null);
 
@@ -116,6 +123,13 @@ export default function CatchPageClient() {
   useEffect(() => {
     void preloadCaptureAssets().catch(() => undefined);
   }, []);
+
+  // Fetch the hint data for a pre-linked stray so we can show the user
+  // what cat they're hunting and run proximity + similarity verification.
+  useEffect(() => {
+    if (!prelinkedStrayId) return;
+    void fetchStrayHint(prelinkedStrayId).then(setStrayHint);
+  }, [prelinkedStrayId]);
 
   useEffect(() => {
     if (phase === "preview") {
@@ -228,8 +242,8 @@ export default function CatchPageClient() {
     setCoords(null);
     setEmbedding(null);
     setStrayMatch(null);
-    setConfirmedStrayId(null);
-    setSkipMatch(false);
+    setConfirmedStrayId(prelinkedStrayId);
+    setSkipMatch(prelinkedStrayId !== null);
     setCatCheckStatus("idle");
     setCatCheckReason(null);
     setLocationStatus("idle");
@@ -376,6 +390,28 @@ export default function CatchPageClient() {
 
     setSaving(true);
 
+    // When catching a pre-linked stray, verify GPS proximity + embedding
+    // similarity before allowing the save. This ensures the user actually
+    // photographed the right cat at the right location.
+    if (prelinkedStrayId && strayHint) {
+      const vec = embedding ?? (await computeImageEmbedding(processed.sticker));
+      setEmbedding(vec);
+
+      if (location) {
+        const verify = verifyStrayMatch(strayHint, vec, location.lat, location.lng);
+        if (!verify.ok) {
+          toast.error(verify.reason);
+          setSaving(false);
+          return;
+        }
+      } else {
+        // No GPS at all — GPS proximity is required for pre-linked catches.
+        toast.error("Location is needed to verify you found the right cat. Please enable GPS and try again.");
+        setSaving(false);
+        return;
+      }
+    }
+
     // Stray-cat matching needs coordinates, so only run it when we have them.
     if (location && !skipMatch && !confirmedStrayId) {
       try {
@@ -447,6 +483,50 @@ export default function CatchPageClient() {
         </h1>
         <span className="size-10" />
       </header>
+
+      {/* Pre-linked stray hint card */}
+      {prelinkedStrayId && phase !== "review" && (
+        <div className="mx-3 mb-1 flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-3">
+          {/* Blurred sticker thumbnail */}
+          <div className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-muted">
+            {strayHint?.cover_sticker_url ? (
+              <Image
+                src={strayHint.cover_sticker_url}
+                alt=""
+                fill
+                className="scale-110 object-contain p-1 blur-sm"
+                sizes="56px"
+                unoptimized
+              />
+            ) : (
+              <span className="flex h-full w-full items-center justify-center text-2xl">🐱</span>
+            )}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+              <span className="text-lg">🔒</span>
+            </div>
+          </div>
+          {/* Info */}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-bold text-foreground">
+              {strayHint?.canonical_name?.trim() || "Mystery stray"}
+            </p>
+            {strayHint?.coat_type && (
+              <p className="text-[10px] capitalize text-muted-foreground">
+                {strayHint.coat_type} coat
+              </p>
+            )}
+            {strayHint?.place_label && (
+              <p className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
+                <MapPin className="size-2.5 shrink-0" />
+                <span className="truncate">{strayHint.place_label}</span>
+              </p>
+            )}
+            <p className="mt-1 text-[10px] font-semibold text-primary">
+              Get close, then snap a photo to unlock
+            </p>
+          </div>
+        </div>
+      )}
 
       {phase === "capture" && <Camera onCapture={handleCapture} />}
 

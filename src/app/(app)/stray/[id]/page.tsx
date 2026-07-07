@@ -108,7 +108,7 @@ export default async function StrayCatPage({
                 Find on map
               </CatButton>
             </Link>
-            <Link href="/catch">
+            <Link href={`/catch?stray=${stray.id}`}>
               <CatButton size="sm">
                 <Camera className="size-4" />
                 Catch a cat
