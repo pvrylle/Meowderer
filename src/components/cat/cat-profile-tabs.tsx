@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { updatePrivacy } from "@/app/(app)/cat/[id]/actions";
 import { CatDetailDock, type CatDetailDockHandle } from "@/components/cat/cat-detail-dock";
 import { NamePollCard } from "@/components/name-poll-card";
-import { catBio, dexNumber } from "@/lib/cat-stats";
+import { catBio, charmRating, dexNumber } from "@/lib/cat-stats";
 import { formatRelativeTime } from "@/lib/format-time";
 import type { NamePollWithCounts } from "@/app/(app)/cat/[id]/poll-actions";
 import type { StraySighting } from "@/lib/stray-cats";
@@ -195,10 +195,9 @@ export function CatProfileTabs({
             <div className="flex items-center gap-2 rounded-2xl border border-border/50 bg-card px-4 py-3 shadow-sm">
               <MapPin className="size-4 shrink-0 text-muted-foreground" />
               <span className="text-sm font-medium text-foreground">{place}</span>
-            )}
-          </div>
-        )}
-        {hasCoordinates && (
+            </div>
+          )}
+          {hasCoordinates && (
           <Link
             href={mapHref}
             className="flex items-center justify-center gap-2 rounded-2xl border border-border/50 bg-card px-4 py-3 text-sm font-semibold text-foreground shadow-sm transition-colors hover:bg-muted/60"

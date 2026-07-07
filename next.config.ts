@@ -38,6 +38,23 @@ const nextConfig: NextConfig = {
         sharp$: false,
         "onnxruntime-node$": false,
       };
+
+      // onnxruntime-web's ESM bundle contains `new URL("...", import.meta.url)`
+      // expressions (for its wasm/proxy-worker assets) that are evaluated at
+      // module-load time. Next's webpack rewrites those into the RelativeURL
+      // runtime helper (`__webpack_require__.U`), which isn't emitted into the
+      // client runtime — so the onnxruntime chunk throws
+      // "TypeError: __webpack_require__.U is not a constructor" as soon as
+      // @imgly/background-removal imports it.
+      //
+      // Disable webpack's `new URL()` asset handling for onnxruntime-web so the
+      // native `URL` constructor is used instead. This is safe here because
+      // @imgly/background-removal sets `ort.env.wasm.wasmPaths` explicitly, so
+      // onnxruntime never relies on webpack to locate its assets.
+      config.module.rules.push({
+        test: /[\\/]node_modules[\\/]onnxruntime-web[\\/]/,
+        parser: { url: false },
+      });
     }
     return config;
   },
