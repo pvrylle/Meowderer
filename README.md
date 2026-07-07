@@ -1,12 +1,8 @@
-# CatDex
+# Meowderer
 
 **Catch real stray cats. Collect stickers. Map the world.**
 
 A mobile-first PWA that turns every stray-cat photo into a collectible sticker — entirely on-device with AI-powered background removal and coat classification. No servers doing the heavy lifting, no API bills, just your camera and the cats around you.
-
-> iNaturalist meets Pokémon GO meets a sticker book — but for stray cats.
-
----
 
 ## Screenshots
 
@@ -25,13 +21,13 @@ A mobile-first PWA that turns every stray-cat photo into a collectible sticker �
 
 ## The Pitch
 
-You're walking down the street and spot a stray cat. You open CatDex, snap a photo, and in seconds the app:
+You're walking down the street and spot a stray cat. You open Meowderer, snap a photo, and in seconds the app:
 
 1. Removes the background **on-device** using WASM/WebGPU
 2. Wraps it in a clean sticker outline
 3. Auto-classifies the coat type and assigns a rarity (Common → Epic)
 4. Pins the catch on a world map with GPS
-5. Files it in your personal CatDex collection
+5. Files it in your personal Meowderer collection
 
 No fighting. No microtransactions. Just finding, photographing, and collecting.
 
