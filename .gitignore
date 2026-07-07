@@ -39,8 +39,9 @@ yarn-error.log*
 .env*
 !.env.example
 
-# kiro
+# kiro (track .kiro/ for submission — only ignore settings with secrets)
 .kiro/
+.kiro/settings/mcp.json
 
 # vercel
 .vercel
