@@ -1,3 +1,4 @@
+import { AnimatedProgress } from "@/components/ui/animated-progress";
 import { xpForBadgeLevel } from "@/lib/xp";
 import { BadgeIcon } from "@/lib/mission-icons";
 import type { UserBadge } from "@/lib/mission-types";
@@ -47,12 +48,11 @@ export function BadgesGrid({ badges }: BadgesGridProps) {
             </div>
             <p className="text-[10px] font-medium text-foreground">{badge.title}</p>
             {!maxed && (
-              <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-primary"
-                  style={{ width: `${progressPct}%` }}
-                />
-              </div>
+              <AnimatedProgress
+                value={progressPct}
+                trackClassName="h-1 w-full bg-muted"
+                barClassName="bg-primary"
+              />
             )}
             {maxed && (
               <p className="text-[9px] font-medium text-primary">Max</p>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronLeft, Sparkles, Trophy } from "lucide-react";
 
 import { MissionsTabs } from "@/components/missions-tabs";
+import { AnimatedProgress } from "@/components/ui/animated-progress";
 import { getCurrentUser, isDemoSession } from "@/lib/auth";
 import {
   getBadgesCatalog,
@@ -98,12 +99,11 @@ export default async function MissionsPage() {
               {completedMissions}/{missions.length} completed
             </span>
           </div>
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted/50">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-legendary to-orange"
-              style={{ width: `${missions.length > 0 ? (completedMissions / missions.length) * 100 : 0}%` }}
-            />
-          </div>
+          <AnimatedProgress
+            value={missions.length > 0 ? (completedMissions / missions.length) * 100 : 0}
+            trackClassName="mt-2 h-2 bg-muted/50"
+            barClassName="bg-gradient-to-r from-legendary to-orange"
+          />
         </div>
       </div>
 

@@ -12,6 +12,7 @@ import {
 
 import { signOut } from "@/app/auth/actions";
 import { AchievementsGrid } from "@/components/achievements-grid";
+import { AnimatedProgress } from "@/components/ui/animated-progress";
 import { ShopEntry } from "@/components/shop/shop-entry";
 import { UserAvatar } from "@/components/user-avatar";
 import { CatButton } from "@/components/ui/cat-button";
@@ -97,12 +98,11 @@ export default async function ProfilePage() {
                   : `${xp.xpToNext.toLocaleString()} XP to Lv ${xp.level + 1}`}
               </span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-card/70 shadow-inner ring-1 ring-border/50">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-[width] duration-500"
-                style={{ width: `${xp.pct}%` }}
-              />
-            </div>
+            <AnimatedProgress
+              value={xp.pct}
+              trackClassName="h-2 bg-card/70 shadow-inner ring-1 ring-border/50"
+              barClassName="bg-gradient-to-r from-primary to-primary/70"
+            />
           </div>
 
           {/* Quick stats */}
@@ -164,12 +164,11 @@ export default async function ProfilePage() {
               {progress.coatPercent}%
             </span>
           </div>
-          <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-white/70">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-[width] duration-500"
-              style={{ width: `${progress.coatPercent}%` }}
-            />
-          </div>
+          <AnimatedProgress
+            value={progress.coatPercent}
+            trackClassName="mt-3 h-2.5 bg-white/70"
+            barClassName="bg-gradient-to-r from-primary to-primary/70"
+          />
         </div>
 
         {/* Actions */}

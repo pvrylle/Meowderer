@@ -6,6 +6,7 @@ import { Check, Zap } from "lucide-react";
 import { toast } from "sonner";
 
 import { claimMissionAction } from "@/app/(app)/missions/actions";
+import { AnimatedProgress } from "@/components/ui/animated-progress";
 import { CatButton } from "@/components/ui/cat-button";
 import { MissionIcon } from "@/lib/mission-icons";
 import type { UserMission } from "@/lib/mission-types";
@@ -18,6 +19,9 @@ type MissionsListProps = {
 export function MissionsList({ missions }: MissionsListProps) {
   const router = useRouter();
   const [claiming, setClaiming] = useState<string | null>(null);
+  // Optimistically-claimed mission ids so the card flips to "Claimed"
+  // instantly, without waiting for router.refresh() to round-trip the server.
+  const [claimedIds, setClaimedIds] = useState<Set<string>>(new Set());
 
   async function handleClaim(missionId: string) {
     setClaiming(missionId);
@@ -27,6 +31,11 @@ export function MissionsList({ missions }: MissionsListProps) {
       toast.error(result.error ?? "Could not claim reward.");
       return;
     }
+    setClaimedIds((prev) => {
+      const next = new Set(prev);
+      next.add(missionId);
+      return next;
+    });
     toast.success(`+${result.xp} XP claimed!`);
     router.refresh();
   }
@@ -43,7 +52,7 @@ export function MissionsList({ missions }: MissionsListProps) {
     <div className="space-y-2">
       {missions.map((mission) => {
         const complete = mission.progress >= mission.target_count;
-        const claimed = Boolean(mission.claimed_at);
+        const claimed = Boolean(mission.claimed_at) || claimedIds.has(mission.id);
         const pct = Math.min(100, Math.round((mission.progress / mission.target_count) * 100));
 
         return (
@@ -96,15 +105,11 @@ export function MissionsList({ missions }: MissionsListProps) {
                 )}
 
                 <div className="mt-2 flex items-center gap-2">
-                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className={cn(
-                        "h-full rounded-full transition-all",
-                        complete ? "bg-green" : "bg-primary",
-                      )}
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
+                  <AnimatedProgress
+                    value={pct}
+                    trackClassName="h-1.5 flex-1 bg-muted"
+                    barClassName={complete ? "bg-green" : "bg-primary"}
+                  />
                   <span className="text-[10px] font-medium text-muted-foreground">
                     {Math.min(mission.progress, mission.target_count)}/{mission.target_count}
                   </span>
