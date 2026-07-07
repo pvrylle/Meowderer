@@ -121,22 +121,8 @@ export async function deleteCapture(id: string): Promise<void> {
     }
 
     await supabase.from("captures").delete().eq("id", id).eq("user_id", user.id);
-
-    // If this capture was the last sighting linked to a stray, remove that
-    // orphaned stray_cat row so it stops appearing in "cats in your area".
-    if (capture.stray_cat_id) {
-      const { count } = await supabase
-        .from("captures")
-        .select("id", { count: "exact", head: true })
-        .eq("stray_cat_id", capture.stray_cat_id);
-
-      if ((count ?? 0) === 0) {
-        await supabase
-          .from("stray_cats")
-          .delete()
-          .eq("id", capture.stray_cat_id);
-      }
-    }
+    // sighting_count and stray_cats cleanup is handled automatically by
+    // the stray_sighting_count_sync trigger (migration 0015).
   }
 
   revalidatePath("/catdex");

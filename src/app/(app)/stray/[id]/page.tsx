@@ -1,9 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, MapPin } from "lucide-react";
+import { ArrowLeft, Camera, Lock, MapPin } from "lucide-react";
 
+import { getCurrentUser } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 import { getStrayCat, getStrayCatSightings } from "@/lib/stray-cats";
+import { CatButton } from "@/components/ui/cat-button";
 
 export default async function StrayCatPage({
   params,
@@ -11,12 +14,25 @@ export default async function StrayCatPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [stray, sightings] = await Promise.all([
+  const [stray, sightings, user] = await Promise.all([
     getStrayCat(id),
     getStrayCatSightings(id),
+    getCurrentUser(),
   ]);
 
   if (!stray) notFound();
+
+  // Check if this user has already caught this stray
+  let alreadyCaught = false;
+  if (user) {
+    const supabase = await createClient();
+    const { count } = await supabase
+      .from("captures")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("stray_cat_id", stray.id);
+    alreadyCaught = (count ?? 0) > 0;
+  }
 
   const name = stray.canonical_name?.trim() || "Mystery stray";
   const place =
@@ -49,9 +65,15 @@ export default async function StrayCatPage({
             src={stray.cover_sticker_url}
             alt=""
             fill
-            className="object-contain p-2"
+            className={alreadyCaught ? "object-contain p-2" : "scale-105 object-contain p-2 blur-md"}
             unoptimized
           />
+          {!alreadyCaught && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+              <Lock className="size-8 text-foreground/70" />
+              <span className="text-xs font-bold text-foreground/70">Locked</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -68,6 +90,33 @@ export default async function StrayCatPage({
       >
         View on map →
       </Link>
+
+      {/* Unlock CTA — shown when the current user hasn't caught this stray yet */}
+      {!alreadyCaught && (
+        <div className="rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-4 text-center">
+          <p className="text-sm font-semibold text-foreground">
+            Find this cat and catch it to unlock
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Head to the map to see where it was last spotted, then take a photo nearby.
+            The app will recognise it and add it to your CatDex.
+          </p>
+          <div className="mt-3 flex justify-center gap-2">
+            <Link href={`/map?stray=${stray.id}`}>
+              <CatButton variant="outline" size="sm">
+                <MapPin className="size-4" />
+                Find on map
+              </CatButton>
+            </Link>
+            <Link href="/catch">
+              <CatButton size="sm">
+                <Camera className="size-4" />
+                Catch a cat
+              </CatButton>
+            </Link>
+          </div>
+        </div>
+      )}
 
       <section className="space-y-3">
         <h2 className="text-base font-semibold text-foreground">Who met this cat</h2>

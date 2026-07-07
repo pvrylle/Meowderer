@@ -42,6 +42,7 @@ export async function GET(request: Request) {
     .lte("primary_lat", box.north)
     .gte("primary_lng", box.west)
     .lte("primary_lng", box.east)
+    .gt("sighting_count", 0)  // exclude orphans whose captures were all deleted
     .order("sighting_count", { ascending: false })
     .limit(50);
 
