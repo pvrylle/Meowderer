@@ -2,7 +2,16 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { Eye, EyeOff, FileText, ShieldCheck, Trash2, UserCog } from "lucide-react";
+import {
+  ExternalLink,
+  Eye,
+  EyeOff,
+  FileText,
+  ShieldCheck,
+  Trash2,
+  UserCog,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -156,6 +165,47 @@ export function SettingsAccountSection() {
           >
             Terms of Service
           </Link>
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
+          <Users className="size-4" />
+          About us
+        </h2>
+        <div className="overflow-hidden rounded-2xl border border-border bg-card">
+          <p className="border-b border-border px-4 py-3 text-sm text-muted-foreground">
+            Meowderer is a passion project built by two developers who love cats
+            and code. Say hi on GitHub:
+          </p>
+          <a
+            href="https://github.com/fromZeroToCode"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between gap-2 border-b border-border px-4 py-3 hover:bg-muted/50"
+          >
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-semibold text-foreground">
+                @fromZeroToCode
+              </span>
+              <span className="block text-xs text-muted-foreground">Founder</span>
+            </span>
+            <ExternalLink className="size-4 shrink-0 text-muted-foreground" />
+          </a>
+          <a
+            href="https://github.com/pvrylle"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between gap-2 px-4 py-3 hover:bg-muted/50"
+          >
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-semibold text-foreground">
+                @pvrylle
+              </span>
+              <span className="block text-xs text-muted-foreground">Founder</span>
+            </span>
+            <ExternalLink className="size-4 shrink-0 text-muted-foreground" />
+          </a>
         </div>
       </section>
 
