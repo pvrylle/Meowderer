@@ -36,6 +36,19 @@ export default async function CatDetailPage({
     ? await getStrayCatSightings(capture.stray_cat_id)
     : [];
 
+  const { data: favoriteRow, error: favError } = user
+    ? await supabase
+        .from("user_cat_favorites")
+        .select("capture_id")
+        .eq("user_id", user.id)
+        .eq("capture_id", capture.id)
+        .maybeSingle()
+    : { data: null, error: null };
+
+  if (favError) {
+    console.error("[CatDetailPage] favorites query error:", favError.message, favError.code);
+  }
+
   return (
     <CatDetailView
       capture={capture}
@@ -45,6 +58,7 @@ export default async function CatDetailPage({
       album={album.filter((s) => s.id !== capture.id)}
       isSuperAdmin={viewerProfile?.is_super_admin === true}
       nameLocked={Boolean(capture.name_locked_at)}
+      isFavorited={favoriteRow !== null}
     />
   );
 }

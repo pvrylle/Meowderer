@@ -389,6 +389,12 @@ export type Database = {
         Update: Partial<{ created_at: string }>;
         Relationships: [];
       };
+      user_cat_favorites: {
+        Row: { user_id: string; capture_id: string; created_at: string };
+        Insert: { user_id: string; capture_id: string; created_at?: string };
+        Update: Partial<{ created_at: string }>;
+        Relationships: [];
+      };
     };
     Views: { [_ in never]: never };
     Functions: { [_ in never]: never };
