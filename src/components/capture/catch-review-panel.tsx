@@ -16,6 +16,7 @@ import {
 import { CoatTypePicker } from "@/components/capture/coat-type-picker";
 import { PawRating } from "@/components/capture/paw-rating";
 import { CatButton } from "@/components/ui/cat-button";
+import { InfoTip } from "@/components/ui/info-tip";
 import { Input } from "@/components/ui/input";
 import type { CoatClassification } from "@/lib/capture/classify-coat";
 import {
@@ -272,11 +273,18 @@ export function CatchReviewPanel({
           />
         </div>
 
-        {/* Privacy + location (single section — location is required; checkbox is public map only) */}
+        {/* Privacy + location */}
         <div className="space-y-2 rounded-xl border border-border/60 p-2.5 sm:rounded-2xl sm:p-3">
-          <FieldLabel>Privacy</FieldLabel>
+          <span className="flex items-center gap-1.5">
+            <FieldLabel>Privacy</FieldLabel>
+            <InfoTip text="Both off by default. Your catch stays in your private CatDex. Check below to share with the community." />
+          </span>
+
           <label className="flex cursor-pointer items-center justify-between gap-2 text-sm">
-            <span className="text-muted-foreground">Share photo publicly</span>
+            <span className="flex items-center gap-1.5 text-muted-foreground">
+              Share photo publicly
+              <InfoTip text="Others can see your cat's sticker in community posts and map pins. Location is controlled separately." />
+            </span>
             <input
               type="checkbox"
               checked={sharePhoto}
@@ -284,8 +292,12 @@ export function CatchReviewPanel({
               className="size-4 accent-primary"
             />
           </label>
+
           <label className="flex cursor-pointer items-center justify-between gap-2 text-sm">
-            <span className="text-muted-foreground">Show pin on public map</span>
+            <span className="flex items-center gap-1.5 text-muted-foreground">
+              Show pin on public map
+              <InfoTip text="Adds a map pin at your catch spot — visible to all, even if your photo is private. Photo and location are independent." />
+            </span>
             <input
               type="checkbox"
               checked={shareLocation}

@@ -214,6 +214,14 @@ export async function saveCapture(input: unknown): Promise<SaveResult> {
     });
   }
 
+  // A catch only enters the shared stray-cat pool when the user opts in to
+  // at least one sharing option. If both are unchecked the catch is private —
+  // it stays in the owner's CatDex but never appears in other users'
+  // "Paws in your area" or on the public map.
+  if (!share_photo && !share_location) {
+    resolvedStrayId = null;
+  }
+
   const { data, error } = await supabase
     .from("captures")
     .insert({

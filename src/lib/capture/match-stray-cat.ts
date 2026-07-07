@@ -38,27 +38,50 @@ export async function fetchNearbyStrayCats(
   return data.cats ?? [];
 }
 
+export type StrayMatch = StrayCatCandidate & {
+  /** Cosine similarity 0–1 */
+  score: number;
+  /** Distance from capture point in metres */
+  distanceM: number;
+};
+
 export function findBestStrayMatch(
   embedding: number[],
   lat: number,
   lng: number,
   candidates: StrayCatCandidate[],
 ): StrayCatCandidate | null {
-  let best: StrayCatCandidate | null = null;
-  let bestScore = MATCH_THRESHOLD;
+  const matches = findStrayMatches(embedding, lat, lng, candidates);
+  return matches[0] ?? null;
+}
+
+/**
+ * Returns up to 3 candidates ranked by cosine similarity, all above the
+ * threshold and within the max distance. Callers can show a picker when
+ * multiple candidates qualify.
+ */
+export function findStrayMatches(
+  embedding: number[],
+  lat: number,
+  lng: number,
+  candidates: StrayCatCandidate[],
+  maxResults = 3,
+): StrayMatch[] {
+  const scored: StrayMatch[] = [];
 
   for (const cat of candidates) {
     if (cat.primary_lat == null || cat.primary_lng == null) continue;
-    const dist = haversineM(lat, lng, cat.primary_lat, cat.primary_lng);
-    if (dist > MAX_DISTANCE_M) continue;
+    const distanceM = haversineM(lat, lng, cat.primary_lat, cat.primary_lng);
+    if (distanceM > MAX_DISTANCE_M) continue;
     if (!cat.image_embedding?.length) continue;
 
-    const sim = cosineSimilarity(embedding, cat.image_embedding);
-    if (sim >= bestScore) {
-      bestScore = sim;
-      best = cat;
+    const score = cosineSimilarity(embedding, cat.image_embedding);
+    if (score >= MATCH_THRESHOLD) {
+      scored.push({ ...cat, score, distanceM });
     }
   }
 
-  return best;
+  return scored
+    .sort((a, b) => b.score - a.score)
+    .slice(0, maxResults);
 }

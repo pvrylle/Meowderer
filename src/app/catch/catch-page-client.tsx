@@ -34,8 +34,8 @@ import { getCurrentPosition, GeoError, type Coords } from "@/lib/geo";
 import type { CatTraits } from "@/lib/supabase/types";
 import {
   fetchNearbyStrayCats,
-  findBestStrayMatch,
-  type StrayCatCandidate,
+  findStrayMatches,
+  type StrayMatch,
 } from "@/lib/capture/match-stray-cat";
 import { computeImageEmbedding } from "@/lib/capture/image-embedding";
 import { saveCapture } from "./actions";
@@ -78,7 +78,7 @@ export default function CatchPageClient() {
   const [saving, setSaving] = useState(false);
   const [coatClassifying, setCoatClassifying] = useState(false);
   const [embedding, setEmbedding] = useState<number[] | null>(null);
-  const [strayMatch, setStrayMatch] = useState<StrayCatCandidate | null>(null);
+  const [strayMatch, setStrayMatch] = useState<StrayMatch[] | null>(null);
   const [confirmedStrayId, setConfirmedStrayId] = useState<string | null>(null);
   const [skipMatch, setSkipMatch] = useState(false);
   const [catCheckStatus, setCatCheckStatus] = useState<CatCheckStatus>("idle");
@@ -382,9 +382,9 @@ export default function CatchPageClient() {
         const vec = embedding ?? (await computeImageEmbedding(processed.sticker));
         setEmbedding(vec);
         const candidates = await fetchNearbyStrayCats(location.lat, location.lng);
-        const match = findBestStrayMatch(vec, location.lat, location.lng, candidates);
-        if (match) {
-          setStrayMatch(match);
+        const matches = findStrayMatches(vec, location.lat, location.lng, candidates);
+        if (matches.length > 0) {
+          setStrayMatch(matches);
           setSaving(false);
           return;
         }
@@ -396,12 +396,11 @@ export default function CatchPageClient() {
     await performSave(confirmedStrayId, location);
   }
 
-  function handleMatchConfirm() {
-    if (!strayMatch) return;
-    setConfirmedStrayId(strayMatch.id);
+  function handleMatchConfirm(pickedId: string) {
+    setConfirmedStrayId(pickedId);
     setStrayMatch(null);
     setSaving(true);
-    void performSave(strayMatch.id);
+    void performSave(pickedId);
   }
 
   function handleMatchNewCat() {
@@ -425,7 +424,7 @@ export default function CatchPageClient() {
     <div className="flex h-full min-h-0 flex-1 flex-col">
       {strayMatch && (
         <StrayMatchDialog
-          match={strayMatch}
+          matches={strayMatch}
           onConfirm={handleMatchConfirm}
           onNewCat={handleMatchNewCat}
           onCancel={() => {
