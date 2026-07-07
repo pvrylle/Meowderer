@@ -2,26 +2,23 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Camera, Compass, Home, User } from "lucide-react";
+import { Camera, Compass, Home, MessageCircle, User } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 const LEFT_ITEMS = [
-  { href: "/home", icon: Home, label: "Home" },
-  { href: "/catdex", icon: BookOpen, label: "CatDex" },
+  { href: "/home", icon: Home,    label: "Home" },
+  { href: "/map",  icon: Compass, label: "Map"  },
 ] as const;
 
 const RIGHT_ITEMS = [
-  { href: "/map", icon: Compass, label: "Map" },
-  { href: "/profile", icon: User, label: "Profile" },
+  { href: "/community", icon: MessageCircle, label: "Community" },
+  { href: "/profile",   icon: User,          label: "Profile"   },
 ] as const;
 
 function isActive(pathname: string, href: string): boolean {
   if (href === "/home") {
-    return pathname === "/home";
-  }
-  if (href === "/catdex") {
-    return pathname === "/catdex" || pathname.startsWith("/catdex/") || pathname.startsWith("/cat/");
+    return pathname === "/home" || pathname === "/catdex" || pathname.startsWith("/catdex/") || pathname.startsWith("/cat/");
   }
   if (href === "/profile") {
     return (
@@ -44,8 +41,8 @@ export function BottomNav() {
       aria-label="Main"
       className="relative z-30 bg-card pb-[calc(env(safe-area-inset-bottom)+0.75rem)]"
     >
-      <div className="flex h-16 items-center border-t border-border/30">
-        <div className="flex flex-1 items-center justify-evenly">
+      <div className="flex h-16 items-center border-t border-border/30 px-1">
+        <div className="flex flex-1 items-center justify-around">
           {LEFT_ITEMS.map((item) => (
             <NavItem
               key={item.href}
@@ -57,15 +54,17 @@ export function BottomNav() {
           ))}
         </div>
 
-        <Link
-          href="/catch"
-          aria-label="Catch a cat"
-          className="relative -mt-5 flex size-14 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/25 active:scale-95"
-        >
-          <Camera className="size-6" strokeWidth={2} />
-        </Link>
+        <div className="flex shrink-0 items-center justify-center px-2">
+          <Link
+            href="/catch"
+            aria-label="Catch a cat"
+            className="relative -mt-5 flex size-14 items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/25 active:scale-95"
+          >
+            <Camera className="size-6" strokeWidth={2} />
+          </Link>
+        </div>
 
-        <div className="flex flex-1 items-center justify-evenly">
+        <div className="flex flex-1 items-center justify-around">
           {RIGHT_ITEMS.map((item) => (
             <NavItem
               key={item.href}
@@ -96,12 +95,14 @@ function NavItem({
     <Link
       href={href}
       className={cn(
-        "flex flex-col items-center justify-center gap-0.5 px-4 py-2",
+        "flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 py-2",
         active ? "text-primary" : "text-muted-foreground",
       )}
     >
-      <Icon className="size-5" strokeWidth={active ? 2 : 1.5} />
-      <span className="text-[10px] font-medium">{label}</span>
+      <Icon className="size-5 shrink-0" strokeWidth={active ? 2 : 1.5} />
+      <span className="w-full truncate text-center text-[10px] font-medium leading-none">
+        {label}
+      </span>
     </Link>
   );
 }

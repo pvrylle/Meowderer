@@ -1,7 +1,9 @@
 import { canvasToBlob } from "./image-utils";
 
 const MAX_OUTLINE_SIDE = 1280;
-const OUTLINE_STEPS = 20;
+// 12 evenly-spaced angles give a visually smooth dilation at 40% fewer
+// canvas draws than 20 steps. Below 10 the outline starts to look polygonal.
+const OUTLINE_STEPS = 12;
 
 export type StickerOutlineOptions = {
   strokeWidth?: number;

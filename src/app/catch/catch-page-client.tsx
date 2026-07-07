@@ -163,15 +163,10 @@ export default function CatchPageClient({ prelinkedStrayId = null }: { prelinked
     }
   }, []);
 
-  useEffect(() => {
-    if (phase === "review") {
-      // Geolocation is an external system we sync into React state via the
-      // async callback in requestLocation. Intentional side effect on entering
-      // review — not derived state.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      void requestLocation();
-    }
-  }, [phase, requestLocation]);
+  // NOTE: geolocation is intentionally NOT requested automatically here.
+  // Browsers require a user gesture for geolocation ("Only request geolocation
+  // in response to a user gesture"), so location is requested only when the
+  // user taps "Add location" in the review panel.
 
   // Rarity shown while reviewing is derived from the selected coat. The server
   // recomputes the authoritative rarity on save, so this is display-only.
@@ -381,12 +376,10 @@ export default function CatchPageClient({ prelinkedStrayId = null }: { prelinked
       return;
     }
 
-    // Location is optional. Use what we already resolved, or make one
-    // best-effort attempt (skip if the user already denied permission).
-    let location = coords;
-    if (!location && locationStatus !== "denied") {
-      location = await requestLocation();
-    }
+    // Location is optional and opt-in via the "Add location" button in the
+    // review panel. We never auto-request it here — browsers require a user
+    // gesture for geolocation, and we don't want a surprise prompt on Save.
+    const location = coords;
 
     setSaving(true);
 
