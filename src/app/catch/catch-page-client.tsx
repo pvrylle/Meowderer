@@ -31,8 +31,7 @@ import { yieldToMain } from "@/lib/capture/yield-to-main";
 import { coatToRarity, type CoatType } from "@/lib/coat-rarity";
 import { DEMO_COOKIE } from "@/lib/demo";
 import { getCurrentPosition, GeoError, type Coords } from "@/lib/geo";
-import { enqueueCapture } from "@/lib/offline-capture-queue";
-import type { CatTraits, Rarity } from "@/lib/supabase/types";
+import type { CatTraits } from "@/lib/supabase/types";
 import {
   fetchNearbyStrayCats,
   findBestStrayMatch,
@@ -65,7 +64,6 @@ export default function CatchPageClient() {
   const [classification, setClassification] = useState<CoatClassification | null>(
     null,
   );
-  const [previewRarity, setPreviewRarity] = useState<Rarity | null>(null);
   const [selectedCoat, setSelectedCoat] = useState<CoatType>("gray tabby");
   const [stickerScale, setStickerScale] = useState(STICKER_SCALE_DEFAULT);
 
@@ -153,13 +151,17 @@ export default function CatchPageClient() {
 
   useEffect(() => {
     if (phase === "review") {
+      // Geolocation is an external system we sync into React state via the
+      // async callback in requestLocation. Intentional side effect on entering
+      // review — not derived state.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       void requestLocation();
     }
   }, [phase, requestLocation]);
 
-  useEffect(() => {
-    setPreviewRarity(coatToRarity(selectedCoat));
-  }, [selectedCoat]);
+  // Rarity shown while reviewing is derived from the selected coat. The server
+  // recomputes the authoritative rarity on save, so this is display-only.
+  const previewRarity = coatToRarity(selectedCoat);
 
   const runCatCheck = useCallback(async (captured: File) => {
     const gen = ++catCheckGenRef.current;
@@ -216,7 +218,6 @@ export default function CatchPageClient() {
     setProcessed(null);
     setClassification(null);
     setCoatClassifying(false);
-    setPreviewRarity(null);
     setSelectedCoat("gray tabby");
     setStickerScale(STICKER_SCALE_DEFAULT);
     setNickname("");
@@ -301,15 +302,15 @@ export default function CatchPageClient() {
     }
   }
 
-  async function performSave(strayCatId: string | null) {
+  async function performSave(
+    strayCatId: string | null,
+    locationOverride?: Coords | null,
+  ) {
     if (!processed) return;
 
-    const location = coords ?? (await requestLocation());
-    if (!location) {
-      toast.error("Location is required to save this catch.");
-      setSaving(false);
-      return;
-    }
+    // Location is optional — save with whatever we have (may be null).
+    const location =
+      locationOverride !== undefined ? locationOverride : coords;
 
     try {
       const stickerToUpload =
@@ -326,8 +327,8 @@ export default function CatchPageClient() {
         photoUrl: uploaded.photoUrl,
         stickerUrl: uploaded.stickerUrl,
         nickname: nickname || null,
-        lat: location.lat,
-        lng: location.lng,
+        lat: location?.lat ?? null,
+        lng: location?.lng ?? null,
         coat_type: selectedCoat,
         rarity: previewRarity,
         stray_cat_id: strayCatId,
@@ -366,15 +367,17 @@ export default function CatchPageClient() {
       return;
     }
 
-    const location = coords ?? (await requestLocation());
-    if (!location) {
-      toast.error("Location is required to save this catch.");
-      return;
+    // Location is optional. Use what we already resolved, or make one
+    // best-effort attempt (skip if the user already denied permission).
+    let location = coords;
+    if (!location && locationStatus !== "denied") {
+      location = await requestLocation();
     }
 
     setSaving(true);
 
-    if (!skipMatch && !confirmedStrayId) {
+    // Stray-cat matching needs coordinates, so only run it when we have them.
+    if (location && !skipMatch && !confirmedStrayId) {
       try {
         const vec = embedding ?? (await computeImageEmbedding(processed.sticker));
         setEmbedding(vec);
@@ -390,7 +393,7 @@ export default function CatchPageClient() {
       }
     }
 
-    await performSave(confirmedStrayId);
+    await performSave(confirmedStrayId, location);
   }
 
   function handleMatchConfirm() {
@@ -408,7 +411,8 @@ export default function CatchPageClient() {
     void performSave(null);
   }
 
-  const canSave = locationStatus === "ready" && coords != null;
+  // Location is optional, so a catch can always be saved once processed.
+  const canSave = !saving;
 
   function adjustStickerScale(delta: number) {
     setStickerScale((current) => {

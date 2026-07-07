@@ -33,37 +33,37 @@ function locationCopy(status: LocationStatus, errorCode?: string | null) {
   if (status === "ready") {
     return {
       title: "Location ready",
-      detail: "Your catch will be saved at this spot.",
+      detail: "Your catch will be pinned to this spot.",
     };
   }
   if (status === "loading" || status === "idle") {
     return {
       title: "Getting location…",
-      detail: "Required to save — allow when your browser asks.",
+      detail: "Optional — add a map pin, or just save without it.",
     };
   }
   if (errorCode === "denied") {
     return {
-      title: "Allow location for this site",
+      title: "Location is off",
       detail:
-        "Phone GPS can be on but the browser still needs permission. Tap Retry, or allow location in site settings (lock icon in the address bar).",
+        "No problem — your catch saves without a map pin. Tap Retry to add one (allow location via the lock icon in the address bar).",
     };
   }
   if (errorCode === "timeout") {
     return {
       title: "Location timed out",
-      detail: "Try again near a window or outdoors, then tap Retry.",
+      detail: "You can save without it, or tap Retry near a window or outdoors.",
     };
   }
   if (errorCode === "unavailable") {
     return {
       title: "Location unavailable",
-      detail: "Check that location services are on, then tap Retry.",
+      detail: "You can save without it, or turn on location services and tap Retry.",
     };
   }
   return {
     title: "Could not get location",
-    detail: "Tap Retry or check browser location settings for this site.",
+    detail: "You can save without it, or tap Retry.",
   };
 }
 
@@ -298,7 +298,7 @@ export function CatchReviewPanel({
             className={cn(
               "mt-1 flex items-center gap-2.5 rounded-xl border px-2.5 py-2.5 sm:gap-3 sm:px-3 sm:py-2.5",
               locationStatus === "ready" && "border-green/40 bg-green/10",
-              locationStatus === "denied" && "border-destructive/35 bg-destructive/5",
+              locationStatus === "denied" && "border-border bg-muted/30",
               (locationStatus === "loading" || locationStatus === "idle") &&
                 "border-border bg-muted/30",
             )}
@@ -307,7 +307,7 @@ export function CatchReviewPanel({
               className={cn(
                 "flex size-8 shrink-0 items-center justify-center rounded-full sm:size-9",
                 locationStatus === "ready" && "bg-green/25 text-green",
-                locationStatus === "denied" && "bg-destructive/15 text-destructive",
+                locationStatus === "denied" && "bg-muted text-muted-foreground",
                 (locationStatus === "loading" || locationStatus === "idle") &&
                   "bg-muted text-muted-foreground",
               )}
@@ -365,13 +365,7 @@ export function CatchReviewPanel({
           disabled={!canSave || saving}
           className="rounded-xl sm:!h-12 sm:rounded-2xl sm:text-sm"
         >
-          {saving
-            ? "Saving…"
-            : canSave
-              ? "Save catch"
-              : locationStatus === "loading" || locationStatus === "idle"
-                ? "Getting location…"
-                : "Need location"}
+          {saving ? "Saving…" : "Save catch"}
         </CatButton>
       </div>
     </section>

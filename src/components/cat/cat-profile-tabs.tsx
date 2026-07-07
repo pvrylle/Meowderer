@@ -47,12 +47,22 @@ export function CatProfileTabs({
   const [tab, setTab] = useState<ProfileTab>("about");
 
   const totalSightings = album.length + 1;
-  const popularity = Math.min(99, Math.max(18, Math.round((charmRating(capture) / 5) * 100)));
+  const charm = charmRating(capture);
   const firstSeen = useMemo(
     () => new Date(capture.caught_at).toLocaleDateString(undefined, { month: "short", year: "numeric" }),
     [capture.caught_at],
   );
-  const lastSeen = formatRelativeTime(album[0]?.caught_at ?? capture.caught_at);
+  // Most recent sighting across this capture and the whole album (ISO strings
+  // sort lexicographically, so a plain max is correct).
+  const lastSeenTime = useMemo(
+    () =>
+      [capture.caught_at, ...album.map((s) => s.caught_at)].reduce(
+        (latest, t) => (t > latest ? t : latest),
+        capture.caught_at,
+      ),
+    [capture.caught_at, album],
+  );
+  const lastSeen = formatRelativeTime(lastSeenTime);
   const place = [capture.place_label, capture.city, capture.country].filter(Boolean).join(" - ");
   const tabs: { key: ProfileTab; label: string }[] = [
     { key: "about", label: "About" },
@@ -92,7 +102,7 @@ export function CatProfileTabs({
       <div className={cn("flex flex-col gap-3", tab !== "about" && "hidden")}>
           <div className="grid grid-cols-2 gap-3">
             <StatCard label="Sightings" value={totalSightings.toLocaleString()} />
-            <StatCard label="Popularity" value={`${popularity}%`} helper="Charm score" />
+            <StatCard label="Charm" value={charm.toFixed(1)} helper="out of 5" />
             <StatCard label="First seen" value={firstSeen} />
             <StatCard label="Last seen" value={lastSeen} />
           </div>
