@@ -96,7 +96,7 @@ export async function deleteCapture(id: string): Promise<void> {
 
   const { data: capture } = await supabase
     .from("captures")
-    .select("photo_url, sticker_url")
+    .select("photo_url, sticker_url, stray_cat_id")
     .eq("id", id)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -121,11 +121,13 @@ export async function deleteCapture(id: string): Promise<void> {
     }
 
     await supabase.from("captures").delete().eq("id", id).eq("user_id", user.id);
+    // sighting_count and stray_cats cleanup is handled automatically by
+    // the stray_sighting_count_sync trigger (migration 0015).
   }
 
   revalidatePath("/catdex");
   revalidatePath("/home");
   revalidatePath("/map");
   revalidatePath("/profile");
-  redirect("/catdex");
+  redirect("/home?bust=1");
 }

@@ -16,7 +16,13 @@ import { getCaptures } from "@/lib/captures";
 import { countCapturesToday } from "@/lib/retention";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ bust?: string }>;
+}) {
+  const params = await searchParams;
+  const bustCache = params.bust === "1";
   const user = await getCurrentUser();
   const captures = await getCaptures();
   const progress = computeCollectionProgress(captures);
@@ -116,7 +122,7 @@ export default async function HomePage() {
         </div>
       </Link>
 
-      {user && <PawsInAreaSection userId={user.id} />}
+      {user && <PawsInAreaSection userId={user.id} bustCache={bustCache} />}
 
       {/* Collection section */}
       <section className="space-y-3">

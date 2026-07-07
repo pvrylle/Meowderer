@@ -8,27 +8,22 @@ export type CoatClassification = {
   source: "transformers" | "color";
 };
 
+/**
+ * Breed→coat hints. Only breeds whose coat is reasonably predictable are
+ * listed. Ambiguous breeds (Persian, Egyptian Mau, etc.) are intentionally
+ * omitted so their coat is decided by pixel-based color analysis instead.
+ */
 const IMAGENET_CAT_LABELS: Record<string, CoatType> = {
   "tabby, tiger cat": "brown tabby",
   "tiger cat": "brown tabby",
   "tabby": "gray tabby",
-  "Persian cat": "gray",
   "Siamese cat, Siamese": "pointed",
-  "Egyptian cat": "gray",
   "Maine coon": "brown tabby",
   "Angora, Angora rabbit": "white",
 };
 
-const CAT_KEYWORDS = [
-  "cat",
-  "tabby",
-  "tiger cat",
-  "Persian",
-  "Siamese",
-  "Egyptian",
-  "Maine coon",
-  "Angora",
-];
+/** A breed hint must reach this confidence before it overrides color analysis. */
+const MIN_BREED_CONFIDENCE = 0.35;
 
 function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -49,26 +44,15 @@ async function classifyWithTransformers(
 
     for (const { label, score } of results) {
       const mapped = IMAGENET_CAT_LABELS[label];
-      if (mapped && score > 0.08) {
+      // Only trust a breed→coat hint when the model is genuinely confident.
+      // A weak guess (e.g. 9%) must not override the color analysis below.
+      if (mapped && score >= MIN_BREED_CONFIDENCE) {
         return {
           coat_type: mapped,
           confidence: score,
           source: "transformers",
         };
       }
-    }
-
-    const catHit = results.find(
-      (r) =>
-        r.score > 0.05 &&
-        CAT_KEYWORDS.some((kw) => r.label.toLowerCase().includes(kw.toLowerCase())),
-    );
-    if (catHit) {
-      return {
-        coat_type: "gray tabby",
-        confidence: catHit.score,
-        source: "transformers",
-      };
     }
   } catch {
     // Model unavailable — fall back to color analysis.

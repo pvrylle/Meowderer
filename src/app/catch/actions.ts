@@ -6,7 +6,7 @@ import { z } from "zod";
 import { unlockAchievementsAfterSave, type Achievement } from "@/lib/achievements";
 import { isCloudinaryAssetUrl } from "@/lib/cloudinary";
 import { progressMissionsAndBadgesAfterSave } from "@/lib/missions";
-import { applyLocationEpicBonus, COAT_TYPES, coatToRarity, maxRarity } from "@/lib/coat-rarity";
+import { applyLocationEpicBonus, COAT_TYPES, coatToRarity } from "@/lib/coat-rarity";
 import { reverseGeocode } from "@/lib/geocode";
 import { isDemoSession } from "@/lib/auth";
 import { updateStreakOnSave } from "@/lib/retention";
@@ -25,9 +25,11 @@ const saveCaptureSchema = z.object({
   photoUrl: z.string().url(),
   stickerUrl: z.string().url(),
   nickname: z.string().trim().max(40).optional().nullable(),
-  lat: z.number().min(-90).max(90),
-  lng: z.number().min(-180).max(180),
+  lat: z.number().min(-90).max(90).nullable().optional(),
+  lng: z.number().min(-180).max(180).nullable().optional(),
   coat_type: z.enum(COAT_TYPES).optional().nullable(),
+  // Accepted for backward-compat but IGNORED — rarity is computed server-side
+  // from the stored coat so it cannot be forged by a modified client.
   rarity: z.enum(["common", "uncommon", "rare", "epic"]).optional().nullable(),
   stray_cat_id: z.string().uuid().optional().nullable(),
   image_embedding: z.array(z.number()).length(512).optional().nullable(),
@@ -134,7 +136,6 @@ export async function saveCapture(input: unknown): Promise<SaveResult> {
     lat,
     lng,
     coat_type,
-    rarity: clientRarity,
     stray_cat_id,
     image_embedding,
     traits,
@@ -157,52 +158,69 @@ export async function saveCapture(input: unknown): Promise<SaveResult> {
     return { success: false, error: "Capture ID does not match uploaded images." };
   }
 
-  const place = await reverseGeocode(lat, lng);
-  const { city, country, place_label } = place;
+  // Location is optional (PRD: GPS is user-togglable). When absent we save the
+  // catch with null coordinates and no city/country/stray linkage.
+  let city: string | null = null;
+  let country: string | null = null;
+  let place_label: string | null = null;
+  let resolvedStrayId: string | null = null;
 
-  const { data: existingCaptures } = await supabase
-    .from("captures")
-    .select("city, country")
-    .eq("user_id", user.id);
-
-  const existingCities = new Set(
-    (existingCaptures ?? [])
-      .map((c) => c.city)
-      .filter((c): c is string => Boolean(c)),
-  );
-  const existingCountries = new Set(
-    (existingCaptures ?? [])
-      .map((c) => c.country)
-      .filter((c): c is string => Boolean(c)),
-  );
-
+  // Rarity is derived server-side from the coat (never trusted from the client).
   const normalizedCoat = coat_type?.trim() || null;
-  let rarity: Rarity | null = null;
-
-  if (normalizedCoat) {
-    const base = coatToRarity(normalizedCoat);
-    const withEpic = applyLocationEpicBonus(
-      base,
-      city,
-      country,
-      existingCities,
-      existingCountries,
-    );
-    rarity = clientRarity ? maxRarity(clientRarity, withEpic) : withEpic;
-  } else if (clientRarity) {
-    rarity = clientRarity;
-  }
+  let rarity: Rarity | null = normalizedCoat ? coatToRarity(normalizedCoat) : null;
 
   const embeddingStr = formatEmbedding(image_embedding ?? null);
-  const resolvedStrayId = await resolveStrayCatId(supabase, {
-    stray_cat_id,
-    nickname,
-    lat,
-    lng,
-    place_label,
-    stickerUrl,
-    embedding: embeddingStr,
-  });
+
+  if (lat != null && lng != null) {
+    const place = await reverseGeocode(lat, lng);
+    city = place.city;
+    country = place.country;
+    place_label = place.place_label;
+
+    if (rarity) {
+      const { data: existingCaptures } = await supabase
+        .from("captures")
+        .select("city, country")
+        .eq("user_id", user.id);
+
+      const existingCities = new Set(
+        (existingCaptures ?? [])
+          .map((c) => c.city)
+          .filter((c): c is string => Boolean(c)),
+      );
+      const existingCountries = new Set(
+        (existingCaptures ?? [])
+          .map((c) => c.country)
+          .filter((c): c is string => Boolean(c)),
+      );
+
+      rarity = applyLocationEpicBonus(
+        rarity,
+        city,
+        country,
+        existingCities,
+        existingCountries,
+      );
+    }
+
+    resolvedStrayId = await resolveStrayCatId(supabase, {
+      stray_cat_id,
+      nickname,
+      lat,
+      lng,
+      place_label,
+      stickerUrl,
+      embedding: embeddingStr,
+    });
+  }
+
+  // A catch only enters the shared stray-cat pool when the user opts in to
+  // at least one sharing option. If both are unchecked the catch is private —
+  // it stays in the owner's CatDex but never appears in other users'
+  // "Paws in your area" or on the public map.
+  if (!share_photo && !share_location) {
+    resolvedStrayId = null;
+  }
 
   const { data, error } = await supabase
     .from("captures")
@@ -212,8 +230,8 @@ export async function saveCapture(input: unknown): Promise<SaveResult> {
       photo_url: photoUrl,
       sticker_url: stickerUrl,
       nickname: nickname?.trim() || null,
-      lat,
-      lng,
+      lat: lat ?? null,
+      lng: lng ?? null,
       city,
       country,
       place_label,

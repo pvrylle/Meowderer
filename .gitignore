@@ -39,6 +39,9 @@ yarn-error.log*
 .env*
 !.env.example
 
+# kiro
+.kiro/
+
 # vercel
 .vercel
 
