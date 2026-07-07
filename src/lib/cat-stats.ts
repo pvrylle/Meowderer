@@ -116,12 +116,17 @@ export function personalityTitle(
   return options[hashString(capture.id) % options.length];
 }
 
-/** Charm rating 1.0–5.0 derived from top stat (visual parity, not user-submitted). */
-export function charmRating(capture: Pick<Capture, "id" | "rarity">): number {
-  const stats = catStats(capture);
-  const top = [...stats].sort((a, b) => b.value - a.value)[0];
-  const frac = (hashString(`charm:${capture.id}`) % 9) / 10;
-  return Math.min(5, Math.round((top.value + frac) * 10) / 10);
+/**
+ * Charm rating 1.0–5.0 — the average of a cat's personality stats. Uses the
+ * user-submitted traits when present, so it reflects real input rather than a
+ * random number dressed up as a popularity percentage.
+ */
+export function charmRating(
+  capture: Pick<Capture, "id" | "rarity"> & { traits?: Capture["traits"] },
+): number {
+  const stats = allCatStats(capture);
+  const avg = stats.reduce((sum, s) => sum + s.value, 0) / stats.length;
+  return Math.min(5, Math.max(1, Math.round(avg * 10) / 10));
 }
 
 /** A short flavour bio for the card back. */

@@ -40,7 +40,8 @@ function strayInBoxQuery(
     .gte("primary_lat", box.south)
     .lte("primary_lat", box.north)
     .gte("primary_lng", box.west)
-    .lte("primary_lng", box.east);
+    .lte("primary_lng", box.east)
+    .gt("sighting_count", 0); // exclude orphans
 }
 
 export async function getAreaStatsNearby(

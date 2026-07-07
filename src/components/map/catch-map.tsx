@@ -1667,7 +1667,7 @@ export function CatchMap({ geojson, focusCatId, focusStrayId, initialLayer }: Ca
                 </Link>
               ) : (
                 <Link
-                  href="/catch"
+                  href={`/catch?stray=${selectedStray.id}`}
                   className="mt-2 inline-flex items-center text-sm font-bold text-primary"
                 >
                   Catch nearby to unlock →

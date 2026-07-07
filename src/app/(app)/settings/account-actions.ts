@@ -59,7 +59,7 @@ export async function deleteAccountAction(): Promise<{ error?: string }> {
 
   const { data: captures } = await supabase
     .from("captures")
-    .select("photo_url, sticker_url")
+    .select("photo_url, sticker_url, stray_cat_id")
     .eq("user_id", user.id);
 
   if (captures) {
@@ -68,6 +68,30 @@ export async function deleteAccountAction(): Promise<{ error?: string }> {
         deleteCaptureAssetsByUrls(user.id, c.photo_url, c.sticker_url),
       ),
     );
+
+    // Collect stray_cat ids linked to this user's captures, then remove any
+    // that will have zero remaining captures after account deletion.
+    const strayCatIds = [
+      ...new Set(
+        captures.map((c) => c.stray_cat_id).filter((id): id is string => Boolean(id)),
+      ),
+    ];
+
+    if (strayCatIds.length > 0) {
+      // Only count captures from OTHER users — this user's rows are about to go.
+      const { data: remaining } = await supabase
+        .from("captures")
+        .select("stray_cat_id")
+        .in("stray_cat_id", strayCatIds)
+        .neq("user_id", user.id);
+
+      const stillLinked = new Set((remaining ?? []).map((r) => r.stray_cat_id));
+      const orphanIds = strayCatIds.filter((id) => !stillLinked.has(id));
+
+      if (orphanIds.length > 0) {
+        await supabase.from("stray_cats").delete().in("id", orphanIds);
+      }
+    }
   }
 
   const admin = createAdminClient();

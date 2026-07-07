@@ -123,6 +123,7 @@ export function CatProfileTabs({
   const dockRef = useRef<CatDetailDockHandle>(null);
 
   const totalSightings = album.length + 1;
+  const charm = charmRating(capture);
   const firstSeen = useMemo(
     () =>
       new Date(capture.caught_at).toLocaleDateString(undefined, {
@@ -131,7 +132,17 @@ export function CatProfileTabs({
       }),
     [capture.caught_at],
   );
-  const lastSeen = formatRelativeTime(album[0]?.caught_at ?? capture.caught_at);
+  // Most recent sighting across this capture and the whole album (ISO strings
+  // sort lexicographically, so a plain max is correct).
+  const lastSeenTime = useMemo(
+    () =>
+      [capture.caught_at, ...album.map((s) => s.caught_at)].reduce(
+        (latest, t) => (t > latest ? t : latest),
+        capture.caught_at,
+      ),
+    [capture.caught_at, album],
+  );
+  const lastSeen = formatRelativeTime(lastSeenTime);
   const place = [capture.place_label, capture.city, capture.country].filter(Boolean).join(" - ");
   const hasCoordinates = capture.lat != null && capture.lng != null;
   const mapHref = capture.stray_cat_id
@@ -174,19 +185,15 @@ export function CatProfileTabs({
       </div>
 
       <div className={cn("flex flex-col gap-3", tab !== "about" && "hidden")}>
-        <div className="grid grid-cols-2 gap-3">
-          <StatCard label="Sightings" value={totalSightings.toLocaleString()} />
-          <StatCard label="First seen" value={firstSeen} />
-          <StatCard label="Last seen" value={lastSeen} className="col-span-2" />
-        </div>
-        {place && (
-          <div className="flex items-center gap-2 rounded-2xl border border-border/50 bg-card px-4 py-3 shadow-sm">
-            <MapPin className="size-4 shrink-0 text-muted-foreground" />
-            {hasCoordinates ? (
-              <Link href={mapHref} className="text-sm font-medium text-foreground hover:underline">
-                {place}
-              </Link>
-            ) : (
+          <div className="grid grid-cols-2 gap-3">
+            <StatCard label="Sightings" value={totalSightings.toLocaleString()} />
+            <StatCard label="Charm" value={charm.toFixed(1)} helper="out of 5" />
+            <StatCard label="First seen" value={firstSeen} />
+            <StatCard label="Last seen" value={lastSeen} />
+          </div>
+          {place && (
+            <div className="flex items-center gap-2 rounded-2xl border border-border/50 bg-card px-4 py-3 shadow-sm">
+              <MapPin className="size-4 shrink-0 text-muted-foreground" />
               <span className="text-sm font-medium text-foreground">{place}</span>
             )}
           </div>

@@ -12,7 +12,7 @@ import { countNearbyFeaturedVets } from "@/lib/featured-vets";
 import type { AreaStats, NearbyStrayCat } from "@/lib/nearby-stray-cats";
 
 const CACHE_KEY = "catdex-area-stats";
-const CACHE_TTL_MS = 5 * 60 * 1000;
+const CACHE_TTL_MS = 60 * 1000; // 1 minute — short enough that deletions show up on next visit
 
 type CachedPayload = {
   at: number;
@@ -49,7 +49,7 @@ function writeCache(lat: number, lng: number, stats: AreaStats): void {
   }
 }
 
-export function PawsInAreaSection({ userId }: { userId: string }) {
+export function PawsInAreaSection({ userId, bustCache }: { userId: string; bustCache?: boolean }) {
   const [stats, setStats] = useState<AreaStats | null>(null);
   const [featuredShelterCount, setFeaturedShelterCount] = useState(0);
   const [featuredVetCount, setFeaturedVetCount] = useState(0);
@@ -103,8 +103,13 @@ export function PawsInAreaSection({ userId }: { userId: string }) {
   }
 
   useEffect(() => {
+    if (bustCache) {
+      if (typeof sessionStorage !== "undefined") {
+        sessionStorage.removeItem(CACHE_KEY);
+      }
+    }
     void requestAndLoad();
-  }, [userId]);
+  }, [userId, bustCache]);
 
   const strays = stats?.strays ?? [];
   const total = stats?.totalInArea ?? 0;

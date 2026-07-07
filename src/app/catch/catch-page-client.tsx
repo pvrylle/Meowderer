@@ -1,9 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { RotateCcw, X, Check, Loader2, Cat } from "lucide-react";
+import { RotateCcw, X, Check, Loader2, Cat, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 import { persistNewAchievements } from "@/components/achievement-session-toasts";
@@ -31,12 +32,14 @@ import { yieldToMain } from "@/lib/capture/yield-to-main";
 import { coatToRarity, type CoatType } from "@/lib/coat-rarity";
 import { DEMO_COOKIE } from "@/lib/demo";
 import { getCurrentPosition, GeoError, type Coords } from "@/lib/geo";
-import { enqueueCapture } from "@/lib/offline-capture-queue";
-import type { CatTraits, Rarity } from "@/lib/supabase/types";
+import type { CatTraits } from "@/lib/supabase/types";
 import {
   fetchNearbyStrayCats,
-  findBestStrayMatch,
-  type StrayCatCandidate,
+  fetchStrayHint,
+  findStrayMatches,
+  verifyStrayMatch,
+  type StrayHint,
+  type StrayMatch,
 } from "@/lib/capture/match-stray-cat";
 import { computeImageEmbedding } from "@/lib/capture/image-embedding";
 import { saveCapture } from "./actions";
@@ -54,7 +57,7 @@ type LocationStatus = "idle" | "loading" | "ready" | "denied";
 
 type CatCheckStatus = "idle" | "checking" | "passed" | "failed";
 
-export default function CatchPageClient() {
+export default function CatchPageClient({ prelinkedStrayId = null }: { prelinkedStrayId?: string | null }) {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("capture");
 
@@ -65,7 +68,6 @@ export default function CatchPageClient() {
   const [classification, setClassification] = useState<CoatClassification | null>(
     null,
   );
-  const [previewRarity, setPreviewRarity] = useState<Rarity | null>(null);
   const [selectedCoat, setSelectedCoat] = useState<CoatType>("gray tabby");
   const [stickerScale, setStickerScale] = useState(STICKER_SCALE_DEFAULT);
 
@@ -80,9 +82,12 @@ export default function CatchPageClient() {
   const [saving, setSaving] = useState(false);
   const [coatClassifying, setCoatClassifying] = useState(false);
   const [embedding, setEmbedding] = useState<number[] | null>(null);
-  const [strayMatch, setStrayMatch] = useState<StrayCatCandidate | null>(null);
-  const [confirmedStrayId, setConfirmedStrayId] = useState<string | null>(null);
-  const [skipMatch, setSkipMatch] = useState(false);
+  const [strayMatch, setStrayMatch] = useState<StrayMatch[] | null>(null);
+  // If a stray ID was passed via ?stray=, pre-confirm it so the match dialog
+  // is skipped and the catch is directly linked to that stray.
+  const [confirmedStrayId, setConfirmedStrayId] = useState<string | null>(prelinkedStrayId);
+  const [skipMatch, setSkipMatch] = useState(prelinkedStrayId !== null);
+  const [strayHint, setStrayHint] = useState<StrayHint | null>(null);
   const [catCheckStatus, setCatCheckStatus] = useState<CatCheckStatus>("idle");
   const [catCheckReason, setCatCheckReason] = useState<string | null>(null);
 
@@ -119,6 +124,13 @@ export default function CatchPageClient() {
     void preloadCaptureAssets().catch(() => undefined);
   }, []);
 
+  // Fetch the hint data for a pre-linked stray so we can show the user
+  // what cat they're hunting and run proximity + similarity verification.
+  useEffect(() => {
+    if (!prelinkedStrayId) return;
+    void fetchStrayHint(prelinkedStrayId).then(setStrayHint);
+  }, [prelinkedStrayId]);
+
   useEffect(() => {
     if (phase === "preview") {
       void preloadCaptureAssets().catch(() => undefined);
@@ -153,13 +165,17 @@ export default function CatchPageClient() {
 
   useEffect(() => {
     if (phase === "review") {
+      // Geolocation is an external system we sync into React state via the
+      // async callback in requestLocation. Intentional side effect on entering
+      // review — not derived state.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       void requestLocation();
     }
   }, [phase, requestLocation]);
 
-  useEffect(() => {
-    setPreviewRarity(coatToRarity(selectedCoat));
-  }, [selectedCoat]);
+  // Rarity shown while reviewing is derived from the selected coat. The server
+  // recomputes the authoritative rarity on save, so this is display-only.
+  const previewRarity = coatToRarity(selectedCoat);
 
   const runCatCheck = useCallback(async (captured: File) => {
     const gen = ++catCheckGenRef.current;
@@ -216,7 +232,6 @@ export default function CatchPageClient() {
     setProcessed(null);
     setClassification(null);
     setCoatClassifying(false);
-    setPreviewRarity(null);
     setSelectedCoat("gray tabby");
     setStickerScale(STICKER_SCALE_DEFAULT);
     setNickname("");
@@ -227,8 +242,8 @@ export default function CatchPageClient() {
     setCoords(null);
     setEmbedding(null);
     setStrayMatch(null);
-    setConfirmedStrayId(null);
-    setSkipMatch(false);
+    setConfirmedStrayId(prelinkedStrayId);
+    setSkipMatch(prelinkedStrayId !== null);
     setCatCheckStatus("idle");
     setCatCheckReason(null);
     setLocationStatus("idle");
@@ -301,15 +316,15 @@ export default function CatchPageClient() {
     }
   }
 
-  async function performSave(strayCatId: string | null) {
+  async function performSave(
+    strayCatId: string | null,
+    locationOverride?: Coords | null,
+  ) {
     if (!processed) return;
 
-    const location = coords ?? (await requestLocation());
-    if (!location) {
-      toast.error("Location is required to save this catch.");
-      setSaving(false);
-      return;
-    }
+    // Location is optional — save with whatever we have (may be null).
+    const location =
+      locationOverride !== undefined ? locationOverride : coords;
 
     try {
       const stickerToUpload =
@@ -326,8 +341,8 @@ export default function CatchPageClient() {
         photoUrl: uploaded.photoUrl,
         stickerUrl: uploaded.stickerUrl,
         nickname: nickname || null,
-        lat: location.lat,
-        lng: location.lng,
+        lat: location?.lat ?? null,
+        lng: location?.lng ?? null,
         coat_type: selectedCoat,
         rarity: previewRarity,
         stray_cat_id: strayCatId,
@@ -366,22 +381,46 @@ export default function CatchPageClient() {
       return;
     }
 
-    const location = coords ?? (await requestLocation());
-    if (!location) {
-      toast.error("Location is required to save this catch.");
-      return;
+    // Location is optional. Use what we already resolved, or make one
+    // best-effort attempt (skip if the user already denied permission).
+    let location = coords;
+    if (!location && locationStatus !== "denied") {
+      location = await requestLocation();
     }
 
     setSaving(true);
 
-    if (!skipMatch && !confirmedStrayId) {
+    // When catching a pre-linked stray, verify GPS proximity + embedding
+    // similarity before allowing the save. This ensures the user actually
+    // photographed the right cat at the right location.
+    if (prelinkedStrayId && strayHint) {
+      const vec = embedding ?? (await computeImageEmbedding(processed.sticker));
+      setEmbedding(vec);
+
+      if (location) {
+        const verify = verifyStrayMatch(strayHint, vec, location.lat, location.lng);
+        if (!verify.ok) {
+          toast.error(verify.reason);
+          setSaving(false);
+          return;
+        }
+      } else {
+        // No GPS at all — GPS proximity is required for pre-linked catches.
+        toast.error("Location is needed to verify you found the right cat. Please enable GPS and try again.");
+        setSaving(false);
+        return;
+      }
+    }
+
+    // Stray-cat matching needs coordinates, so only run it when we have them.
+    if (location && !skipMatch && !confirmedStrayId) {
       try {
         const vec = embedding ?? (await computeImageEmbedding(processed.sticker));
         setEmbedding(vec);
         const candidates = await fetchNearbyStrayCats(location.lat, location.lng);
-        const match = findBestStrayMatch(vec, location.lat, location.lng, candidates);
-        if (match) {
-          setStrayMatch(match);
+        const matches = findStrayMatches(vec, location.lat, location.lng, candidates);
+        if (matches.length > 0) {
+          setStrayMatch(matches);
           setSaving(false);
           return;
         }
@@ -390,15 +429,14 @@ export default function CatchPageClient() {
       }
     }
 
-    await performSave(confirmedStrayId);
+    await performSave(confirmedStrayId, location);
   }
 
-  function handleMatchConfirm() {
-    if (!strayMatch) return;
-    setConfirmedStrayId(strayMatch.id);
+  function handleMatchConfirm(pickedId: string) {
+    setConfirmedStrayId(pickedId);
     setStrayMatch(null);
     setSaving(true);
-    void performSave(strayMatch.id);
+    void performSave(pickedId);
   }
 
   function handleMatchNewCat() {
@@ -408,7 +446,8 @@ export default function CatchPageClient() {
     void performSave(null);
   }
 
-  const canSave = locationStatus === "ready" && coords != null;
+  // Location is optional, so a catch can always be saved once processed.
+  const canSave = !saving;
 
   function adjustStickerScale(delta: number) {
     setStickerScale((current) => {
@@ -421,7 +460,7 @@ export default function CatchPageClient() {
     <div className="flex h-full min-h-0 flex-1 flex-col">
       {strayMatch && (
         <StrayMatchDialog
-          match={strayMatch}
+          matches={strayMatch}
           onConfirm={handleMatchConfirm}
           onNewCat={handleMatchNewCat}
           onCancel={() => {
@@ -444,6 +483,50 @@ export default function CatchPageClient() {
         </h1>
         <span className="size-10" />
       </header>
+
+      {/* Pre-linked stray hint card */}
+      {prelinkedStrayId && phase !== "review" && (
+        <div className="mx-3 mb-1 flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-3">
+          {/* Blurred sticker thumbnail */}
+          <div className="relative size-14 shrink-0 overflow-hidden rounded-xl bg-muted">
+            {strayHint?.cover_sticker_url ? (
+              <Image
+                src={strayHint.cover_sticker_url}
+                alt=""
+                fill
+                className="scale-110 object-contain p-1 blur-sm"
+                sizes="56px"
+                unoptimized
+              />
+            ) : (
+              <span className="flex h-full w-full items-center justify-center text-2xl">🐱</span>
+            )}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+              <span className="text-lg">🔒</span>
+            </div>
+          </div>
+          {/* Info */}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-bold text-foreground">
+              {strayHint?.canonical_name?.trim() || "Mystery stray"}
+            </p>
+            {strayHint?.coat_type && (
+              <p className="text-[10px] capitalize text-muted-foreground">
+                {strayHint.coat_type} coat
+              </p>
+            )}
+            {strayHint?.place_label && (
+              <p className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
+                <MapPin className="size-2.5 shrink-0" />
+                <span className="truncate">{strayHint.place_label}</span>
+              </p>
+            )}
+            <p className="mt-1 text-[10px] font-semibold text-primary">
+              Get close, then snap a photo to unlock
+            </p>
+          </div>
+        </div>
+      )}
 
       {phase === "capture" && <Camera onCapture={handleCapture} />}
 

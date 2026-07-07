@@ -1,14 +1,10 @@
-"use client";
+import { CatchPageLoader } from "./catch-page-loader";
 
-import dynamic from "next/dynamic";
-
-import { CatchPageLoading } from "@/components/capture/catch-page-loading";
-
-const CatchPageClient = dynamic(() => import("./catch-page-client"), {
-  ssr: false,
-  loading: () => <CatchPageLoading />,
-});
-
-export default function CatchPage() {
-  return <CatchPageClient />;
+export default async function CatchPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ stray?: string }>;
+}) {
+  const params = await searchParams;
+  return <CatchPageLoader prelinkedStrayId={params.stray ?? null} />;
 }
