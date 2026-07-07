@@ -1,19 +1,20 @@
+"use client";
+
 import Link from "next/link";
+import { useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 
 import { CatDetailCardStage } from "@/components/cat/cat-detail-card-stage";
 import { CatDetailHeaderActions } from "@/components/cat/cat-detail-header-actions";
 import { CatProfileTabs } from "@/components/cat/cat-profile-tabs";
+import type { CatDetailDockHandle } from "@/components/cat/cat-detail-dock";
 import type { NamePollWithCounts } from "@/app/(app)/cat/[id]/poll-actions";
 import { pickBiome } from "@/lib/cat-stats";
 import type { StraySighting } from "@/lib/stray-cats";
 import type { Capture } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 
-const BIOME_HERO: Record<
-  ReturnType<typeof pickBiome>,
-  string
-> = {
+const BIOME_HERO: Record<ReturnType<typeof pickBiome>, string> = {
   meadow: "from-green/25 via-background/40 to-card",
   city: "from-secondary/50 via-background/40 to-card",
   beach: "from-rare/20 via-orange/10 to-card",
@@ -29,6 +30,7 @@ export function CatDetailView({
   album,
   isSuperAdmin,
   nameLocked,
+  isFavorited,
 }: {
   capture: Capture;
   poll: NamePollWithCounts | null;
@@ -37,8 +39,10 @@ export function CatDetailView({
   album: StraySighting[];
   isSuperAdmin: boolean;
   nameLocked: boolean;
+  isFavorited: boolean;
 }) {
   const biome = pickBiome(capture);
+  const dockRef = useRef<CatDetailDockHandle>(null);
 
   return (
     <div className="relative flex min-h-full flex-1 flex-col overflow-visible bg-gradient-to-b from-background via-background/95 to-muted/25 pb-0">
@@ -57,8 +61,11 @@ export function CatDetailView({
           <ArrowLeft className="size-5" />
         </Link>
         <CatDetailHeaderActions
+          captureId={capture.id}
           shareTitle={capture.nickname?.trim() || "Meowderer cat"}
           shareText={`Check out ${capture.nickname?.trim() || "this cat"} on Meowderer.`}
+          isFavorited={isFavorited}
+          onOpenMenu={() => dockRef.current?.openMenu()}
         />
       </header>
 
@@ -75,8 +82,10 @@ export function CatDetailView({
         uploaderUsername={uploaderUsername}
         isSuperAdmin={isSuperAdmin}
         nameLocked={nameLocked}
+        onDockMenuRef={(el) => {
+          (dockRef as React.MutableRefObject<CatDetailDockHandle | null>).current = el;
+        }}
       />
-
     </div>
   );
 }

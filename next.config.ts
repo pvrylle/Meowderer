@@ -22,6 +22,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "res.cloudinary.com",
       },
+      {
+        protocol: "https",
+        hostname: "tiles.stadiamaps.com",
+      },
     ],
     // Local demo stickers are SVGs; safe because they are first-party assets.
     dangerouslyAllowSVG: true,
