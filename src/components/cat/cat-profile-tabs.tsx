@@ -72,7 +72,7 @@ export function CatProfileTabs({
   ];
 
   return (
-    <div className="relative z-10 mx-2 mt-3 flex flex-col gap-3 pb-3">
+    <div className="relative z-10 mx-2 mt-3 flex flex-1 flex-col gap-3 pb-3">
       <div className="flex justify-center gap-4 overflow-x-auto border-b border-border/40 px-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {tabs.map(({ key, label }) => {
           const active = tab === key;
@@ -184,11 +184,15 @@ export function CatProfileTabs({
           <NamePollCard capture={capture} poll={poll} isOwner={isOwner} />
       </div>
 
-      <CatDetailDock
-        capture={capture}
-        isSuperAdmin={isSuperAdmin}
-        nameLocked={nameLocked}
-      />
+      {/* mt-auto pins the action dock to the bottom when tab content is short,
+          so it anchors above the nav instead of floating with a void below. */}
+      <div className="mt-auto pt-1">
+        <CatDetailDock
+          capture={capture}
+          isSuperAdmin={isSuperAdmin}
+          nameLocked={nameLocked}
+        />
+      </div>
     </div>
   );
 }

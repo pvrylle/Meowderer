@@ -524,7 +524,7 @@ export default function CatchPageClient({ prelinkedStrayId = null }: { prelinked
       {phase === "capture" && <Camera onCapture={handleCapture} />}
 
       {phase === "preview" && previewUrl && (
-        <div className="flex flex-1 flex-col gap-6 p-6">
+        <div className="flex flex-1 flex-col gap-5 px-5 pt-2 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
           <div className="relative flex-1 overflow-hidden rounded-3xl bg-muted">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -556,7 +556,7 @@ export default function CatchPageClient({ prelinkedStrayId = null }: { prelinked
           )}
 
           {catCheckStatus === "passed" && (
-            <p className="text-center text-xs text-muted-foreground">
+            <p className="mx-auto max-w-[15rem] text-center text-xs leading-relaxed text-muted-foreground">
               Location is only needed when you save — you can make the sticker first.
             </p>
           )}
