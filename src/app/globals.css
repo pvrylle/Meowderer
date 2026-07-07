@@ -401,6 +401,29 @@
   height: 100%;
 }
 
+/* Catch processing overlay — CSS-only animations that survive WASM main-thread lock */
+@keyframes shimmer {
+  from { transform: translateX(-4rem); }
+  to   { transform: translateX(20rem); }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-4px); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+
+/* Trickle fill for the processing bar — scaleX runs on the compositor thread,
+   so it keeps advancing even while the background-removal WASM blocks JS. */
+@keyframes progress-trickle {
+  0%   { transform: scaleX(0.04); }
+  100% { transform: scaleX(0.9); }
+}
+
 /* Gentle warmth + extra saturation so water, parks, and land read clearly */
 .catch-map-root .maplibregl-canvas {
   filter: saturate(1.18) contrast(1.03) hue-rotate(-3deg);

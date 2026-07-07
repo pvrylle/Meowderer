@@ -30,41 +30,65 @@ import { cn } from "@/lib/utils";
 
 type LocationStatus = "idle" | "loading" | "ready" | "denied";
 
-function locationCopy(status: LocationStatus, errorCode?: string | null) {
+function locationCopy(
+  status: LocationStatus,
+  errorCode: string | null | undefined,
+  required: boolean,
+) {
   if (status === "ready") {
     return {
       title: "Location ready",
-      detail: "Your catch will be pinned to this spot.",
+      detail: required
+        ? "Your pin will show on the public map."
+        : "Your catch will be pinned to this spot.",
     };
   }
-  if (status === "loading" || status === "idle") {
+  if (status === "idle") {
+    return required
+      ? {
+          title: "Location needed for map pin",
+          detail: "Tap Add so your catch can appear on the public map.",
+        }
+      : {
+          title: "Add location? (optional)",
+          detail: "Tap to pin your catch on the map — or just save without it.",
+        };
+  }
+  if (status === "loading") {
     return {
       title: "Getting location…",
-      detail: "Optional — add a map pin, or just save without it.",
+      detail: "Allow location when your browser asks.",
     };
   }
   if (errorCode === "denied") {
     return {
       title: "Location is off",
-      detail:
-        "No problem — your catch saves without a map pin. Tap Retry to add one (allow location via the lock icon in the address bar).",
+      detail: required
+        ? "Your map pin can't show without it. Allow location (lock icon in the address bar) and tap Retry, or uncheck the map pin."
+        : "No problem — your catch saves without a map pin. Tap Retry to add one.",
     };
   }
   if (errorCode === "timeout") {
     return {
       title: "Location timed out",
-      detail: "You can save without it, or tap Retry near a window or outdoors.",
+      detail: required
+        ? "Needed for your map pin — tap Retry near a window/outdoors, or uncheck the map pin."
+        : "You can save without it, or tap Retry near a window or outdoors.",
     };
   }
   if (errorCode === "unavailable") {
     return {
       title: "Location unavailable",
-      detail: "You can save without it, or turn on location services and tap Retry.",
+      detail: required
+        ? "Needed for your map pin — turn on location services and tap Retry, or uncheck the map pin."
+        : "You can save without it, or turn on location services and tap Retry.",
     };
   }
   return {
     title: "Could not get location",
-    detail: "You can save without it, or tap Retry.",
+    detail: required
+      ? "Needed for your map pin — tap Retry, or uncheck the map pin."
+      : "You can save without it, or tap Retry.",
   };
 }
 
@@ -129,7 +153,21 @@ export function CatchReviewPanel({
 }) {
   const coatOverridden =
     classification != null && selectedCoat !== classification.coat_type;
-  const locationText = locationCopy(locationStatus, locationErrorCode);
+
+  // "Show pin on public map" is only meaningful with a location. Surface that:
+  // the location card turns into a required prompt, and checking the box
+  // auto-requests location (safe — it runs inside the checkbox gesture).
+  const locationReady = locationStatus === "ready";
+  const needsLocationForPin =
+    shareLocation && !locationReady && locationStatus !== "loading";
+  const locationText = locationCopy(locationStatus, locationErrorCode, shareLocation);
+
+  const handleShareLocationChange = (checked: boolean) => {
+    onShareLocationChange(checked);
+    if (checked && locationStatus !== "ready" && locationStatus !== "loading") {
+      onRetryLocation();
+    }
+  };
 
   return (
     <section className="relative z-10 flex h-full min-h-0 flex-col overflow-hidden rounded-t-[1.25rem] border border-b-0 border-border/80 bg-card shadow-[0_-8px_32px_rgba(58,53,80,0.12)] sm:rounded-t-[1.75rem]">
@@ -296,12 +334,12 @@ export function CatchReviewPanel({
           <label className="flex cursor-pointer items-center justify-between gap-2 text-sm">
             <span className="flex items-center gap-1.5 text-muted-foreground">
               Show pin on public map
-              <InfoTip text="Adds a map pin at your catch spot — visible to all, even if your photo is private. Photo and location are independent." />
+              <InfoTip text="Puts a pin at your catch spot on the public map for everyone (works even if your photo stays private). Needs a location — turning this on will ask for it." />
             </span>
             <input
               type="checkbox"
               checked={shareLocation}
-              onChange={(e) => onShareLocationChange(e.target.checked)}
+              onChange={(e) => handleShareLocationChange(e.target.checked)}
               className="size-4 accent-primary"
             />
           </label>
@@ -309,25 +347,25 @@ export function CatchReviewPanel({
           <div
             className={cn(
               "mt-1 flex items-center gap-2.5 rounded-xl border px-2.5 py-2.5 sm:gap-3 sm:px-3 sm:py-2.5",
-              locationStatus === "ready" && "border-green/40 bg-green/10",
-              locationStatus === "denied" && "border-border bg-muted/30",
-              (locationStatus === "loading" || locationStatus === "idle") &&
-                "border-border bg-muted/30",
+              locationReady && "border-green/40 bg-green/10",
+              needsLocationForPin && "border-orange/50 bg-orange/10",
+              !locationReady && !needsLocationForPin && "border-border bg-muted/30",
             )}
           >
             <span
               className={cn(
                 "flex size-8 shrink-0 items-center justify-center rounded-full sm:size-9",
-                locationStatus === "ready" && "bg-green/25 text-green",
-                locationStatus === "denied" && "bg-muted text-muted-foreground",
-                (locationStatus === "loading" || locationStatus === "idle") &&
-                  "bg-muted text-muted-foreground",
+                locationReady && "bg-green/25 text-green",
+                needsLocationForPin && "bg-orange/20 text-orange",
+                !locationReady && !needsLocationForPin && "bg-muted text-muted-foreground",
               )}
             >
-              {locationStatus === "loading" || locationStatus === "idle" ? (
+              {locationStatus === "loading" ? (
                 <Loader2 className="size-3.5 animate-spin sm:size-4" />
               ) : locationStatus === "ready" ? (
                 <CheckCircle2 className="size-3.5 sm:size-4" />
+              ) : locationStatus === "idle" ? (
+                <MapPin className="size-3.5 sm:size-4" />
               ) : (
                 <XCircle className="size-3.5 sm:size-4" />
               )}
@@ -340,13 +378,13 @@ export function CatchReviewPanel({
                 {locationText.detail}
               </p>
             </div>
-            {locationStatus === "denied" && (
+            {(locationStatus === "idle" || locationStatus === "denied") && (
               <button
                 type="button"
                 onClick={onRetryLocation}
-                className="shrink-0 rounded-full bg-card px-2.5 py-1 text-[10px] font-bold text-primary shadow-sm sm:px-3 sm:py-1.5 sm:text-xs"
+                className="shrink-0 rounded-full bg-primary px-3 py-1 text-[10px] font-bold text-primary-foreground shadow-sm sm:py-1.5 sm:text-xs"
               >
-                Retry
+                {locationStatus === "idle" ? "Add" : "Retry"}
               </button>
             )}
             {locationStatus === "ready" && (
