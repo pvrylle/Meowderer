@@ -19,10 +19,10 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   icons: {
     icon: [
-      { url: BRAND_ICON_PNG, sizes: "512x512", type: "image/png" },
+      { url: BRAND_ICON_PNG, sizes: "2000x2000", type: "image/png" },
       { url: BRAND_ICON, type: "image/svg+xml" },
     ],
-    apple: [{ url: BRAND_ICON_PNG, sizes: "180x180", type: "image/png" }],
+    apple: [{ url: BRAND_ICON_PNG, type: "image/png" }],
   },
   appleWebApp: {
     capable: true,

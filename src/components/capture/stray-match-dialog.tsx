@@ -1,12 +1,17 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MapPin } from "lucide-react";
 
+import { SightingsAlbum } from "@/components/cat/sightings-album";
 import { CatButton } from "@/components/ui/cat-button";
 import { PhoneOverlayPortal } from "@/components/phone-overlay-portal";
-import type { StrayMatch } from "@/lib/capture/match-stray-cat";
+import {
+  fetchStraySightings,
+  type StrayMatch,
+  type StraySightingLite,
+} from "@/lib/capture/match-stray-cat";
 import { cn } from "@/lib/utils";
 
 function formatDistance(m: number): string {
@@ -113,6 +118,29 @@ export function StrayMatchDialog({
   const [selectedId, setSelectedId] = useState<string | null>(
     matches.length === 1 ? matches[0].id : null,
   );
+  // Lazily-loaded shared album per candidate, so users can compare a cat's
+  // other nearby sightings before confirming "same cat". A missing key means
+  // "not fetched yet" (loading); an empty array means "fetched, none shared".
+  const [albums, setAlbums] = useState<Record<string, StraySightingLite[]>>({});
+
+  useEffect(() => {
+    if (!selectedId || albums[selectedId] !== undefined) return;
+    let cancelled = false;
+    fetchStraySightings(selectedId).then((sightings) => {
+      if (!cancelled) {
+        setAlbums((prev) => ({ ...prev, [selectedId]: sightings }));
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedId, albums]);
+
+  const albumLoading = selectedId != null && albums[selectedId] === undefined;
+
+  const selectedName =
+    matches.find((m) => m.id === selectedId)?.canonical_name?.trim() ||
+    "this cat";
 
   const isSingle = matches.length === 1;
   const title = isSingle ? "Same cat?" : "Looks familiar…";
@@ -144,6 +172,25 @@ export function StrayMatchDialog({
             />
           ))}
         </div>
+
+        {/* Shared album for the selected candidate — other nearby sightings */}
+        {selectedId && (
+          <div className="mt-4">
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.28em] text-muted-foreground">
+              Other sightings of {selectedName}
+            </p>
+            {albumLoading ? (
+              <p className="text-xs text-muted-foreground">Loading album…</p>
+            ) : (
+              <SightingsAlbum
+                sightings={albums[selectedId] ?? []}
+                size="md"
+                showLabels
+                emptyLabel="No other shared photos of this cat yet."
+              />
+            )}
+          </div>
+        )}
 
         {/* Actions */}
         <div className="mt-4 flex flex-col gap-2">

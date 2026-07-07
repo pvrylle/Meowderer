@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useRef, useState, useTransition } from "react";
 import { MapPin } from "lucide-react";
@@ -8,6 +7,7 @@ import { toast } from "sonner";
 
 import { updatePrivacy } from "@/app/(app)/cat/[id]/actions";
 import { CatDetailDock, type CatDetailDockHandle } from "@/components/cat/cat-detail-dock";
+import { SightingsAlbum } from "@/components/cat/sightings-album";
 import { NamePollCard } from "@/components/name-poll-card";
 import { catBio, charmRating, dexNumber } from "@/lib/cat-stats";
 import { formatRelativeTime } from "@/lib/format-time";
@@ -274,25 +274,7 @@ export function CatProfileTabs({
             Album
           </span>
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {[capture, ...album].map((sighting) => (
-            <div
-              key={sighting.id}
-              className="w-20 shrink-0 overflow-hidden rounded-2xl border border-border/60 bg-background/80 shadow-sm"
-            >
-              <div className="relative aspect-square bg-muted/50">
-                <Image
-                  src={sighting.sticker_url}
-                  alt=""
-                  fill
-                  className="object-contain p-1"
-                  sizes="80px"
-                  unoptimized
-                />
-              </div>
-            </div>
-          ))}
-        </div>
+        <SightingsAlbum sightings={[capture, ...album]} size="sm" />
       </div>
 
       <div className={cn("space-y-3", tab !== "comments" && "hidden")}>

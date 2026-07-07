@@ -7,6 +7,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getStrayCat, getStrayCatSightings } from "@/lib/stray-cats";
 import { CatButton } from "@/components/ui/cat-button";
+import { SightingsAlbum } from "@/components/cat/sightings-album";
 
 export default async function StrayCatPage({
   params,
@@ -120,39 +121,12 @@ export default async function StrayCatPage({
 
       <section className="space-y-3">
         <h2 className="text-base font-semibold text-foreground">Who met this cat</h2>
-        {sightings.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No shared sightings yet. Catch and share to add to the album!
-          </p>
-        ) : (
-          <div className="flex gap-2 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {sightings.map((s) => (
-              <div
-                key={s.id}
-                className="w-28 shrink-0 overflow-hidden rounded-2xl border border-border bg-card"
-              >
-                <div className="relative aspect-square bg-muted">
-                  <Image
-                    src={s.sticker_url}
-                    alt=""
-                    fill
-                    className="object-contain p-1"
-                    sizes="112px"
-                    unoptimized
-                  />
-                </div>
-                <div className="p-2">
-                  <p className="truncate text-[10px] font-bold text-foreground">
-                    @{s.username ?? "catcher"}
-                  </p>
-                  <p className="truncate text-[9px] text-muted-foreground">
-                    {s.place_label || s.city || "Nearby"}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        <SightingsAlbum
+          sightings={sightings}
+          size="md"
+          showLabels
+          emptyLabel="No shared sightings yet. Catch and share to add to the album!"
+        />
       </section>
     </div>
   );

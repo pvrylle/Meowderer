@@ -45,6 +45,36 @@ export type StrayMatch = StrayCatCandidate & {
   distanceM: number;
 };
 
+/** A single shared-album entry for a stray cat (public sightings only). */
+export type StraySightingLite = {
+  id: string;
+  sticker_url: string;
+  username: string | null;
+  place_label: string | null;
+  city: string | null;
+};
+
+/**
+ * Fetch the shared album (public sightings) for one stray cat. Used by the
+ * "Same cat?" dialog to preview a candidate's other photos. Candidates are
+ * already geo-fenced by `findStrayMatches` (within MAX_DISTANCE_M), so the
+ * album shown is always for a nearby cat.
+ */
+export async function fetchStraySightings(
+  strayId: string,
+): Promise<StraySightingLite[]> {
+  try {
+    const res = await fetch(
+      `/api/stray-cats/${encodeURIComponent(strayId)}/sightings`,
+    );
+    if (!res.ok) return [];
+    const data = (await res.json()) as { sightings?: StraySightingLite[] };
+    return data.sightings ?? [];
+  } catch {
+    return [];
+  }
+}
+
 export function findBestStrayMatch(
   embedding: number[],
   lat: number,
